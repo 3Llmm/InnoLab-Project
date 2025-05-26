@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Courses - Reverse Engineering</title>
+  <!-- Fetch links, do not change-->
+  <script>
+    fetch('../include/links.html')
+      .then(response => response.text())
+      .then(data => {
+        document.head.insertAdjacentHTML('beforeend', data);
+      })
+      .catch(error => console.error('Error loading head links:', error));
+  </script>
+</head>
+<body>
+  <!-- Navbar -->
+  <div id="header"></div>
+
+  <!-- Title of the course -->
+  <div class="bg-dark text-white py-3">
+    <div class="container d-flex flex-column align-items-center text-center py-5">
+      <h1 class="fw-bold">Reverse Engineering</h1>
+    </div>
+  </div>
+
+  <!-- Description of the course-->
+  <div class="text-white py-5">
+    <div class="container d-flex flex-column align-items-center text-center py-5">
+      <h3>What is Reverse Engineering ?</h3>
+      <hr style="height: 5px; background-color: white; border: none; width: 100px; margin: 1rem auto;">
+      
+      <div class="d-flex flex-column flex-sm-row gap-3 mt-3">
+        <div class="w-100" style="max-width: 600px;">
+          <p class="mb-0 fw-lighter">
+            Reverse Engineering is ... [Enter a short description]
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="mt-1 mb-5 text-white">
+    <div class="container text-center">
+      <h3>Learn and practice through our lessons</h3>
+      <p class="py-3 fw-lighter">
+        Follow structured paths and reinforce your skills in a real-world environment by completing guided objective-based tasks and challenges. Learning cyber security on FHTW Hacking is fun and addictive. 
+        Earn points by answering questions, taking on challenges and maintaining your hacking streak through short lessons.
+      </p>
+      <div class="row g-4 mt-3 justify-content-center">
+  
+        <div class="col-12 col-md-4 d-flex justify-content-center">
+          <div class="card bg-transparent border border-white" style="width: 18rem;">
+            <div class="card-body">
+              <h5 class="card-title">Lesson 1</h5>
+              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+              <a href="#" class="btn btn-dark">Go to lesson</a>
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-12 col-md-4 d-flex justify-content-center">
+          <div class="card bg-transparent border border-white" style="width: 18rem;">
+            <div class="card-body">
+              <h5 class="card-title">Lesson 2</h5>
+              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+              <a href="#" class="btn btn-dark">Go to lesson</a>
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-12 col-md-4 d-flex justify-content-center">
+          <div class="card bg-transparent border border-white" style="width: 18rem;">
+            <div class="card-body">
+              <h5 class="card-title">Lesson 3</h5>
+              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+              <a href="#" class="btn btn-dark">Go to lesson</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4 d-flex justify-content-center mt-4">
+            <div class="card bg-transparent border border-white" style="width: 18rem;">
+                <div class="card-body">
+                <h5 class="card-title">Lesson 4</h5>
+                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                <a href="#" class="btn btn-dark">Go to lesson</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4 d-flex justify-content-center mt-4">
+            <div class="card bg-transparent border border-white" style="width: 18rem;">
+                <div class="card-body">
+                <h5 class="card-title">Lesson 5</h5>
+                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                <a href="#" class="btn btn-dark">Go to lesson</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4 d-flex justify-content-center mt-4">
+            <div class="card bg-transparent border border-white" style="width: 18rem;">
+                <div class="card-body">
+                <h5 class="card-title">Lesson 6</h5>
+                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                <a href="#" class="btn btn-dark">Go to lesson</a>
+                </div>
+            </div>
+        </div>
+  
+      </div>
+    </div>
+  </div> 
+  
+  <div id="footer"></div>
+
+  <!-- Fetch Navbar and Footer, do not change-->
+  <script>
+    fetch('../include/navbar.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('header').innerHTML = data;
+      })
+      .catch(error => console.error('Error loading header:', error));
+
+    fetch('../include/footer.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('footer').innerHTML = data;
+      })
+      .catch(error => console.error('Error loading footer:', error));
+  </script>
+
+  <!-- Load scripts, do not change -->
+  <script>
+    fetch('../include/scripts.html')
+      .then(response => response.text())
+      .then(data => {
+        const temp = document.createElement('div');
+        temp.innerHTML = data;
+        Array.from(temp.querySelectorAll('script')).forEach(oldScript => {
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      })
+      .catch(error => console.error('Error loading scripts:', error));
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const lessonsContainer = document.querySelector('.row.g-4');
+
+      // Fetch categories from the backend
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        lessonsContainer.innerHTML = `<p class="text-danger">No token found. Please log in.</p>`;
+        return;
+      }
+
+      fetch('http://localhost:8080/api/categories', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch categories');
+          }
+          return response.json();
+        })
+        .then(categories => {
+          // Filter for Reverse Engineering category
+          const reverseEngineering = categories.find(category => category.id === 'pwn'); // Replace 'pwn' with the correct ID for Reverse Engineering
+
+          if (reverseEngineering) {
+            lessonsContainer.innerHTML = `
+              <div class="col-12">
+                <h3>${reverseEngineering.name}</h3>
+                <p>${reverseEngineering.summary}</p>
+              </div>
+            `;
+          } else {
+            lessonsContainer.innerHTML = `<p class="text-warning">No data found for Reverse Engineering.</p>`;
+          }
+        })
+        .catch(error => {
+          lessonsContainer.innerHTML = `<p class="text-danger">Error loading data: ${error.message}</p>`;
+        });
+    });
+  </script>
+</body>
+</html>

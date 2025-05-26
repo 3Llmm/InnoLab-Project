@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home</title>
+  <script>
+    fetch('./include/links.html')
+      .then(response => response.text())
+      .then(data => {
+        document.head.insertAdjacentHTML('beforeend', data);
+      })
+      .catch(error => console.error('Error loading head links:', error));
+  </script>
+</head>
+<body>
+  <div id="header"></div>
+
+  <!-- Title Section -->
+  <div class="bg-dark text-white py-3">
+    <div class="container d-flex flex-column align-items-center text-center py-5">
+      <h1 class="fw-bold">Help & FAQ</h1>
+    </div>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="text-light py-5">
+    <div class="container d-flex flex-column align-items-center text-center py-5">
+      
+      <div class="accordion w-100" id="faqAccordion" style="max-width: 800px;">
+        
+        <!-- Question 1 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+              How do I start a course?
+            </button>
+          </h2>
+          <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-start text-dark">
+              To start a course, simply click on your preferred field on the Courses page and follow the guided instructions to begin.
+            </div>
+          </div>
+        </div>
+        <hr>
+
+        <!-- Question 2 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+              Is this platform suitable for complete beginners?
+            </button>
+          </h2>
+          <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-start text-dark">
+              Absolutely! Our platform is designed to support learners at all levels, starting from the basics and progressing to advanced cybersecurity topics.
+            </div>
+          </div>
+        </div>
+        <hr>
+
+        <!-- Question 3 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingThree">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+              Do I need any prior programming knowledge?
+            </button>
+          </h2>
+          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-start text-dark">
+              While basic programming skills can help, they are not required. We provide beginner-friendly explanations and resources to guide you step-by-step.
+            </div>
+          </div>
+        </div>
+        <hr>
+
+        <!-- Question 4 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingFour">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+              Is there a scoreboard to track my progress?
+            </button>
+          </h2>
+          <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-start text-dark">
+              Yes! Our live scoreboard allows you to monitor your achievements, compare with other users, and stay motivated throughout your learning journey.
+            </div>
+          </div>
+        </div>
+        <hr>
+
+        <!-- Question 5 -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingFive">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+              How can I get help if I’m stuck on a challenge?
+            </button>
+          </h2>
+          <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-start text-dark">
+              If you’re stuck, you can access hints, join our community forums, or contact our support team for guidance.
+            </div>
+          </div>
+        </div>
+        <hr>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="footer"></div>
+
+  <script>
+    fetch('./include/navbar.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('header').innerHTML = data;
+      })
+      .catch(error => console.error('Error loading header:', error));
+
+    fetch('./include/footer.html')
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('footer').innerHTML = data;
+      })
+      .catch(error => console.error('Error loading footer:', error));
+  </script>
+
+  <!-- Load scripts -->
+  <script>
+    fetch('./include/scripts.html')
+      .then(response => response.text())
+      .then(data => {
+        const temp = document.createElement('div');
+        temp.innerHTML = data;
+        Array.from(temp.querySelectorAll('script')).forEach(oldScript => {
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      })
+      .catch(error => console.error('Error loading scripts:', error));
+  </script>
+</body>
+</html>
