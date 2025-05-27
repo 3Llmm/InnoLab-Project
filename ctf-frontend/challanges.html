@@ -4,9 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Home</title>
-  <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css">
-  <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
-
   <script>
     fetch('./include/links.html')
       .then(response => response.text())
@@ -15,6 +12,10 @@
       })
       .catch(error => console.error('Error loading head links:', error));
   </script>
+
+  <!-- Add these to your head via include/links.html or directly in the file -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
 </head>
 <body>
   <div id="header"></div>
@@ -212,34 +213,43 @@
 </div>
 <script>
   document.getElementById('spawn-terminal-btn').addEventListener('click', function () {
-    const term = new Terminal();
-    const terminalContainer = document.getElementById('terminal-container');
-    terminalContainer.innerHTML = ''; // clear if needed
-    term.open(terminalContainer);
-    term.focus();
+    try {
+      const term = new Terminal();
+      const terminalContainer = document.getElementById('terminal-container');
+      terminalContainer.innerHTML = ''; // clear if needed
+      term.open(terminalContainer);
+      term.write('Connecting to terminal service...\r\n');
+      term.focus();
 
-    const socket = new WebSocket('ws://localhost:3001');
+      const socket = new WebSocket('ws://localhost:3001');
 
-    socket.onopen = () => {
-      console.log('[WS] Terminal connected');
-    };
+      socket.onopen = () => {
+        console.log('[WS] Terminal connected');
+        term.write('\r\nConnection established!\r\n');
+      };
 
-    socket.onmessage = (e) => {
-      term.write(e.data);
-    };
+      socket.onmessage = (e) => {
+        term.write(e.data);
+      };
 
-    term.onData((data) => {
-      socket.send(data);
-    });
+      term.onData((data) => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(data);
+        }
+      });
 
-    socket.onclose = () => {
-      term.write('\r\n[Terminal closed]');
-    };
+      socket.onclose = () => {
+        term.write('\r\n\x1b[1;31m[Terminal connection closed]\x1b[0m\r\n');
+      };
 
-    socket.onerror = (err) => {
-      term.write('\r\n[Connection error]');
-      console.error(err);
-    };
+      socket.onerror = (err) => {
+        term.write('\r\n\x1b[1;31m[Connection error: Make sure the terminal server is running on port 3001]\x1b[0m\r\n');
+        console.error(err);
+      };
+    } catch (error) {
+      console.error('Failed to initialize terminal:', error);
+      alert('Failed to initialize terminal. Make sure the xterm.js library is loaded properly.');
+    }
   });
 </script>
 

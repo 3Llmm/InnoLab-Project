@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven
+
+      - name: Generate Checkstyle report (non-blocking)
+        run: mvn checkstyle:checkstyle
+
+#      - name: Run unit tests (skip checkstyle and LDAP)
+#        run: mvn test -Dtest=!LoginIntegrationTest -Dcheckstyle.skip=true
+
+      - name: Build JAR
+        run: mvn clean package -DskipTests=true -Dcheckstyle.skip=true
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctf-backend-jar
+          path: target/*.jar
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: if23b090/ctfbackend:latest
+
+  docker-compose-integration-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    services: {}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        run: |
+          docker compose -f docker-compose.yml up -d --wait
+          sleep 15  # Give services time to start
+
+      - name: Test backend API health
+        run: |
+          curl --fail http://localhost:8080/api/health || exit 1
+
+      - name: Shut down containers
+        if: always()
+        run: docker compose -f docker-compose.yml down

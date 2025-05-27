@@ -37,27 +37,6 @@ services:
       - ldapdata:/var/lib/ldap
       - ./ldap/bootstrap/ldif/custom:/container/environment/99-custom
 
-#  ldap:
-#    image: osixia/openldap:1.5.0
-#    environment:
-#      LDAP_ORGANISATION: "CTF"
-#      LDAP_DOMAIN: "ctf.local"
-#      LDAP_ADMIN_PASSWORD: "admin"
-#      LDAP_CONFIG_PASSWORD: "admin"
-#    ports:
-#      - "389:389"
-#    volumes:
-#      - ldapdata:/var/lib/ldap
-#
-#  ldap-init:
-#    image: alpine
-#    depends_on:
-#      - ldap
-#    volumes:
-#      - ./init-ldap.sh:/init-ldap.sh
-#    entrypoint: [ "/bin/sh", "/init-ldap.sh" ]
-
 volumes:
   pgdata:
   ldapdata:
-  ldapconfig:
