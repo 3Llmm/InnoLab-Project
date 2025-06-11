@@ -3,7 +3,7 @@ services:
   app:
     image: ctf-backend
     build:
-      context: .
+      context: ./ctf-backend
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
@@ -35,7 +35,35 @@ services:
       - "389:389"
     volumes:
       - ldapdata:/var/lib/ldap
+      - ./ldap-config:/etc/ldap/slapd.d
       - ./ldap/bootstrap/ldif/custom:/container/environment/99-custom
+
+  frontend:
+    image: ctf-frontend
+    build:
+      context: ./ctf-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+
+  kali-vm-tools:
+    image: ctf-kali-vm-tools
+    build:
+      context: ./ctf-terminal
+      dockerfile: Dockerfile.vm-tools
+ 
+  terminal:
+    image: ctf-terminal
+    build:
+      context: ./ctf-terminal
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    depends_on:
+      - frontend
+      - kali-vm-tools
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock 
 
 volumes:
   pgdata:
