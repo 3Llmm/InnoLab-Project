@@ -12,7 +12,7 @@ const wss = new webSocket.Server({ server });
 wss.on('connection', (ws) => {
     console.log('WebSocket connected');
 
-    const docker = pty.spawn('docker', ['run', '-it', '--rm', 'ubuntu', 'bash'], {
+    const docker = pty.spawn('docker', ['run', '-it', '--rm', 'ctf-kali-vm-tools', 'bash'], {
         name: 'xterm-color',
         cols: 80,
         rows: 30,
