@@ -1,3 +1,7 @@
+dn: ou=users,dc=ctf,dc=local
+objectClass: organizationalUnit
+ou: users
+
 dn: uid=testuser,ou=users,dc=ctf,dc=local
 objectClass: inetOrgPerson
 objectClass: posixAccount

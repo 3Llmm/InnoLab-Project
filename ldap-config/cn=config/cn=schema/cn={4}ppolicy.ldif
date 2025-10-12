@@ -1,5 +1,5 @@
 # AUTO-GENERATED FILE - DO NOT EDIT!! Use ldapmodify.
-# CRC32 c3f636c4
+# CRC32 5da28f87
 dn: cn={4}ppolicy
 objectClass: olcSchemaConfig
 cn: {4}ppolicy
@@ -57,9 +57,9 @@ olcObjectClasses: {1}( 1.3.6.1.4.1.42.2.27.8.2.1 NAME 'pwdPolicy' SUP top AU
  kout $ pwdLockoutDuration $ pwdMaxFailure $ pwdFailureCountInterval $ pwdMu
  stChange $ pwdAllowUserChange $ pwdSafeModify $ pwdMaxRecordedFailure ) )
 structuralObjectClass: olcSchemaConfig
-entryUUID: 3cce92aa-daa7-103f-9c04-a12bd38fb33c
+entryUUID: 2701d4ce-3be5-1040-8ecb-db4262621cab
 creatorsName: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
-createTimestamp: 20250611003202Z
-entryCSN: 20250611003202.233568Z#000000#000#000000
+createTimestamp: 20251012182937Z
+entryCSN: 20251012182937.246234Z#000000#000#000000
 modifiersName: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
-modifyTimestamp: 20250611003202Z
+modifyTimestamp: 20251012182937Z
