@@ -1,6 +1,5 @@
 ctf-terminal/node_modules/
 .env
-# Ignore LDAP runtime directories created by Docker
-ldap-config/
+
 
 
