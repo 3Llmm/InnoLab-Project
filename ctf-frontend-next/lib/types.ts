@@ -1,0 +1,44 @@
+// Core type definitions for the CTF platform
+
+export interface User {
+  id: string
+  username: string
+  email: string
+  score: number
+  solvedChallenges: number
+  createdAt: Date
+}
+
+export interface Challenge {
+  id: string
+  title: string
+  description: string
+  category: "binary-exploitation" | "cryptography" | "forensics" | "reverse-engineering" | "web-exploitation"
+  difficulty: "easy" | "medium" | "hard"
+  points: number
+  solved: boolean
+  hints?: string[]
+  files?: {
+    name: string
+    url: string
+  }[]
+}
+
+export interface ScoreboardEntry {
+  id: string
+  username: string
+  score: number
+  solvedChallenges: number
+}
+
+export interface AuthResult {
+  success: boolean
+  error?: string
+  user?: User
+}
+
+export interface FlagSubmissionResult {
+  success: boolean
+  message: string
+  points?: number
+}
