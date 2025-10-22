@@ -1,27 +1,29 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { loginUser } from "@/lib/actions/auth"
+import { useAuth } from "@/lib/hooks/use-auth"  // ← USE THE HOOK
 import { AlertCircle } from "lucide-react"
 
 export default function LoginForm() {
   const router = useRouter()
+  const { login, isLoading } = useAuth()  // ← GET FROM HOOK
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
-    setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+    const credentials = {
+      username: formData.get('username') as string,
+      password: formData.get('password') as string,
+    }
 
     try {
-      const result = await loginUser(formData)
+      const result = await login(credentials)  // ← USE HOOK'S LOGIN
 
       if (result.success) {
         router.push("/challenges")
@@ -31,8 +33,6 @@ export default function LoginForm() {
       }
     } catch (err) {
       setError("An unexpected error occurred")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -86,10 +86,10 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isLoading}  // ← USE HOOK'S LOADING STATE
           className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Logging in..." : "Login"}
+          {isLoading ? "Logging in..." : "Login"}  {/* ← USE HOOK'S LOADING STATE */}
         </button>
 
         <p className="text-center text-sm text-muted-foreground">

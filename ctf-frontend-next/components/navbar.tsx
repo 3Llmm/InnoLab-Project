@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { Menu, X, Flag } from "lucide-react"
 import ThemeToggle from "@/components/theme-toggle"
-import { useAuth } from "@/lib/hooks/use-auth"
+import { useAuth } from "@/lib/hooks/use-auth"  // ← ADD THIS IMPORT
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
-  const { user, logout } = useAuth()
+  const { auth, logout } = useAuth()  // ← USE THE HOOK
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -59,10 +59,10 @@ export default function Navbar() {
             <div className="hidden md:flex items-center mr-2">
               <ThemeToggle />
             </div>
-            {user ? (
+            {auth.isAuthenticated ? (  // ← CHECK AUTH STATE
               <>
                 <span className="text-sm text-muted-foreground">
-                  Welcome, <span className="text-primary font-semibold">{user.username}</span>
+                  Welcome, <span className="text-primary font-semibold">{auth.user}</span>
                 </span>
                 <button
                   onClick={logout}
@@ -119,18 +119,18 @@ export default function Navbar() {
               <div className="px-2">
                 <ThemeToggle />
               </div>
-              {user ? (
+              {auth.isAuthenticated ? (  // ← CHECK AUTH STATE
                 <>
                   <div className="text-sm text-muted-foreground">
-                    Welcome, <span className="text-primary font-semibold">{user.username}</span>
+                    Welcome, <span className="text-primary font-semibold">{auth.user}</span>
                   </div>
                   <button
                     onClick={() => {
                       logout()
                       setMobileMenuOpen(false)
                     }}
-                    className="w-full px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
-                  >
+                    className="w-full px-4 py-2 bg-destructive/90 text-destructive-foreground rounded-md font-medium hover:bg-destructive transition-colors"
+>
                     Logout
                   </button>
                 </>

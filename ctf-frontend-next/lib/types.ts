@@ -42,3 +42,26 @@ export interface FlagSubmissionResult {
   message: string
   points?: number
 }
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  status: string;
+  message: string;
+}
+
+export interface AuthState {
+  token: string | null;
+  user: string | null;
+  isAuthenticated: boolean;
+}
+
+export interface ApiResult<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
