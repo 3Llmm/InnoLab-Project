@@ -1,83 +1,80 @@
-// API functions for fetching challenge data
-// TODO: Replace mock data with actual API calls to your backend
+import { apiClient } from './client'
+import type { Challenge } from '@/lib/types'
 
-import type { Challenge } from "@/lib/types"
+// Backend response type
+interface BackendChallenge {
+  id: string
+  name: string
+  description: string
+  fileUrl: string
+}
 
-// Mock challenge data
-const MOCK_CHALLENGES: Challenge[] = [
-  {
-    id: "1",
-    title: "Buffer Overflow Basics",
-    description: "Learn the fundamentals of buffer overflow exploitation. Can you overwrite the return address?",
-    category: "binary-exploitation",
-    difficulty: "easy",
-    points: 100,
+// Map backend data to frontend format
+function mapChallenge(backend: BackendChallenge): Challenge {
+  // Derive category from ID (e.g., "web-101" -> "web-exploitation")
+  const categoryMap: Record<string, string> = {
+    'web': 'web-exploitation',
+    'rev': 'reverse-engineering',
+    'crypto': 'cryptography',
+    'forensics': 'forensics',
+    'pwn': 'binary-exploitation',
+  }
+  
+  const prefix = backend.id.split('-')[0] || 'web'
+  const category = categoryMap[prefix] || 'web-exploitation'
+  
+  // Derive difficulty from ID number
+  const idNumber = parseInt(backend.id.split('-')[1] || '100')
+  let difficulty: 'easy' | 'medium' | 'hard' = 'medium'
+  if (idNumber < 200) difficulty = 'easy'
+  else if (idNumber < 300) difficulty = 'medium'
+  else difficulty = 'hard'
+  
+  // Calculate points
+  const pointsMap = { easy: 100, medium: 200, hard: 300 }
+  
+  return {
+    id: backend.id,
+    title: backend.name, // Map "name" to "title"
+    description: backend.description,
+    category,
+    difficulty,
+    points: pointsMap[difficulty],
+    solves: 0,
     solved: false,
-    hints: ["Look at the buffer size", "What happens when you write past the buffer?"],
-    files: [{ name: "vuln.c", url: "/files/vuln.c" }],
-  },
-  {
-    id: "2",
-    title: "Caesar Cipher",
-    description: "A classic substitution cipher. Can you decrypt the message?",
-    category: "cryptography",
-    difficulty: "easy",
-    points: 50,
-    solved: false,
-    hints: ["Try all possible shifts", "The shift is less than 26"],
-  },
-  {
-    id: "3",
-    title: "Hidden in Plain Sight",
-    description: "There's more to this image than meets the eye. Can you find the hidden data?",
-    category: "forensics",
-    difficulty: "medium",
-    points: 150,
-    solved: false,
-    files: [{ name: "image.png", url: "/files/image.png" }],
-  },
-  {
-    id: "4",
-    title: "Crackme Challenge",
-    description: "Reverse engineer this binary to find the correct password.",
-    category: "reverse-engineering",
-    difficulty: "medium",
-    points: 200,
-    solved: false,
-    files: [{ name: "crackme", url: "/files/crackme" }],
-  },
-  {
-    id: "5",
-    title: "SQL Injection 101",
-    description: "Exploit this vulnerable login form to gain admin access.",
-    category: "web-exploitation",
-    difficulty: "easy",
-    points: 100,
-    solved: false,
-    hints: ["Try common SQL injection payloads", "Think about bypassing authentication"],
-  },
-]
+  }
+}
 
+// Fetch real challenges from backend
 export async function getAllChallenges(): Promise<Challenge[]> {
-  // TODO: Replace with actual API call
-  // Example: const response = await fetch('/api/challenges')
-  // return response.json()
-
-  return MOCK_CHALLENGES
+  try {
+    const response = await apiClient.get<BackendChallenge[]>('/api/challenges')
+    return response.map(mapChallenge)
+  } catch (error) {
+    console.error('Failed to fetch challenges:', error)
+    // Return empty array on error instead of crashing
+    return []
+  }
 }
 
+// Get single challenge by ID
 export async function getChallengeById(id: string): Promise<Challenge | null> {
-  // TODO: Replace with actual API call
-  // Example: const response = await fetch(`/api/challenges/${id}`)
-  // return response.json()
-
-  return MOCK_CHALLENGES.find((c) => c.id === id) || null
+  try {
+    const challenges = await getAllChallenges()
+    return challenges.find((c) => c.id === id) || null
+  } catch (error) {
+    console.error('Failed to fetch challenge:', error)
+    return null
+  }
 }
 
+// Get challenges by category
 export async function getChallengesByCategory(category: string): Promise<Challenge[]> {
-  // TODO: Replace with actual API call
-  // Example: const response = await fetch(`/api/challenges?category=${category}`)
-  // return response.json()
-
-  return MOCK_CHALLENGES.filter((c) => c.category === category)
+  try {
+    const challenges = await getAllChallenges()
+    return challenges.filter((c) => c.category === category)
+  } catch (error) {
+    console.error('Failed to fetch challenges:', error)
+    return []
+  }
 }

@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Flag, Download, AlertCircle, CheckCircle2 } from "lucide-react"
-import { submitFlag } from "@/lib/actions/challenges"
+import { apiClient } from "@/lib/api/client"
 import type { Challenge } from "@/lib/types"
 
 interface ChallengeDetailProps {
@@ -23,14 +22,25 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
     setResult(null)
 
     try {
-      const response = await submitFlag(challenge.id, flag)
-      setResult(response)
+      // Call your REST endpoint
+      const response = await apiClient.post<{ correct: boolean; message: string }>(
+        "/api/flags/submit",
+        { challengeId: challenge.id, flag }
+      )
 
-      if (response.success) {
-        setFlag("")
+      // Normalize to { success, message } for the UI
+      const next = {
+        success: Boolean(response?.correct),
+        message: response?.message ?? "",
       }
+
+      setResult(next)
+      if (next.success) setFlag("")
     } catch (error) {
-      setResult({ success: false, message: "An error occurred" })
+      setResult({
+        success: false,
+        message: error instanceof Error ? error.message : "An error occurred",
+      })
     } finally {
       setSubmitting(false)
     }
@@ -40,7 +50,7 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
     easy: "text-green-500 bg-green-500/10",
     medium: "text-yellow-500 bg-yellow-500/10",
     hard: "text-red-500 bg-red-500/10",
-  }
+  } as const
 
   return (
     <div>
@@ -143,7 +153,9 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
             {result && (
               <div
                 className={`p-4 rounded-lg flex items-start gap-3 ${
-                  result.success ? "bg-accent/10 border border-accent" : "bg-destructive/10 border border-destructive"
+                  result.success
+                    ? "bg-accent/10 border border-accent"
+                    : "bg-destructive/10 border border-destructive"
                 }`}
               >
                 {result.success ? (
@@ -151,7 +163,9 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
                 ) : (
                   <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                 )}
-                <p className={`text-sm ${result.success ? "text-accent" : "text-destructive"}`}>{result.message}</p>
+                <p className={`text-sm ${result.success ? "text-accent" : "text-destructive"}`}>
+                  {result.message}
+                </p>
               </div>
             )}
           </form>

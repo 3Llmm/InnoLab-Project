@@ -1,45 +1,23 @@
-"use server"
+'use server'
 
-import { getCurrentUser } from "./auth"
-import type { FlagSubmissionResult } from "@/lib/types"
+import { apiClient } from '@/lib/api/client'
 
-export async function submitFlag(challengeId: string, flag: string): Promise<FlagSubmissionResult> {
+// Replace your submitFlag function with this:
+export async function submitFlag(challengeId: string, flag: string) {
   try {
-    const user = await getCurrentUser()
-
-    if (!user) {
-      return { success: false, message: "You must be logged in to submit flags" }
-    }
-
-    // TODO: Replace with actual API call to backend
-    // This is a mock implementation
-
-    // Validate flag format
-    if (!flag.startsWith("flag{") || !flag.endsWith("}")) {
-      return { success: false, message: "Invalid flag format. Flags should be in the format: flag{...}" }
-    }
-
-    // Mock flag validation - In production, verify against database
-    const isCorrect = flag === `flag{mock_flag_for_challenge_${challengeId}}`
-
-    if (isCorrect) {
-      // TODO: Update user score and challenge status in database
-      return {
-        success: true,
-        message: "Congratulations! Flag accepted! 🎉",
-        points: 100, // Mock points
-      }
-    } else {
-      return {
-        success: false,
-        message: "Incorrect flag. Try again!",
-      }
+    const response = await apiClient.post<{ correct: boolean; message: string }>(
+      '/api/flags/submit',
+      { challengeId, flag }
+    )
+    
+    return {
+      success: response.correct,
+      message: response.message,
     }
   } catch (error) {
-    console.error("Flag submission error:", error)
     return {
       success: false,
-      message: "An error occurred while submitting the flag",
+      message: error instanceof Error ? error.message : 'Failed to submit flag',
     }
   }
 }
