@@ -116,10 +116,10 @@ export default function HomePage() {
             Join thousands of security enthusiasts learning and competing
           </p>
           <Link
-            href="/register"
+            href="/login"
             className="inline-block px-8 py-4 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
           >
-            Create Free Account
+            Login with your FH credentials
           </Link>
         </div>
       </section>

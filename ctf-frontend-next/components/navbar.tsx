@@ -75,15 +75,9 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-foreground hover:text-primary transition-colors font-medium"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
                 >
-                  Register
+                  Login
                 </Link>
               </>
             )}
@@ -139,16 +133,9 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full px-4 py-2 text-center border border-border rounded-lg font-medium hover:border-primary transition-colors"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setMobileMenuOpen(false)}
                     className="block w-full px-4 py-2 text-center bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
                   >
-                    Register
+                    Login
                   </Link>
                 </>
               )}

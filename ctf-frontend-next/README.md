@@ -20,7 +20,6 @@ ctf-frontend-next/
 │   ├── layout.tsx               # Root layout with navbar/footer
 │   ├── page.tsx                 # Homepage
 │   ├── login/page.tsx           # Login page
-│   ├── register/page.tsx        # Registration page
 │   ├── challenges/              # Challenge pages
 │   │   ├── page.tsx            # Challenge list
 │   │   └── [id]/page.tsx       # Individual challenge
@@ -38,7 +37,6 @@ ctf-frontend-next/
 │   ├── navbar.tsx               # Navigation bar
 │   ├── footer.tsx               # Footer
 │   ├── login-form.tsx           # Login form
-│   ├── register-form.tsx        # Registration form
 │   ├── challenge-list.tsx       # Challenge grid with filters
 │   ├── challenge-detail.tsx     # Challenge detail view
 │   └── category-page.tsx        # Reusable category page

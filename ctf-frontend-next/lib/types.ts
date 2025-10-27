@@ -16,12 +16,10 @@ export interface Challenge {
   category: "binary-exploitation" | "cryptography" | "forensics" | "reverse-engineering" | "web-exploitation"
   difficulty: "easy" | "medium" | "hard"
   points: number
-  solved: boolean
+  solved: boolean  
+  fileurl: string                                   
   hints?: string[]
-  files?: {
-    name: string
-    url: string
-  }[]
+  files?: { name: string; url: string }[]
 }
 
 export interface ScoreboardEntry {

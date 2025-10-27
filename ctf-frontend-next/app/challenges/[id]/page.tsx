@@ -9,12 +9,22 @@ import type { Challenge } from '@/lib/types'
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-export default function ChallengePage({ params }: { params: { id: string } }) {
+export default function ChallengePage({ params }: { params: Promise<{ id: string }> }) { 
   const { auth, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [resolvedId, setResolvedId] = useState<string | null>(null) 
+
+ 
+  useEffect(() => {
+    const resolveParams = async () => {
+      const resolved = await params
+      setResolvedId(resolved.id)
+    }
+    resolveParams()
+  }, [params])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -23,16 +33,16 @@ export default function ChallengePage({ params }: { params: { id: string } }) {
     }
   }, [auth.isAuthenticated, authLoading, router])
 
-  // Fetch challenge
+  // Fetch challenge - now using resolvedId
   useEffect(() => {
-    if (auth.isAuthenticated && params.id) {
+    if (auth.isAuthenticated && resolvedId) {
       setLoading(true)
-      getChallengeById(params.id)
+      getChallengeById(resolvedId)
         .then(setChallenge)
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false))
     }
-  }, [auth.isAuthenticated, params.id])
+  }, [auth.isAuthenticated, resolvedId]) 
 
   // Show loading state
   if (authLoading || loading) {

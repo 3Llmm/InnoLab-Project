@@ -76,7 +76,7 @@ export default function LoginForm() {
 
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="remember" className="rounded border-border" />
+            <input type="checkbox" name="remember" defaultChecked className="rounded border-border" />
             <span className="text-muted-foreground">Remember me</span>
           </label>
           <Link href="/help#forgot-password" className="text-primary hover:underline">
@@ -91,13 +91,6 @@ export default function LoginForm() {
         >
           {isLoading ? "Logging in..." : "Login"}  {/* ← USE HOOK'S LOADING STATE */}
         </button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{" "}
-          <Link href="/register" className="text-primary hover:underline font-medium">
-            Register here
-          </Link>
-        </p>
       </form>
     </div>
   )
