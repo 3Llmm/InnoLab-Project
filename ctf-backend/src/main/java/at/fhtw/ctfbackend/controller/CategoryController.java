@@ -22,8 +22,7 @@ public class CategoryController {
 
     @PostMapping("/create")
     public String createCategory(@RequestBody String body) throws JsonProcessingException {
-        String response = categoryService.createCategory(body);
-        return response;
+        return categoryService.createCategory(body);
     }
 
 }

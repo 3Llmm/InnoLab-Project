@@ -42,6 +42,9 @@ public class ChallengeService {
                 e.getId(),
                 e.getTitle(),
                 e.getDescription(),
+                e.getCategory(),
+                e.getDifficulty(),
+                e.getPoints(),
                 downloadUrl
         );
     }

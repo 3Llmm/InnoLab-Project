@@ -4,18 +4,23 @@ import lombok.Getter;
 
 @Getter
 public class Challenge {
-
     private String id;
-    private String name;
+    private String title;
     private String description;
-//    private String category;
-//    private String difficulty;
+    private String category;
+    private String difficulty;
+    private Integer points;
     private String fileUrl;
 
-    public Challenge(String id, String name, String description, String fileUrl) {
+    public Challenge(String id, String title, String description,
+                     String category, String difficulty, Integer points,
+                     String fileUrl) {
         this.id = id;
-        this.name = name;
+        this.title = title;
         this.description = description;
+        this.category = category;
+        this.difficulty = difficulty;
+        this.points = points;
         this.fileUrl = fileUrl;
     }
 }
