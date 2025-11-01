@@ -17,7 +17,8 @@ export interface Challenge {
   difficulty: "easy" | "medium" | "hard"
   points: number
   solved: boolean  
-  fileurl: string                                   
+  fileurl: string  
+  flag?: string                                 
   hints?: string[]
   files?: { name: string; url: string }[]
 }

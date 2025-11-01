@@ -44,18 +44,18 @@ services:
     restart: always
 
   # careful both frontend and frontend-next use the same port, so only one should be run at a time
-  frontend: #old frontend
+ # frontend: #old frontend
+  #  image: ctf-frontend
+   # build:
+    #  context: ./ctf-frontend
+      #dockerfile: Dockerfile
+    #ports:
+     # - "3000:3000"
+  
+  frontend: #new frontend
     image: ctf-frontend
     build:
       context: ./ctf-frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-  
-  frontend-next: #new frontend
-    image: ctf-frontend-next
-    build:
-      context: ./ctf-frontend-next
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
