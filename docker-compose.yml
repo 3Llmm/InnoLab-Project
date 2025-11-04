@@ -28,7 +28,7 @@ services:
 
   ldap:
     image: osixia/openldap:1.5.0
-    container_name: ldap
+   # container_name: ldap
     environment:
       LDAP_ORGANISATION: "CTF"
       LDAP_DOMAIN: "ctf.local"

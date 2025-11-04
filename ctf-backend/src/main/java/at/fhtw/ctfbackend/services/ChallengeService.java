@@ -4,6 +4,8 @@ import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.models.Challenge;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,21 +33,23 @@ public class ChallengeService {
     /**
      * Load the ZIP bytes for a given challenge.
      */
+    // FIXED (will work in tests)
+    @Transactional(readOnly = true)
     public byte[] getZip(String challengeId) {
         return repo.findById(challengeId)
                 .map(ChallengeEntity::getDownloadZip)
                 .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
     }
+
+    @Transactional
     public Challenge createChallenge(String title, String description, String category,
                                      String difficulty, Integer points, String flag,
                                      byte[] downloadZip) {
-        // Generate ID from title + timestamp
         String challengeId = title.toLowerCase()
                 .replaceAll("[^a-z0-9]", "-")
                 .replaceAll("-+", "-")
                 .replaceAll("^-|-$", "") + "-" + System.currentTimeMillis();
 
-        // Create entity using your existing constructor
         ChallengeEntity entity = new ChallengeEntity(
                 challengeId,
                 title,
@@ -53,13 +57,14 @@ public class ChallengeService {
                 category,
                 difficulty,
                 points,
-                downloadZip, // can be null
+                downloadZip,
                 flag
         );
 
-        ChallengeEntity savedEntity = repo.save(entity);
+        ChallengeEntity savedEntity = repo.saveAndFlush(entity); // 👈 important fix
         return toModel(savedEntity);
     }
+
     /**
      * Update an existing challenge
      */
@@ -134,7 +139,12 @@ public class ChallengeService {
     }
     // --- Internal mapping from entity to API model ---
     private Challenge toModel(ChallengeEntity e) {
+        if (e.getId() == null) {
+            throw new IllegalStateException("Entity has no ID — cannot map to model");
+        }
+
         String downloadUrl = "http://localhost:8080/api/challenges/" + e.getId() + "/download";
+
         return new Challenge(
                 e.getId(),
                 e.getTitle(),
@@ -145,5 +155,6 @@ public class ChallengeService {
                 downloadUrl
         );
     }
+
 
 }
