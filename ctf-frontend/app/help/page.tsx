@@ -121,8 +121,8 @@ export default function HelpPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-primary" />
-              <a href="mailto:support@ctfplatform.com" className="text-primary hover:underline">
-                support@ctfplatform.com
+              <a href="mailto:support@technikum-wien.at" className="text-primary hover:underline">
+                support@technikum-wien.at
               </a>
             </div>
             <p className="text-sm text-muted-foreground">We typically respond within 24 hours during business days.</p>

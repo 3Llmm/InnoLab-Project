@@ -1,6 +1,3 @@
-
-// lib/api/admin.ts
-
 export interface AdminStats {
   totalChallenges: number
   totalUsers: number | string
@@ -10,24 +7,16 @@ export interface AdminStats {
   challengesByDifficulty: Array<{ difficulty: string; count: number }>
 }
 
-// Client-side function (requires localStorage)
 export async function getAdminStats(): Promise<AdminStats> {
   try {
-    // Get token from localStorage (client-side only)
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-    
-    if (!token) {
-      throw new Error("Not authenticated - please log in")
-    }
-
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/admin/stats`,
       {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
       }
     )
 

@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, createContext, useContext } from 'react'
-import { apiClient } from '@/lib/api/client' // ✅ CHANGED: Import apiClient instead
+import { apiClient } from '@/lib/api/client'
 import type { AuthState, LoginCredentials, ApiResult } from '@/lib/types'
 
 interface AuthContextType {
   auth: AuthState
   login: (credentials: LoginCredentials) => Promise<ApiResult>
-  logout: () => void
+  logout: () => Promise<void>
   isLoading: boolean
+  checkAuth: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -29,48 +30,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  // ✅ CHANGED: Load from localStorage directly (client-side only)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('auth_token')
-      const user = localStorage.getItem('auth_user')
-      
-      if (token && user) {
+  const checkAuth = async () => {
+    try {
+      const userInfo = await apiClient.get<{ username: string; status: string }>('/api/user/me')
+      if (userInfo.status === 'success') {
         setAuth({
-          token,
-          user,
+          token: 'http-only-cookie',
+          user: userInfo.username,
           isAuthenticated: true,
         })
+      } else {
+        throw new Error('Not authenticated')
       }
+    } catch (error) {
+      setAuth({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+      })
     }
-    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    checkAuth().finally(() => setIsLoading(false))
   }, [])
 
-  // ✅ CHANGED: Call backend directly with apiClient
   const login = async (credentials: LoginCredentials): Promise<ApiResult> => {
     setIsLoading(true)
     try {
-      // Call backend API
-      const response = await apiClient.post<{ token: string }>('/api/login', {
+      const response = await apiClient.post<{ 
+        status: string; 
+        message: string; 
+        username: string 
+      }>('/api/login', {
         username: credentials.username,
         password: credentials.password,
       })
 
-      // Store token in localStorage
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token)
-        localStorage.setItem('auth_user', credentials.username)
-
-        setAuth({
-          token: response.token,
-          user: credentials.username,
-          isAuthenticated: true,
-        })
-
+      if (response.status === 'success') {
+        await checkAuth()
         return { success: true, data: response }
       }
 
-      return { success: false, error: 'No token received' }
+      return { success: false, error: 'Login failed' }
     } catch (error) {
       return {
         success: false,
@@ -81,16 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // ✅ CHANGED: Clear localStorage directly
   const logout = async () => {
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('auth_user')
-    
-    setAuth({
-      token: null,
-      user: null,
-      isAuthenticated: false,
-    })
+    try {
+      await apiClient.post('/api/logout')
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setAuth({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+      })
+    }
   }
 
   const value = {
@@ -98,7 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     isLoading,
+    checkAuth,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+

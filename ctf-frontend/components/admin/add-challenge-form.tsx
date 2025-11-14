@@ -40,17 +40,10 @@ export default function AddChallengeForm() {
         multipartFormData.append('file', emptyBlob, 'empty.txt')
       }
 
-      // Get JWT token
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error("Not authenticated")
-      }
-
+      // CHANGED: Remove manual token, use credentials instead
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include', // Send cookies automatically
         body: multipartFormData,
       })
 
@@ -77,6 +70,7 @@ export default function AddChallengeForm() {
     }
   }
 
+  // ... rest of the component remains the same
   if (!isOpen) {
     return (
       <button

@@ -40,8 +40,7 @@ export default function AboutPage() {
             <Users className="w-12 h-12 text-secondary mb-4" />
             <h2 className="text-xl font-semibold mb-2">Community</h2>
             <p className="text-muted-foreground">
-              Join thousands of security enthusiasts learning, competing, and sharing knowledge in our vibrant
-              community.
+              Join a supportive space where learners and experts come together to discuss challenges, share insights, and help each other grow in cybersecurity.
             </p>
           </div>
 
@@ -73,7 +72,7 @@ export default function AboutPage() {
             </li>
             <li className="flex items-start gap-3">
               <span className="text-primary mt-1">•</span>
-              <span>Detailed writeups and hints to help you learn from each challenge</span>
+              <span>Detailed writeups to help you learn from each challenge</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-primary mt-1">•</span>

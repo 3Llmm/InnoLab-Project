@@ -41,17 +41,10 @@ export default function EditChallengeModal({ challenge, onClose }: EditChallenge
         multipartFormData.append('file', file)
       }
 
-      // Get JWT token
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error("Not authenticated")
-      }
-
+      // CHANGED: Remove manual token, use credentials instead
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${challenge.id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include', // Send cookies automatically
         body: multipartFormData,
       })
 

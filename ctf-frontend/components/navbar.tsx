@@ -1,16 +1,17 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { Menu, X, Flag } from "lucide-react"
+import { User, Menu, X, Flag } from "lucide-react"
 import ThemeToggle from "@/components/theme-toggle"
-import { useAuth } from "@/lib/hooks/use-auth"  // ← ADD THIS IMPORT
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
-  const { auth, logout } = useAuth()  // ← USE THE HOOK
+  const router = useRouter()
+  const { auth, logout } = useAuth()
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -22,6 +23,13 @@ export default function Navbar() {
   ]
 
   const isActive = (href: string) => pathname === href
+
+  const handleLogout = async () => {
+    await logout()
+    setMobileMenuOpen(false)
+    router.push("/")
+    router.refresh()
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-card border-b border-border backdrop-blur-sm bg-opacity-95">
@@ -38,20 +46,19 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center">
-  
+            <div className="flex items-center gap-6">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`font-medium transition-colors ${
+                    isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`font-medium transition-colors ${
-                  isActive(link.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
           </div>
 
           {/* Auth Buttons */}
@@ -59,14 +66,17 @@ export default function Navbar() {
             <div className="hidden md:flex items-center mr-2">
               <ThemeToggle />
             </div>
-            {auth.isAuthenticated ? (  // ← CHECK AUTH STATE
+            {auth.isAuthenticated ? (
               <>
-                <span className="text-sm text-muted-foreground">
-                  Welcome, <span className="text-primary font-semibold">{auth.user}</span>
-                </span>
+                <Link
+                  href="/profile"
+                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
+                >
+                  <User className="w-5 h-5 text-secondary-foreground" />
+                </Link>
                 <button
-                  onClick={logout}
-                  className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
+                  onClick={handleLogout}
+                  className="px-4 py-2 cursor-pointer bg-destructive text-destructive-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
                 >
                   Logout
                 </button>
@@ -113,18 +123,19 @@ export default function Navbar() {
               <div className="px-2">
                 <ThemeToggle />
               </div>
-              {auth.isAuthenticated ? (  // ← CHECK AUTH STATE
+              {auth.isAuthenticated ? (
                 <>
-                  <div className="text-sm text-muted-foreground">
-                    Welcome, <span className="text-primary font-semibold">{auth.user}</span>
-                  </div>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block w-full px-4 py-2 text-center bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <User className="w-5 h-5 text-secondary-foreground" />
+                  </Link>
                   <button
-                    onClick={() => {
-                      logout()
-                      setMobileMenuOpen(false)
-                    }}
-                    className="w-full px-4 py-2 bg-destructive/90 text-destructive-foreground rounded-md font-medium hover:bg-destructive transition-colors"
->
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
+                  >
                     Logout
                   </button>
                 </>

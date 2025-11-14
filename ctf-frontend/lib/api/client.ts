@@ -7,24 +7,15 @@ export class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  // ✅ ADD THIS METHOD
-  private getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('auth_token');
-  }
-
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
-    // ✅ ADD THESE 2 LINES - Get token and add to headers
-    const token = this.getToken();
     
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }), // ✅ ADD THIS LINE
         ...options.headers,
       },
+      credentials: 'include', // Send cookies with every request
       ...options,
     };
 
@@ -48,6 +39,19 @@ export class ApiClient {
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'GET',
+    });
+  }
+
+  async put<T>(endpoint: string, data: any): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
     });
   }
 }

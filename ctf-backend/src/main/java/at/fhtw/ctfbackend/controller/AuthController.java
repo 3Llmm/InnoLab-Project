@@ -8,10 +8,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,30 +25,66 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/api/login")
-    public Map<String, String> login(@RequestBody LdapCredentials credentials) {
-        Map<String, String> response = new HashMap<>();
+    public Map<String, String> login(@RequestBody LdapCredentials credentials, HttpServletResponse response) {
+        Map<String, String> responseBody = new HashMap<>();
 
         try {
-            //  class provided by Spring Security that implements the Authentication interface. It is used to store the username and password for authentication.
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(credentials.getUsername(), credentials.getPassword());
 
-            // Authenticate user
             Authentication authentication = authenticationManager.authenticate(authToken);
-
-            // Store authentication in security context
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            // Generate JWT token
+
             String jwtToken = jwtUtil.generateToken(authentication.getName());
 
-            // Return welcome message
-            response.put("token", jwtToken);
-            response.put("status", "success");
-            response.put("message", "Welcome, " + authentication.getName() + "!");
+            // Set HTTP-only cookie instead of returning token in response body
+            Cookie authCookie = new Cookie("auth_token", jwtToken);
+            authCookie.setHttpOnly(true);
+            authCookie.setSecure(false); // Set to true in production with HTTPS
+            authCookie.setPath("/");
+            authCookie.setMaxAge(24 * 60 * 60); // 24 hours
+            authCookie.setAttribute("SameSite", "Lax");
 
-            return response;
+            response.addCookie(authCookie);
+
+            responseBody.put("status", "success");
+            responseBody.put("message", "Welcome, " + authentication.getName() + "!");
+            responseBody.put("username", authentication.getName());
+
+            return responseBody;
         } catch (AuthenticationException e) {
             throw new RuntimeException("Authentication failed: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/api/logout")
+    public Map<String, String> logout(HttpServletResponse response) {
+        // Clear the auth cookie
+        Cookie authCookie = new Cookie("auth_token", "");
+        authCookie.setHttpOnly(true);
+        authCookie.setSecure(false);
+        authCookie.setPath("/");
+        authCookie.setMaxAge(0); // Expire immediately
+
+        response.addCookie(authCookie);
+
+        Map<String, String> responseBody = new HashMap<>();
+        responseBody.put("status", "success");
+        responseBody.put("message", "Logged out successfully");
+
+        return responseBody;
+    }
+
+    @GetMapping("/api/user/me")
+    public Map<String, String> getCurrentUser(Authentication authentication) {
+        Map<String, String> response = new HashMap<>();
+        if (authentication != null && authentication.isAuthenticated()) {
+            response.put("username", authentication.getName());
+            response.put("status", "success");
+        } else {
+            response.put("status", "error");
+            response.put("message", "Not authenticated");
+        }
+        return response;
     }
 }
