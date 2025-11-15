@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect, createContext, useContext } from 'react'
 import { apiClient } from '@/lib/api/client'
 import type { AuthState, LoginCredentials, ApiResult } from '@/lib/types'
@@ -29,6 +28,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
   })
   const [isLoading, setIsLoading] = useState(true)
+
+  // Clear all cookies on app startup
+  useEffect(() => {
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+    });
+  }, []) // Empty array = runs once on mount
 
   const checkAuth = async () => {
     try {
@@ -85,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await apiClient.post('/api/logout')
+      await apiClient.post('/api/logout',{})
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -107,4 +115,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-
