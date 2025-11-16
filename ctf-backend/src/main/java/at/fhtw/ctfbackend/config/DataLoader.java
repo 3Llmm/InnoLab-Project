@@ -85,10 +85,10 @@ public class DataLoader {
     CommandLineRunner loadCategories(CategoryRepository repo, ConfluenceClient confluenceClient) {
         return args -> {
             Map<String, String> confluencePageIds = Map.of(
-                    "crypto", "60784643",
-                    "web", "61603886",
-                    "pwn", "61603873",
-                    "forensics", "61505537"
+                    "crypto", "60784643",  // TODO: Update with correct Cryptography page ID (current URL seems incorrect)
+                    "web", "31293459",
+                    "pwn", "20250625",    // Binary Exploitation
+                    "forensics", "21364737" // Forensics 2
             );
 
             List<CategoryEntity> categories = List.of(

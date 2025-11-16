@@ -58,6 +58,7 @@ public class SecurityConfig {
         .requestMatchers("/api/login").permitAll()
         .requestMatchers("/api/auth/**").permitAll()
         .requestMatchers("/ws/**").permitAll()
+        .requestMatchers("/api/categories").permitAll()  // Categories are public (theory content)
 
         // Protected (token required)
         .requestMatchers("/api/challenges/**").authenticated()
@@ -65,7 +66,6 @@ public class SecurityConfig {
         .requestMatchers("/api/flags/**").authenticated()
         .requestMatchers("/api/user/me").authenticated()
         .requestMatchers("/api/files/**").authenticated()
-        .requestMatchers("/api/categories").authenticated()
 
         .anyRequest().authenticated()
 )

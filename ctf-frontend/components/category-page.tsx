@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { ArrowLeft, BookOpen } from "lucide-react"
+import { ArrowLeft, BookOpen, ExternalLink } from "lucide-react"
 import ChallengeList from "@/components/challenge-list"
 import { getChallengesByCategory } from "@/lib/api/challenges"
+import { getCategoryByFrontendName } from "@/lib/api/categories"
 
 interface CategoryPageProps {
   category: string
@@ -11,8 +12,11 @@ interface CategoryPageProps {
 }
 
 export default async function CategoryPage({ category, title, description, color }: CategoryPageProps) {
-  // TODO: Replace with actual API call when backend is ready
-  const challenges = await getChallengesByCategory(category)
+  // Fetch both challenges and category data (theory from Confluence)
+  const [challenges, categoryData] = await Promise.all([
+    getChallengesByCategory(category),
+    getCategoryByFrontendName(category)
+  ])
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -51,12 +55,56 @@ export default async function CategoryPage({ category, title, description, color
                   <div className="text-muted-foreground mb-1">Total Points</div>
                   <div className="font-semibold">{challenges.reduce((sum, c) => sum + c.points, 0)} pts</div>
                 </div>
+                {categoryData?.fileUrl && (
+                  <div className="pt-4 border-t border-border">
+                    <a
+                      href={categoryData.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-primary hover:underline text-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View in Confluence
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-3">
-            <ChallengeList challenges={challenges} />
+          <div className="lg:col-span-3 space-y-8">
+            {/* Theory Section from Confluence - Show First */}
+            {categoryData?.summary && (
+              <div className="bg-card p-8 rounded-lg border border-border shadow-sm">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+                  <h2 className="text-2xl font-semibold flex items-center gap-2">
+                    <BookOpen className="w-6 h-6 text-primary" />
+                    Theory
+                  </h2>
+                  {categoryData.fileUrl && (
+                    <a
+                      href={categoryData.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-primary hover:text-primary/80 hover:underline text-sm transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View in Confluence
+                    </a>
+                  )}
+                </div>
+                <div 
+                  className="confluence-content"
+                  dangerouslySetInnerHTML={{ __html: categoryData.summary }}
+                />
+              </div>
+            )}
+
+            {/* Challenges Section - Show After Theory */}
+            <div>
+              <h2 className="text-2xl font-semibold mb-6">Challenges</h2>
+              <ChallengeList challenges={challenges} />
+            </div>
           </div>
         </div>
       </div>

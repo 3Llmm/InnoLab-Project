@@ -1,14 +1,30 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+// For server-side rendering in Docker, use the service name 'app'
+// For client-side (browser), use localhost
+const getApiBaseUrl = () => {
+  // If explicitly set via NEXT_PUBLIC_API_URL, use that (for browser)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    // If we're on the server (SSR), use the internal Docker service name
+    if (typeof window === 'undefined') {
+      return process.env.API_URL || 'http://app:8080';
+    }
+    // If we're in the browser, use the public URL
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  // If running on server (SSR), use Docker service name
+  if (typeof window === 'undefined') {
+    return process.env.API_URL || 'http://app:8080';
+  }
+  // If running in browser, use localhost
+  return 'http://localhost:8080';
+};
 
 export class ApiClient {
-  private baseUrl: string;
-
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl;
+  private getBaseUrl(): string {
+    return getApiBaseUrl();
   }
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    const url = `${this.getBaseUrl()}${endpoint}`;
     
     const config: RequestInit = {
       headers: {

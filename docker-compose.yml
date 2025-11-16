@@ -50,6 +50,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      - API_URL=http://app:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
 
   kali-vm-tools:
     image: ctf-kali-vm-tools

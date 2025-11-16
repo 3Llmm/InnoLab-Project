@@ -13,13 +13,19 @@ The project provides an environment where users can practice cybersecurity skill
 ### Prerequisites
 
 * Docker
+* Confluence API credentials (see [CONFLUENCE_SETUP.md](./CONFLUENCE_SETUP.md))
 
 ### Run the Platform
 
-```bash
-docker compose build 
-docker compose up -d
-```
+1. **Set up Confluence credentials** (required for category theory content):
+   - See [CONFLUENCE_SETUP.md](./CONFLUENCE_SETUP.md) for detailed instructions
+   - Create a `.env` file in the project root with your Confluence credentials
+
+2. **Start the application:**
+   ```bash
+   docker compose build 
+   docker compose up -d
+   ```
 
 **Once the services start, the application will be available at:**
 [http://localhost:3000](http://localhost:3000)
