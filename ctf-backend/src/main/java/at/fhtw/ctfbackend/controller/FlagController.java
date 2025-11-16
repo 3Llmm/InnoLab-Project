@@ -23,13 +23,16 @@ public class FlagController {
             Authentication auth,
             @RequestBody SubmitFlagRequest request) {
 
-        String user = auth.getName(); // your username from JWT
+        String username = auth.getName(); // FH username from JWT
         String challengeId = request.getChallengeId();
-        String flag = request.getFlag();
+        String submittedFlag = request.getFlag();
+
         System.out.println("Got into controller!");
 
+        // NEW: validate using dynamic instance flag
+        boolean valid = flagService.validateFlag(username, challengeId, submittedFlag);
 
-        if (!flagService.validateFlag(challengeId, flag)) {
+        if (!valid) {
             return ResponseEntity
                     .badRequest()
                     .body(Map.of(
@@ -38,8 +41,10 @@ public class FlagController {
                     ));
         }
 
-        boolean isNew = flagService.recordSolve(user, challengeId);
-        if (!isNew) {
+        // NEW: record that user solved the challenge (optional)
+        boolean isNewSolve = flagService.recordSolve(username, challengeId);
+
+        if (!isNewSolve) {
             return ResponseEntity
                     .badRequest()
                     .body(Map.of(

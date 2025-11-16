@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 public class ChallengeEntity {
     @Id
-    private String id;
+    private String id;  // challenge ID: "rev-101"
 
     private String title;           //  Changed from name to title for consistency
 
@@ -30,6 +30,14 @@ public class ChallengeEntity {
     private byte[] downloadZip;
 
     private String flag;            // Internal only
+
+
+
+    private String dockerImageName;  // e.g. "myctf/rev-101"
+    private Integer defaultSshPort;      //  22
+    private Integer defaultVscodePort;   // 8080 in container
+    private Integer defaultDesktopPort;  // 6080 in container
+
 
     protected ChallengeEntity() { }
 
