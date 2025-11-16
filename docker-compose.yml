@@ -28,7 +28,7 @@ services:
 
   ldap:
     image: osixia/openldap:1.5.0
-    container_name: ldap
+   # container_name: ldap
     environment:
       LDAP_ORGANISATION: "CTF"
       LDAP_DOMAIN: "ctf.local"
@@ -42,17 +42,8 @@ services:
       - ldapconfig:/etc/ldap/slapd.d
       - ./ldap/bootstrap/seed:/container/service/slapd/assets/config/bootstrap/ldif/custom
     restart: always
-
-  # careful both frontend and frontend-next use the same port, so only one should be run at a time
- # frontend: #old frontend
-  #  image: ctf-frontend
-   # build:
-    #  context: ./ctf-frontend
-      #dockerfile: Dockerfile
-    #ports:
-     # - "3000:3000"
   
-  frontend: #new frontend
+  frontend:
     image: ctf-frontend
     build:
       context: ./ctf-frontend

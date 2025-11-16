@@ -3,7 +3,6 @@ package at.fhtw.ctfbackend.config;
 import at.fhtw.ctfbackend.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -34,11 +33,8 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-
-
     @Bean
     public AuthenticationManager authenticationManager(LdapContextSource contextSource) {
-        // Search for users under "ou=users"
         FilterBasedLdapUserSearch userSearch =
                 new FilterBasedLdapUserSearch("ou=users", "(uid={0})", contextSource);
 
@@ -57,44 +53,45 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/login").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
+        .authorizeHttpRequests(auth -> auth
+        // Public (no token needed)
+        .requestMatchers("/api/login").permitAll()
+        .requestMatchers("/api/auth/**").permitAll()
+        .requestMatchers("/ws/**").permitAll()
 
-                        .requestMatchers("/api/challenges/**").authenticated()
-                        .requestMatchers("/api/environment/**").authenticated()
-                        .requestMatchers("/api/flags/**").authenticated()
+        // Protected (token required)
+        .requestMatchers("/api/challenges/**").authenticated()
+        .requestMatchers("/api/environment/**").authenticated()
+        .requestMatchers("/api/flags/**").authenticated()
+        .requestMatchers("/api/user/me").authenticated()
+        .requestMatchers("/api/files/**").authenticated()
+        .requestMatchers("/api/categories").authenticated()
 
-                        .anyRequest().authenticated()
-                )
+        .anyRequest().authenticated()
+)
+
 
                 .authenticationManager(authManager)
                 .formLogin(AbstractHttpConfigurer::disable)
-                // No httpBasic() anymore
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:3000",
-            "http://127.0.0.1:3000"
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:3002"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cookie"));
+        configuration.setExposedHeaders(List.of("Set-Cookie"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
-
-
-
 }

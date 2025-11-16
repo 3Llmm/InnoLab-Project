@@ -27,16 +27,11 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
     if (!confirm("Are you sure you want to delete this challenge?")) return
 
     try {
-      // Get JWT token
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error("Not authenticated")
-      }
-
+      // CHANGED: Remove manual token, use credentials instead
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${id}`, {
         method: 'DELETE',
+        credentials: 'include', // Send cookies automatically
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })

@@ -8,6 +8,8 @@
 
 # testing
 /coverage
+.vitest/
+.vite/
 
 # next.js
 /.next/

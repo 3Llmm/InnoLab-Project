@@ -48,36 +48,41 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
   }
 
   const handleDownload = async () => {
-    if (!challenge.fileurl) return
+  if (!challenge.id) return;
 
-    setDownloading(true)
-    try {
-      const response = await fetch(challenge.fileurl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      })
+  setDownloading(true);
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${challenge.id}/download`,
+      {
+        method: 'GET',
+        credentials: 'include', 
+      }
+    );
 
-      if (!response.ok) throw new Error(`Download failed: ${response.status}`)
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${challenge.id}.zip`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (error) {
-      setResult({
-        status: "error",
-        message: `Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      })
-    } finally {
-      setDownloading(false)
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status}`);
     }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${challenge.id}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Download error:', error);
+    setResult({
+      status: "error",
+      message: `Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    });
+  } finally {
+    setDownloading(false);
   }
+}
 
   const difficultyColors = {
     easy: "text-green-500 bg-green-500/10",
@@ -121,7 +126,7 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
           <div className="mb-6">
             <button
               onClick={handleDownload}
-              disabled={downloading}
+              disabled={downloading || !challenge.fileurl}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" />
@@ -206,8 +211,6 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
             </p>
           </div>
         )}
-
-
       </div>
     </div>
   )
