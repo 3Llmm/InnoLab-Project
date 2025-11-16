@@ -59,9 +59,16 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/login").permitAll()
-                        .requestMatchers("/api/challenges").authenticated()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+
+                        .requestMatchers("/api/challenges/**").authenticated()
+                        .requestMatchers("/api/environment/**").authenticated()
+                        .requestMatchers("/api/flags/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
+
                 .authenticationManager(authManager)
                 .formLogin(AbstractHttpConfigurer::disable)
                 // No httpBasic() anymore
