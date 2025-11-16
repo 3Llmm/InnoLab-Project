@@ -7,6 +7,7 @@ export interface User {
   score: number
   solvedChallenges: number
   createdAt: Date
+  isAdmin: boolean
 }
 
 export interface Challenge {
@@ -57,6 +58,7 @@ export interface AuthState {
   token: string | null;
   user: string | null;
   isAuthenticated: boolean;
+  isAdmin: boolean 
 }
 
 export interface ApiResult<T = any> {

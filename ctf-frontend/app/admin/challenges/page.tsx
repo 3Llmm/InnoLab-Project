@@ -1,22 +1,35 @@
 "use client"
 
-import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useAuth } from '@/lib/hooks/use-auth'
+import { useRouter } from 'next/navigation'
 import { getAllChallenges } from "@/lib/api/challenges" // Use client version
 import ChallengeTable from "@/components/admin/challenge-table"
 import AddChallengeForm from "@/components/admin/add-challenge-form"
 import type { Challenge } from "@/lib/types"
 
-// Remove metadata export since client components can't export metadata
-// You can use next/headers instead or keep it in layout
-
 export default function AdminChallengesPage() {
+  const { auth, isLoading: authLoading } = useAuth()
+  const router = useRouter()
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // Redirect non-admin users
   useEffect(() => {
+    if (!authLoading && (!auth.isAuthenticated || !auth.isAdmin)) {
+      router.push('/')
+    }
+  }, [auth, authLoading, router])
+
+  useEffect(() => {
+    // Only load challenges if user is authenticated and admin
+    if (!auth.isAuthenticated || !auth.isAdmin) {
+      setIsLoading(false)
+      return
+    }
+
     const loadChallenges = async () => {
       try {
         const data = await getAllChallenges()
@@ -30,7 +43,33 @@ export default function AdminChallengesPage() {
     }
 
     loadChallenges()
-  }, [])
+  }, [auth.isAuthenticated, auth.isAdmin])
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render anything if not admin (will redirect in useEffect)
+  if (!auth.isAuthenticated || !auth.isAdmin) {
+    return (
+      <div className="min-h-screen bg-background py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -57,7 +96,9 @@ export default function AdminChallengesPage() {
           </Link>
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">Manage Challenges</h1>
-            <p className="text-muted-foreground">Create, edit, and delete CTF challenges</p>
+            <p className="text-muted-foreground">
+              Welcome, {auth.user}! Create, edit, and delete CTF challenges
+            </p>
           </div>
         </div>
 

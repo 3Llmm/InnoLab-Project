@@ -3,6 +3,20 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { apiClient } from '@/lib/api/client'
 import type { AuthState, LoginCredentials, ApiResult } from '@/lib/types'
 
+// Update your types to include isAdmin
+interface UserInfo {
+  username: string;
+  status: string;
+  isAdmin: boolean;
+}
+
+interface LoginResponse {
+  status: string;
+  message: string;
+  username: string;
+  isAdmin: boolean;
+}
+
 interface AuthContextType {
   auth: AuthState
   login: (credentials: LoginCredentials) => Promise<ApiResult>
@@ -26,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token: null,
     user: null,
     isAuthenticated: false,
+    isAdmin: false, // Add isAdmin to auth state
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -40,12 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const userInfo = await apiClient.get<{ username: string; status: string }>('/api/user/me')
+      const userInfo = await apiClient.get<UserInfo>('/api/user/me')
       if (userInfo.status === 'success') {
         setAuth({
           token: 'http-only-cookie',
           user: userInfo.username,
           isAuthenticated: true,
+          isAdmin: userInfo.isAdmin || false, // Add admin status
         })
       } else {
         throw new Error('Not authenticated')
@@ -55,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: null,
         user: null,
         isAuthenticated: false,
+        isAdmin: false,
       })
     }
   }
@@ -66,17 +83,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (credentials: LoginCredentials): Promise<ApiResult> => {
     setIsLoading(true)
     try {
-      const response = await apiClient.post<{ 
-        status: string; 
-        message: string; 
-        username: string 
-      }>('/api/login', {
+      const response = await apiClient.post<LoginResponse>('/api/login', {
         username: credentials.username,
         password: credentials.password,
       })
 
       if (response.status === 'success') {
-        await checkAuth()
+        // Update auth state with admin information
+        setAuth({
+          token: 'http-only-cookie',
+          user: response.username,
+          isAuthenticated: true,
+          isAdmin: response.isAdmin || false,
+        })
         return { success: true, data: response }
       }
 
@@ -93,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await apiClient.post('/api/logout',{})
+      await apiClient.post('/api/logout', {})
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -101,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: null,
         user: null,
         isAuthenticated: false,
+        isAdmin: false,
       })
     }
   }
