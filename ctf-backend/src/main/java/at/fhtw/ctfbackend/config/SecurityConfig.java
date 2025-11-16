@@ -53,15 +53,24 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/login", "/api/logout").permitAll()
-                        .requestMatchers("/api/user/me").authenticated()
-                        .requestMatchers("/api/challenges").authenticated()
-                        .requestMatchers("/api/files/**").authenticated()
-                        .requestMatchers("/api/categories").authenticated()
-                        .requestMatchers("/api/flags/**").authenticated()
-                        .anyRequest().authenticated()
-                )
+        .authorizeHttpRequests(auth -> auth
+        // Public (no token needed)
+        .requestMatchers("/api/login").permitAll()
+        .requestMatchers("/api/auth/**").permitAll()
+        .requestMatchers("/ws/**").permitAll()
+
+        // Protected (token required)
+        .requestMatchers("/api/challenges/**").authenticated()
+        .requestMatchers("/api/environment/**").authenticated()
+        .requestMatchers("/api/flags/**").authenticated()
+        .requestMatchers("/api/user/me").authenticated()
+        .requestMatchers("/api/files/**").authenticated()
+        .requestMatchers("/api/categories").authenticated()
+
+        .anyRequest().authenticated()
+)
+
+
                 .authenticationManager(authManager)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
