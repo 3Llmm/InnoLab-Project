@@ -4,8 +4,8 @@ import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.models.Challenge;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,20 +31,25 @@ public class ChallengeService {
     }
 
     /**
-     * Load the ZIP bytes for a given challenge.
+     * Load the file bytes for a given challenge.
      */
-    // FIXED (will work in tests)
     @Transactional(readOnly = true)
-    public byte[] getZip(String challengeId) {
+    public byte[] getFile(String challengeId) {
         return repo.findById(challengeId)
-                .map(ChallengeEntity::getDownloadZip)
+                .map(ChallengeEntity::getDownload)
                 .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
     }
 
     @Transactional
     public Challenge createChallenge(String title, String description, String category,
                                      String difficulty, Integer points, String flag,
-                                     byte[] downloadZip) {
+                                     byte[] download, String originalFilename, // ← ADD this parameter
+                                     String dockerImageName,
+                                     Integer defaultSshPort,
+                                     Integer defaultVscodePort,
+                                     Integer defaultDesktopPort,
+                                     Boolean requiresInstance) {
+
         String challengeId = title.toLowerCase()
                 .replaceAll("[^a-z0-9]", "-")
                 .replaceAll("-+", "-")
@@ -57,12 +62,26 @@ public class ChallengeService {
                 category,
                 difficulty,
                 points,
-                downloadZip,
+                download,
                 flag
         );
 
-        ChallengeEntity savedEntity = repo.saveAndFlush(entity); // 👈 important fix
+        entity.setOriginalFilename(originalFilename);
+        entity.setDockerImageName(dockerImageName);
+        entity.setDefaultSshPort(defaultSshPort);
+        entity.setDefaultVscodePort(defaultVscodePort);
+        entity.setDefaultDesktopPort(defaultDesktopPort);
+        entity.setRequiresInstance(requiresInstance != null ? requiresInstance : false);
+
+        ChallengeEntity savedEntity = repo.saveAndFlush(entity);
         return toModel(savedEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public String getOriginalFilename(String challengeId) {
+        ChallengeEntity entity = repo.findById(challengeId)
+                .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
+        return entity.getOriginalFilename();
     }
 
     /**
@@ -82,7 +101,7 @@ public class ChallengeService {
         if (difficulty != null) existingEntity.setDifficulty(difficulty);
         if (points != null) existingEntity.setPoints(points);
         if (flag != null) existingEntity.setFlag(flag);
-        if (downloadZip != null) existingEntity.setDownloadZip(downloadZip);
+        if (downloadZip != null) existingEntity.setDownload(downloadZip);
 
         ChallengeEntity updatedEntity = repo.save(existingEntity);
         return toModel(updatedEntity);
@@ -137,6 +156,12 @@ public class ChallengeService {
 
         return stats;
     }
+    @Transactional(readOnly = true)
+    public Challenge getChallengeById(String id) {
+        return repo.findById(id)
+                .map(this::toModel)
+                .orElseThrow(() -> new RuntimeException("Challenge not found: " + id));
+    }
     // --- Internal mapping from entity to API model ---
     private Challenge toModel(ChallengeEntity e) {
         if (e.getId() == null) {
@@ -152,7 +177,8 @@ public class ChallengeService {
                 e.getCategory(),
                 e.getDifficulty(),
                 e.getPoints(),
-                downloadUrl
+                downloadUrl,
+                e.getOriginalFilename()
         );
     }
 

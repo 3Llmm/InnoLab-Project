@@ -1,5 +1,6 @@
 package at.fhtw.ctfbackend.controller;
 
+import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.models.Challenge;
 import at.fhtw.ctfbackend.services.ChallengeService;
 import org.springframework.core.io.ByteArrayResource;
@@ -26,15 +27,67 @@ public class ChallengeController {
         return challengeService.listAll();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Challenge> getChallenge(@PathVariable String id) {
+        try {
+            Challenge challenge = challengeService.getChallengeById(id);
+            return ResponseEntity.ok(challenge);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/{id}/download")
     public ResponseEntity<ByteArrayResource> download(@PathVariable String id) {
-        byte[] data = challengeService.getZip(id);
+        // Get the challenge entity to access both file and filename
+        Challenge challenge = challengeService.getChallengeById(id);
+        byte[] data = challengeService.getFile(id);
+        String filename = challengeService.getOriginalFilename(id);
+
+        // Debug logging
+        System.out.println("DEBUG: Challenge ID = " + id);
+        System.out.println("DEBUG: Retrieved filename = '" + filename + "'");
+        System.out.println("DEBUG: Is null? " + (filename == null));
+        System.out.println("DEBUG: Is empty? " + (filename != null && filename.trim().isEmpty()));
+
         ByteArrayResource resource = new ByteArrayResource(data);
+
+        // Better fallback logic
+        if (filename == null || filename.trim().isEmpty()) {
+            System.out.println("DEBUG: Falling back to file extension detection");
+            String fileExtension = determineFileExtension(data);
+            filename = id + fileExtension;
+        }
+
+        System.out.println("DEBUG: Final filename = '" + filename + "'");
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + id + ".zip\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .body(resource);
+    }
+    // Helper method to determine file extension from content
+    private String determineFileExtension(byte[] data) {
+        if (data == null || data.length < 4) return "";
+
+        // Check for ZIP file signature
+        if (data.length >= 4 && data[0] == 0x50 && data[1] == 0x4B && data[2] == 0x03 && data[3] == 0x04) {
+            return ".zip";
+        }
+        // Check for PDF
+        if (data.length >= 4 && data[0] == 0x25 && data[1] == 0x50 && data[2] == 0x44 && data[3] == 0x46) {
+            return ".pdf";
+        }
+        // Check for JPG
+        if (data.length >= 3 && data[0] == (byte)0xFF && data[1] == (byte)0xD8 && data[2] == (byte)0xFF) {
+            return ".jpg";
+        }
+        // Check for PNG
+        if (data.length >= 8 && data[0] == (byte)0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47) {
+            return ".png";
+        }
+
+        return ""; // Unknown type
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -45,13 +98,19 @@ public class ChallengeController {
             @RequestParam String difficulty,
             @RequestParam Integer points,
             @RequestParam String flag,
-            @RequestParam MultipartFile file) {
+            @RequestParam MultipartFile file,
+            @RequestParam(required = false) String dockerImageName,
+            @RequestParam(required = false) Integer defaultSshPort,
+            @RequestParam(required = false) Integer defaultVscodePort,
+            @RequestParam(required = false) Integer defaultDesktopPort,
+            @RequestParam(required = false) Boolean requiresInstance) {
 
         try {
             byte[] fileBytes = file.getBytes();
 
             Challenge createdChallenge = challengeService.createChallenge(
-                    title, description, category, difficulty, points, flag, fileBytes
+                    title, description, category, difficulty, points, flag, fileBytes, file.getOriginalFilename(),
+                    dockerImageName, defaultSshPort, defaultVscodePort, defaultDesktopPort, requiresInstance
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
@@ -60,6 +119,7 @@ public class ChallengeController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Challenge> updateChallenge(
             @PathVariable String id,

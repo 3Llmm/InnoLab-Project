@@ -1,18 +1,18 @@
-package at.fhtw.ctfbackend.repository;
+    package at.fhtw.ctfbackend.repository;
 
-import at.fhtw.ctfbackend.entity.ChallengeEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
+    import at.fhtw.ctfbackend.entity.ChallengeEntity;
+    import org.springframework.data.jpa.repository.JpaRepository;
+    import org.springframework.data.jpa.repository.Query;
+    import org.springframework.stereotype.Repository;
 
-import java.util.List;
+    import java.util.List;
 
-@Repository
-public interface ChallengeRepository extends JpaRepository<ChallengeEntity, String> {
+    @Repository
+    public interface ChallengeRepository extends JpaRepository<ChallengeEntity, String> {
 
-    @Query("SELECT c.category, COUNT(c) FROM ChallengeEntity c GROUP BY c.category")
-    List<Object[]> countChallengesByCategory();
+        @Query("SELECT c.category, COUNT(c) FROM ChallengeEntity c GROUP BY c.category")
+        List<Object[]> countChallengesByCategory();
 
-    @Query("SELECT c.difficulty, COUNT(c) FROM ChallengeEntity c GROUP BY c.difficulty")
-    List<Object[]> countChallengesByDifficulty();
-}
+        @Query("SELECT c.difficulty, COUNT(c) FROM ChallengeEntity c GROUP BY c.difficulty")
+        List<Object[]> countChallengesByDifficulty();
+    }

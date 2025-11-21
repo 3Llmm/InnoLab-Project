@@ -10,17 +10,19 @@ public class Challenge {
     private String category;
     private String difficulty;
     private Integer points;
-    private String fileUrl;
+    private String downloadUrl;
+    private String originalFilename;
 
     public Challenge(String id, String title, String description,
                      String category, String difficulty, Integer points,
-                     String fileUrl) {
+                     String downloadUrl, String originalFilename) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.category = category;
         this.difficulty = difficulty;
         this.points = points;
-        this.fileUrl = fileUrl;
+        this.downloadUrl = downloadUrl;
+        this.originalFilename = originalFilename;
     }
 }

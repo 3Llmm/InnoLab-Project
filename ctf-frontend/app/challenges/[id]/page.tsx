@@ -1,30 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/use-auth'
-import { getChallengeById } from '@/lib/api/challenges'
+import { getChallenge } from '@/lib/api/challenges'
 import ChallengeDetail from '@/components/challenge-detail'
 import type { Challenge } from '@/lib/types'
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-export default function ChallengePage({ params }: { params: Promise<{ id: string }> }) { 
+export default function ChallengePage() { 
   const { auth, isLoading: authLoading } = useAuth()
   const router = useRouter()
+  const params = useParams() // ← Use useParams hook instead
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [resolvedId, setResolvedId] = useState<string | null>(null) 
 
- 
-  useEffect(() => {
-    const resolveParams = async () => {
-      const resolved = await params
-      setResolvedId(resolved.id)
-    }
-    resolveParams()
-  }, [params])
+  const challengeId = params.id as string // ← Get ID directly from params
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -33,16 +26,16 @@ export default function ChallengePage({ params }: { params: Promise<{ id: string
     }
   }, [auth.isAuthenticated, authLoading, router])
 
-  // Fetch challenge - now using resolvedId
+  // Fetch challenge
   useEffect(() => {
-    if (auth.isAuthenticated && resolvedId) {
+    if (auth.isAuthenticated && challengeId) {
       setLoading(true)
-      getChallengeById(resolvedId)
+      getChallenge(challengeId)
         .then(setChallenge)
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false))
     }
-  }, [auth.isAuthenticated, resolvedId]) 
+  }, [auth.isAuthenticated, challengeId]) 
 
   // Show loading state
   if (authLoading || loading) {

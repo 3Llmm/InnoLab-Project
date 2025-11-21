@@ -22,6 +22,13 @@ export interface Challenge {
   flag?: string                                 
   hints?: string[]
   files?: { name: string; url: string }[]
+  
+  // NEW FIELDS for instance-based challenges
+  dockerImageName?: string
+  defaultSshPort?: number
+  defaultVscodePort?: number  
+  defaultDesktopPort?: number
+  requiresInstance?: boolean
 }
 
 export interface ScoreboardEntry {
@@ -65,4 +72,20 @@ export interface ApiResult<T = any> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+
+export interface CreateChallengeData {
+  title: string
+  description: string
+  category: string
+  difficulty: string
+  points: number
+  flag: string
+  file: File
+  dockerImageName?: string
+  defaultSshPort?: number
+  defaultVscodePort?: number
+  defaultDesktopPort?: number
+  requiresInstance?: boolean
 }

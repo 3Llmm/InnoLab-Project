@@ -1,208 +1,411 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
-import { X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Switch } from "@/components/ui/switch"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Terminal, Monitor, Code, Server } from "lucide-react"
 import type { Challenge } from "@/lib/types"
-import { updateChallenge } from "@/lib/actions/admin"
+import { updateChallenge } from "@/lib/api/challenges"
+import { useToast } from "@/hooks/use-toast"
+
+// Form validation schema
+const challengeFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  category: z.string().min(1, "Category is required"),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  points: z.number().min(1, "Points must be at least 1"),
+  flag: z.string().min(1, "Flag is required"),
+  file: z.instanceof(File).optional(),
+  
+  // Instance fields
+  requiresInstance: z.boolean().default(false),
+  dockerImageName: z.string().optional(),
+  defaultSshPort: z.number().min(1024).max(65535).optional(),
+  defaultVscodePort: z.number().min(1024).max(65535).optional(),
+  defaultDesktopPort: z.number().min(1024).max(65535).optional(),
+})
+
+type ChallengeFormValues = z.infer<typeof challengeFormSchema>
 
 interface EditChallengeModalProps {
-  challenge: Challenge
+  challenge: Challenge | null
+  isOpen: boolean
   onClose: () => void
+  onSave: () => void
 }
 
-export default function EditChallengeModal({ challenge, onClose }: EditChallengeModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export default function EditChallengeModal({ challenge, isOpen, onClose, onSave }: EditChallengeModalProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+  const form = useForm<ChallengeFormValues>({
+    resolver: zodResolver(challengeFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      category: "",
+      difficulty: "easy",
+      points: 100,
+      flag: "",
+      requiresInstance: false,
+      dockerImageName: "",
+      defaultSshPort: 30000,
+      defaultVscodePort: 31000,
+      defaultDesktopPort: 32000,
+    },
+  })
 
+  const requiresInstance = form.watch("requiresInstance")
+
+  // Reset form when challenge changes
+  useEffect(() => {
+    if (challenge) {
+      form.reset({
+        title: challenge.title,
+        description: challenge.description,
+        category: challenge.category,
+        difficulty: challenge.difficulty,
+        points: challenge.points,
+        flag: challenge.flag || "",
+        requiresInstance: challenge.requiresInstance || false,
+        dockerImageName: challenge.dockerImageName || "",
+        defaultSshPort: challenge.defaultSshPort || 30000,
+        defaultVscodePort: challenge.defaultVscodePort || 31000,
+        defaultDesktopPort: challenge.defaultDesktopPort || 32000,
+      })
+    }
+  }, [challenge, form])
+
+  const onSubmit = async (data: ChallengeFormValues) => {
+    if (!challenge) return
+
+    setIsLoading(true)
     try {
-      const formData = new FormData(e.currentTarget)
-      const title = formData.get("title") as string
-      const description = formData.get("description") as string
-      const category = formData.get("category") as string
-      const difficulty = formData.get("difficulty") as string
-      const points = Number.parseInt(formData.get("points") as string)
-      const flag = formData.get("flag") as string
-      const file = formData.get("file") as File | null
-
-      // Create multipart form data for the backend
-      const multipartFormData = new FormData()
-      multipartFormData.append('title', title)
-      multipartFormData.append('description', description)
-      multipartFormData.append('category', category)
-      multipartFormData.append('difficulty', difficulty)
-      multipartFormData.append('points', points.toString())
-      multipartFormData.append('flag', flag)
-      
-      if (file && file.size > 0) {
-        multipartFormData.append('file', file)
-      }
-
-      // CHANGED: Remove manual token, use credentials instead
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${challenge.id}`, {
-        method: 'PUT',
-        credentials: 'include', // Send cookies automatically
-        body: multipartFormData,
+      await updateChallenge(challenge.id, {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        difficulty: data.difficulty,
+        points: data.points,
+        flag: data.flag,
+        file: data.file,
+        requiresInstance: data.requiresInstance,
+        dockerImageName: data.requiresInstance ? data.dockerImageName : undefined,
+        defaultSshPort: data.requiresInstance ? data.defaultSshPort : undefined,
+        defaultVscodePort: data.requiresInstance ? data.defaultVscodePort : undefined,
+        defaultDesktopPort: data.requiresInstance ? data.defaultDesktopPort : undefined,
       })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `Failed to update challenge: ${response.status}`)
-      }
+      toast({
+        title: "Challenge updated!",
+        description: "The challenge has been successfully updated.",
+      })
 
-      // Call server action for revalidation
-      const result = await updateChallenge(challenge.id, new FormData())
-      
-      if (result.success) {
-        alert("Challenge updated successfully!")
-        onClose()
-        window.location.reload()
-      } else {
-        alert(result.error || "Failed to update challenge")
-      }
+      onSave()
     } catch (error) {
-      console.error("Error updating challenge:", error)
-      alert(error instanceof Error ? error.message : "Failed to update challenge")
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update challenge",
+        variant: "destructive",
+      })
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-card border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground">Edit Challenge</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Challenge</DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="edit-title" className="block text-sm font-medium text-foreground mb-2">
-                Title *
-              </label>
-              <input
-                type="text"
-                id="edit-title"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
                 name="title"
-                required
-                defaultValue={challenge.title}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Web SQL Injection" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div>
-              <label htmlFor="edit-points" className="block text-sm font-medium text-foreground mb-2">
-                Points *
-              </label>
-              <input
-                type="number"
-                id="edit-points"
-                name="points"
-                required
-                min="0"
-                defaultValue={challenge.points}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="edit-description" className="block text-sm font-medium text-foreground mb-2">
-              Description *
-            </label>
-            <textarea
-              id="edit-description"
-              name="description"
-              required
-              rows={4}
-              defaultValue={challenge.description}
-              className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="edit-category" className="block text-sm font-medium text-foreground mb-2">
-                Category *
-              </label>
-              <select
-                id="edit-category"
+              <FormField
+                control={form.control}
                 name="category"
-                required
-                defaultValue={challenge.category}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="binary-exploitation">Binary Exploitation</option>
-                <option value="cryptography">Cryptography</option>
-                <option value="forensics">Forensics</option>
-                <option value="reverse-engineering">Reverse Engineering</option>
-                <option value="web-exploitation">Web Exploitation</option>
-              </select>
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="web-exploitation">Web Exploitation</SelectItem>
+                        <SelectItem value="cryptography">Cryptography</SelectItem>
+                        <SelectItem value="reverse-engineering">Reverse Engineering</SelectItem>
+                        <SelectItem value="binary-exploitation">Binary Exploitation</SelectItem>
+                        <SelectItem value="forensics">Forensics</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div>
-              <label htmlFor="edit-difficulty" className="block text-sm font-medium text-foreground mb-2">
-                Difficulty *
-              </label>
-              <select
-                id="edit-difficulty"
-                name="difficulty"
-                required
-                defaultValue={challenge.difficulty}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-          </div>
-
-
-          <div>
-            <label htmlFor="edit-file" className="block text-sm font-medium text-foreground mb-2">
-              Challenge File (optional - leave empty to keep current file)
-            </label>
-            <input
-              type="file"
-              id="edit-file"
-              name="file"
-              className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-primary-foreground file:cursor-pointer hover:file:bg-primary/90"
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe the challenge and what players need to do..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-xs text-muted-foreground mt-2">
-              Current file: {challenge.fileurl ? 'Uploaded' : 'None'}
-            </p>
-          </div>
 
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? "Updating..." : "Update Challenge"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors font-medium"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="difficulty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Difficulty</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="points"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Points</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="100"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="flag"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Flag</FormLabel>
+                    <FormControl>
+                      <Input placeholder="FLAG{example_flag}" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* File Upload */}
+            <FormField
+              control={form.control}
+              name="file"
+              render={({ field: { value, onChange, ...field } }) => (
+                <FormItem>
+                  <FormLabel>Challenge Files (ZIP) - Optional Update</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="*"
+                      onChange={(e) => onChange(e.target.files?.[0])}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Upload a new ZIP file to replace the existing one (optional)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Instance Configuration */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="requiresInstance"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Requires Running Instance</FormLabel>
+                      <FormDescription>
+                        Enable if this challenge needs a Docker container with SSH, VSCode, or Desktop access
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {requiresInstance && (
+                <Alert>
+                  <Server className="h-4 w-4" />
+                  <AlertDescription>
+                    Instance-based challenge: Players will get a dedicated Docker container
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {requiresInstance && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-lg p-6 bg-muted/50">
+                  <FormField
+                    control={form.control}
+                    name="dockerImageName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Docker Image Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ctf/web-challenge" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Docker image that will be run for this challenge
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="defaultSshPort"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Terminal className="h-4 w-4" />
+                            SSH Port
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="30000"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="defaultVscodePort"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Code className="h-4 w-4" />
+                            VSCode Port
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="31000"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="defaultDesktopPort"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Monitor className="h-4 w-4" />
+                            Desktop Port
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="32000"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-4 justify-end">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Updating..." : "Update Challenge"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   )
 }

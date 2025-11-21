@@ -1,185 +1,182 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Trash2, Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Edit, Trash2, Play, Download } from "lucide-react"
 import type { Challenge } from "@/lib/types"
-import { deleteChallenge } from "@/lib/actions/admin"
 import EditChallengeModal from "./edit-challenge-modal"
+import { deleteChallenge } from "@/lib/api/challenges"
+import { useToast } from "@/hooks/use-toast"
 
 interface ChallengeTableProps {
   challenges: Challenge[]
 }
 
 export default function ChallengeTable({ challenges }: ChallengeTableProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState<string>("all")
-  const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null)
-
-  const filteredChallenges = challenges.filter((challenge) => {
-    const matchesSearch = challenge.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = categoryFilter === "all" || challenge.category === categoryFilter
-    const matchesDifficulty = difficultyFilter === "all" || challenge.difficulty === difficultyFilter
-    return matchesSearch && matchesCategory && matchesDifficulty
-  })
+  const [isDeleteLoading, setIsDeleteLoading] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this challenge?")) return
+    if (!confirm("Are you sure you want to delete this challenge?")) {
+      return
+    }
 
+    setIsDeleteLoading(id)
     try {
-      // CHANGED: Remove manual token, use credentials instead
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${id}`, {
-        method: 'DELETE',
-        credentials: 'include', // Send cookies automatically
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      await deleteChallenge(id)
+      toast({
+        title: "Challenge deleted",
+        description: "The challenge has been successfully deleted.",
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `Failed to delete challenge: ${response.status}`)
-      }
-
-      // Call server action for revalidation
-      const result = await deleteChallenge(id)
-      
-      if (result.success) {
-        alert("Challenge deleted successfully")
-        window.location.reload()
-      } else {
-        alert(result.error || "Failed to delete challenge")
-      }
+      // Refresh the page to show updated list
+      window.location.reload()
     } catch (error) {
-      console.error("Error deleting challenge:", error)
-      alert(error instanceof Error ? error.message : "Failed to delete challenge")
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete challenge",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleteLoading(null)
     }
   }
 
-  // ... rest of the component remains the same
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "easy":
-        return "text-accent"
+        return "bg-green-100 text-green-800"
       case "medium":
-        return "text-secondary"
+        return "bg-yellow-100 text-yellow-800"
       case "hard":
-        return "text-destructive"
+        return "bg-red-100 text-red-800"
       default:
-        return "text-foreground"
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "web-exploitation":
+        return "bg-blue-100 text-blue-800"
+      case "cryptography":
+        return "bg-purple-100 text-purple-800"
+      case "reverse-engineering":
+        return "bg-orange-100 text-orange-800"
+      case "binary-exploitation":
+        return "bg-red-100 text-red-800"
+      case "forensics":
+        return "bg-green-100 text-green-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
   }
 
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
-      {/* Filters */}
-      <div className="p-6 border-b border-border">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search challenges..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="all">All Categories</option>
-            <option value="binary-exploitation">Binary Exploitation</option>
-            <option value="cryptography">Cryptography</option>
-            <option value="forensics">Forensics</option>
-            <option value="reverse-engineering">Reverse Engineering</option>
-            <option value="web-exploitation">Web Exploitation</option>
-          </select>
-          <select
-            value={difficultyFilter}
-            onChange={(e) => setDifficultyFilter(e.target.value)}
-            className="px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="all">All Difficulties</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
+    <>
+      <div className="bg-card border border-border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Difficulty</TableHead>
+              <TableHead>Points</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Docker Image</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {challenges.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  No challenges found. Create your first challenge above.
+                </TableCell>
+              </TableRow>
+            ) : (
+              challenges.map((challenge) => (
+                <TableRow key={challenge.id}>
+                  <TableCell className="font-medium">
+                    <div>
+                      <div>{challenge.title}</div>
+                      <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+                        {challenge.description}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className={getCategoryColor(challenge.category)}>
+                      {challenge.category.replace("-", " ")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className={getDifficultyColor(challenge.difficulty)}>
+                      {challenge.difficulty}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      {challenge.points}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="flex items-center gap-1 w-20 justify-center">
+                      {challenge.requiresInstance ? (
+                        <>
+                          <Play className="h-3 w-3" />
+                          Instance
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-3 w-3" />
+                          Static
+                        </>
+                      )}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground font-mono max-w-[150px] truncate">
+                      {challenge.dockerImageName || "N/A"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingChallenge(challenge)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(challenge.id)}
+                        disabled={isDeleteLoading === challenge.id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Title
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Difficulty
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Points
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {filteredChallenges.map((challenge) => (
-              <tr key={challenge.id} className="hover:bg-muted/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{challenge.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{challenge.title}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground capitalize">
-                  {challenge.category.replace("-", " ")}
-                </td>
-                <td
-                  className={`px-6 py-4 whitespace-nowrap text-sm font-medium capitalize ${getDifficultyColor(challenge.difficulty)}`}
-                >
-                  {challenge.difficulty}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{challenge.points}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => setEditingChallenge(challenge)}
-                    className="text-primary hover:text-primary/80 mr-4 inline-flex items-center gap-1"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(challenge.id)}
-                    className="text-destructive hover:text-destructive/80 inline-flex items-center gap-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {filteredChallenges.length === 0 && (
-        <div className="p-12 text-center">
-          <p className="text-muted-foreground">No challenges found matching your filters.</p>
-        </div>
-      )}
-
-      {editingChallenge && (
-        <EditChallengeModal challenge={editingChallenge} onClose={() => setEditingChallenge(null)} />
-      )}
-    </div>
+      <EditChallengeModal
+        challenge={editingChallenge}
+        isOpen={!!editingChallenge}
+        onClose={() => setEditingChallenge(null)}
+        onSave={() => {
+          setEditingChallenge(null)
+          window.location.reload() // Refresh to show updated data
+        }}
+      />
+    </>
   )
 }
