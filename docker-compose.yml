@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   app:
+    privileged: true
     image: ctf-backend
     build:
       context: ./ctf-backend
@@ -17,6 +18,7 @@ services:
 
   db:
     image: postgres:16
+    privileged: true
     environment:
       POSTGRES_USER: ctfuser
       POSTGRES_PASSWORD: ctfpass
@@ -57,6 +59,7 @@ services:
 
   kali-vm-tools:
     image: ctf-kali-vm-tools
+    privileged: true
     build:
       context: ./ctf-terminal
       dockerfile: Dockerfile.vm-tools
@@ -79,6 +82,7 @@ volumes:
   pgdata:
   ldapdata:
   ldapconfig:
+
 
 
 
