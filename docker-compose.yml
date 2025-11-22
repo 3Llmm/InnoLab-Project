@@ -7,7 +7,7 @@ services:
       context: ./ctf-backend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       - db
       - ldap
@@ -50,8 +50,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - API_URL=http://app:8080
-      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - API_URL=http://app:8080 #no change needed because it is communicating via docker network
+      - NEXT_PUBLIC_API_URL=http://localhost:8081
 
   kali-vm-tools:
     image: ctf-kali-vm-tools
@@ -76,6 +76,7 @@ volumes:
   pgdata:
   ldapdata:
   ldapconfig:
+
 
 
 
