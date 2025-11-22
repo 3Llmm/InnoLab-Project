@@ -2,7 +2,6 @@ version: "3.9"
 
 services:
   app:
-    privileged: true
     image: ctf-backend
     build:
       context: ./ctf-backend
@@ -18,7 +17,6 @@ services:
 
   db:
     image: postgres:16
-    privileged: true
     environment:
       POSTGRES_USER: ctfuser
       POSTGRES_PASSWORD: ctfpass
@@ -30,7 +28,6 @@ services:
 
   ldap:
     image: osixia/openldap:1.5.0
-    privileged: true
     environment:
       LDAP_ORGANISATION: "CTF"
       LDAP_DOMAIN: "ctf.local"
@@ -47,7 +44,6 @@ services:
   
   frontend:
     image: ctf-frontend
-    privileged: true
     build:
       context: ./ctf-frontend
       dockerfile: Dockerfile
@@ -59,14 +55,12 @@ services:
 
   kali-vm-tools:
     image: ctf-kali-vm-tools
-    privileged: true
     build:
       context: ./ctf-terminal
       dockerfile: Dockerfile.vm-tools
 
   terminal:
     image: ctf-terminal
-    privileged: true
     build:
       context: ./ctf-terminal
       dockerfile: Dockerfile
@@ -82,6 +76,7 @@ volumes:
   pgdata:
   ldapdata:
   ldapconfig:
+
 
 
 
