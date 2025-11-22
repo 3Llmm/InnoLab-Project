@@ -28,7 +28,8 @@ services:
 
   ldap:
     image: osixia/openldap:1.5.0
-   # container_name: ldap
+    security_opt:
+      - apparmor:unconfined
     environment:
       LDAP_ORGANISATION: "CTF"
       LDAP_DOMAIN: "ctf.local"
@@ -77,3 +78,4 @@ volumes:
   pgdata:
   ldapdata:
   ldapconfig:
+
