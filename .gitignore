@@ -1,4 +1,5 @@
 ctf-terminal/node_modules/
+.env
 .env.Confluence
 git-sim_media
 material
