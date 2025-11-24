@@ -66,7 +66,7 @@ export default function HelpPage() {
             <div>
               <h3 className="text-lg font-semibold mb-2">What is a CTF flag?</h3>
               <p className="text-muted-foreground">
-                A flag is a specific string of text that proves you've successfully completed a challenge. Flags
+                A flag is a specific string of text that proves you&apos;ve successfully completed a challenge. Flags
                 typically follow the format{" "}
                 <code className="px-2 py-1 bg-muted rounded font-mono text-sm">
                   flag{"{"}...{"}"}
@@ -95,7 +95,7 @@ export default function HelpPage() {
             <div id="forgot-password">
               <h3 className="text-lg font-semibold mb-2">I forgot my password. What should I do?</h3>
               <p className="text-muted-foreground">
-                Click the "Forgot password?" link on the login page. Enter your email address, and we'll send you
+                Click the “Forgot password?” link on the login page. Enter your email address, and we&apos;ll send you
                 instructions to reset your password.
               </p>
             </div>
@@ -116,7 +116,7 @@ export default function HelpPage() {
         <div id="contact" className="bg-card p-8 rounded-lg border border-border">
           <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
           <p className="text-muted-foreground mb-6">
-            Have a question that's not answered here? Need technical support? We're here to help!
+            Have a question that&apos;s not answered here? Need technical support? We&apos;re here to help!
           </p>
           <div className="space-y-3">
             <div className="flex items-center gap-3">

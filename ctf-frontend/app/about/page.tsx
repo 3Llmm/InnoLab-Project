@@ -20,7 +20,7 @@ export default function AboutPage() {
 
           <p className="text-muted-foreground mb-6">
             Our platform offers a wide range of challenges across multiple categories including binary exploitation,
-            cryptography, forensics, reverse engineering, and web exploitation. Whether you're a beginner just starting
+            cryptography, forensics, reverse engineering, and web exploitation. Whether you&apos;re a beginner just starting
             your cybersecurity journey or an experienced professional looking to sharpen your skills, we have challenges
             suited to your level.
           </p>
