@@ -75,7 +75,7 @@ export default function ChallengePage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Challenge Not Found</h2>
           <p className="text-muted-foreground mb-4">
-            The challenge you're looking for doesn't exist.
+            The challenge you&apos;re looking for doesn&apos;t exist.
           </p>
           <Link
             href="/challenges"
