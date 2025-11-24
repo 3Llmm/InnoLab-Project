@@ -27,7 +27,7 @@ const ChallengeRun: React.FC<ChallengeRunProps> = ({ challengeId, backendUrl, do
             .then((res) => res.json())
             .then((data) => setInstance(data))
             .catch((err) => console.error("Failed to start environment", err));
-    }, [challengeId]);
+    }, [backendUrl, challengeId]);
 
     if (!instance) return <div>Loading environment...</div>;
 
