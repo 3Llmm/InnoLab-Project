@@ -22,6 +22,9 @@ public class ChallengeEntity {
     private String category;        // Store category directly
     private String difficulty;      // Store difficulty directly
     private Integer points;         // Store points directly
+    private byte[] download;
+    private String originalFilename;
+    private boolean requiresInstance;
 
 
     @Lob

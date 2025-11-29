@@ -1,6 +1,43 @@
 FROM kalilinux/kali-rolling
 
-RUN useradd -m -s /bin/bash ctf-user
-USER ctf-user
+# Install essential pentesting tools
+RUN apt-get update && apt-get install -y \
+    nmap \
+    curl \
+    wget \
+    netcat-traditional \
+    dnsutils \
+    whois \
+    iputils-ping \
+    vim \
+    nano \
+    git \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
+# Create user
+RUN useradd -m -s /bin/bash ctf-user && \
+    echo "ctf-user:kali" | chpasswd
+
+USER ctf-user
 WORKDIR /home/ctf-user
+
+# Welcome banner
+RUN echo '#!/bin/bash' > ~/.bashrc && \
+    echo 'echo -e "\033[1;32m"' >> ~/.bashrc && \
+    echo 'echo "╔════════════════════════════════════════╗"' >> ~/.bashrc && \
+    echo 'echo "║     🐉 Kali Linux CTF Terminal        ║"' >> ~/.bashrc && \
+    echo 'echo "╚════════════════════════════════════════╝"' >> ~/.bashrc && \
+    echo 'echo -e "\033[0m"' >> ~/.bashrc && \
+    echo 'echo ""' >> ~/.bashrc && \
+    echo 'echo "Available tools:"' >> ~/.bashrc && \
+    echo 'echo "  • nmap - Network scanner"' >> ~/.bashrc && \
+    echo 'echo "  • curl/wget - HTTP clients"' >> ~/.bashrc && \
+    echo 'echo "  • netcat - Network utility"' >> ~/.bashrc && \
+    echo 'echo "  • python3 - Scripting"' >> ~/.bashrc && \
+    echo 'echo ""' >> ~/.bashrc && \
+    echo 'echo "💡 Tip: Challenge containers are in ctf-isolated network"' >> ~/.bashrc && \
+    echo 'echo ""' >> ~/.bashrc
+
+CMD ["/bin/bash"]

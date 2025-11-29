@@ -144,8 +144,10 @@ public class EnvironmentService {
 
         inst.setStatus("STOPPED");
         instanceRepo.save(inst);
+
         return true;
     }
+
 
     // ===== PORT MANAGEMENT =====
 

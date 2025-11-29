@@ -1,3 +1,4 @@
+/*
 package at.fhtw.ctfbackend.config;
 
 import at.fhtw.ctfbackend.entity.ChallengeInstanceEntity;
@@ -170,10 +171,10 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    /**
-     * Extract instanceId from WebSocket path
-     * Expected format: /ws/terminal/{instanceId}
-     */
+
+     // Extract instanceId from WebSocket path
+     // Expected format: /ws/terminal/{instanceId}
+
     private String extractInstanceId(String path) {
         if (path == null || path.isEmpty()) {
             return null;
@@ -197,3 +198,4 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
         return segments[segments.length - 1];
     }
 }
+*/
