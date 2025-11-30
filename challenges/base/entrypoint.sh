@@ -3,7 +3,9 @@ set -e
 
 # 1) Write FLAG
 echo "$FLAG" > /flag.txt
+chown ctfuser:ctfuser /flag.txt
 chmod 600 /flag.txt
+
 
 # 2) Start SSH
 service ssh start

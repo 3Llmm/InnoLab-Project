@@ -9,11 +9,11 @@ import {
     AlertCircle,
     CheckCircle2,
     Info,
-    Terminal, // NEU
+    Terminal,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import type { Challenge } from "@/lib/types";
-import KaliTerminal from "@/components/KaliTerminal"; // NEU
+import KaliTerminal from "@/components/KaliTerminalClient";
 
 interface ChallengeDetailProps {
     challenge: Challenge;
@@ -23,22 +23,39 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
     const [flag, setFlag] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [downloading, setDownloading] = useState(false);
-    const [showTerminal, setShowTerminal] = useState(false); // NEU
+    const [showTerminal, setShowTerminal] = useState(false);
     const [result, setResult] = useState<{
         status: string;
         message: string;
     } | null>(null);
     const [solved, setSolved] = useState<boolean>(!!challenge.solved);
 
-    const [environment, setEnvironment] = useState(null);
+    const [environment, setEnvironment] = useState<{
+        instanceId: string;
+        sshPort: number;
+        vscodePort: number;
+        desktopPort: number;
+        expiresAt: string;
+        status: string;
+    } | null>(null);
 
     async function handleLaunchTerminal() {
-        const res = await apiClient.post(`/api/environment/start/${challenge.id}`);
-        setEnvironment(res);
-        setShowTerminal(true);
+        try {
+            console.log("🚀 Starting environment for challenge:", challenge.id);
+            const res = await apiClient.post(`/api/environment/start/${challenge.id}`);
+            console.log("✅ Environment started:", res);
+            setEnvironment(res);
+            setShowTerminal(true);
+        } catch (error) {
+            console.error("❌ Failed to start environment:", error);
+            setResult({
+                status: "error",
+                message: `Failed to start terminal: ${error instanceof Error ? error.message : "Unknown error"}`,
+            });
+        }
     }
 
-    // ... (existing handleSubmit and handleDownload functions bleiben gleich)
+    // ... (keep your existing handleSubmit and handleDownload functions)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -179,18 +196,21 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
                         </p>
                     </div>
 
-                    {/* 🆕 TERMINAL SECTION - NEU HINZUGEFÜGT */}
+                    {/* 🆕 TERMINAL SECTION - FIXED */}
                     <div className="mb-6">
                         <button
-                            onClick={() => setShowTerminal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            onClick={handleLaunchTerminal}
+                            disabled={!!environment} // Disable if environment is already running
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Terminal className="w-4 h-4" />
-                            🐉 Launch Kali Linux Terminal
+                            {environment ? "🚀 Terminal Running" : "🐉 Launch Kali Linux Terminal"}
                         </button>
                         <p className="text-sm text-muted-foreground mt-2">
-                            Open a Kali Linux terminal with pentesting tools (nmap, curl,
-                            sqlmap, etc.)
+                            {environment 
+                                ? `SSH Port: ${environment.sshPort} - Expires: ${new Date(environment.expiresAt).toLocaleTimeString()}`
+                                : "Open a Kali Linux terminal with pentesting tools (nmap, curl, sqlmap, etc.)"
+                            }
                         </p>
                     </div>
 
@@ -283,9 +303,13 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
                 )}
             </div>
 
-            {/* 🆕 Terminal Modal - NEU */}
-            {showTerminal && (
-                <KaliTerminal onClose={() => setShowTerminal(false)} />
+            {/* 🆕 KaliTerminal Modal - FIXED */}
+            {showTerminal && environment && (
+                <KaliTerminal 
+                    instanceId={environment.instanceId}
+                    sshPort={2222}
+                    onClose={() => setShowTerminal(false)}
+                />
             )}
         </div>
     );

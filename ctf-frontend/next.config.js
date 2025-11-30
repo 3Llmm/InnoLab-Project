@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   // Enable React strict mode for better development experience
-  reactStrictMode: true,
+  reactStrictMode: false,
 
   // ESLint configuration
   eslint: {
