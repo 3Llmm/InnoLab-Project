@@ -33,6 +33,9 @@ public class ChallengeEntity {
     @Column(name = "original_filename")
     private String originalFilename;
 
+    @Column(name = "image_path")
+    private String imagePath;
+
     @Column(name = "flag_hash")
     private String flagHash;
 

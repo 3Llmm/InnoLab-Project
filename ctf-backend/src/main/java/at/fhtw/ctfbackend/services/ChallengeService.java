@@ -48,7 +48,8 @@ public class ChallengeService {
                                      Integer defaultSshPort,
                                      Integer defaultVscodePort,
                                      Integer defaultDesktopPort,
-                                     Boolean requiresInstance) {
+                                     Boolean requiresInstance,
+                                     String imagePath) {
 
         String challengeId = title.toLowerCase()
                 .replaceAll("[^a-z0-9]", "-")
@@ -72,6 +73,7 @@ public class ChallengeService {
         entity.setDefaultVscodePort(defaultVscodePort);
         entity.setDefaultDesktopPort(defaultDesktopPort);
         entity.setRequiresInstance(requiresInstance != null ? requiresInstance : false);
+        entity.setImagePath(imagePath);
 
         ChallengeEntity savedEntity = repo.saveAndFlush(entity);
         return toModel(savedEntity);
@@ -178,7 +180,8 @@ public class ChallengeService {
                 e.getDifficulty(),
                 e.getPoints(),
                 downloadUrl,
-                e.getOriginalFilename()
+                e.getOriginalFilename(),
+                e.getImagePath()
         );
     }
 

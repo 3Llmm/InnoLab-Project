@@ -59,6 +59,8 @@ public class SecurityConfig {
         .requestMatchers("/api/auth/**").permitAll()
         .requestMatchers("/ws/**").permitAll()
         .requestMatchers("/api/categories").permitAll()  // Categories are public (theory content)
+        .requestMatchers("/api/files/image").permitAll() // for testing
+        .requestMatchers("/api/challenges/**").permitAll() // for testing
 
         // Protected (token required)
         .requestMatchers("/api/challenges/**").authenticated()

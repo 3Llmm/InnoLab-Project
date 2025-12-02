@@ -103,14 +103,15 @@ public class ChallengeController {
             @RequestParam(required = false) Integer defaultSshPort,
             @RequestParam(required = false) Integer defaultVscodePort,
             @RequestParam(required = false) Integer defaultDesktopPort,
-            @RequestParam(required = false) Boolean requiresInstance) {
+            @RequestParam(required = false) Boolean requiresInstance,
+            @RequestParam(required = false) String imagePath) {
 
         try {
             byte[] fileBytes = file.getBytes();
 
             Challenge createdChallenge = challengeService.createChallenge(
                     title, description, category, difficulty, points, flag, fileBytes, file.getOriginalFilename(),
-                    dockerImageName, defaultSshPort, defaultVscodePort, defaultDesktopPort, requiresInstance
+                    dockerImageName, defaultSshPort, defaultVscodePort, defaultDesktopPort, requiresInstance, imagePath
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
