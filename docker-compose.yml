@@ -10,6 +10,9 @@ services:
     build:
       context: ./ctf-backend
       dockerfile: Dockerfile
+    volumes:
+      - ./challenges:/app/challenges 
+      - /var/run/docker.sock:/var/run/docker.sock  # ADDED: Docker socket
     ports:
       - "8081:8080"
     networks:
@@ -20,6 +23,7 @@ services:
     environment:
       - CONFLUENCE_EMAIL=${CONFLUENCE_EMAIL}
       - CONFLUENCE_API_TOKEN=${CONFLUENCE_API_TOKEN}
+      - DOCKER_HOST=unix:///var/run/docker.sock  # ADDED
 
   db:
     image: postgres:16
@@ -62,30 +66,9 @@ services:
     networks:
       - ctf-isolated
     environment:
-      - API_URL=http://app:8080
+      - API_URL=http://app:8081
       - NEXT_PUBLIC_API_URL=http://localhost:8081
 
-  kali-vm-tools:
-    image: ctf-kali-vm-tools
-    build:
-      context: ./ctf-terminal
-      dockerfile: Dockerfile.vm-tools
-    networks:
-      - ctf-isolated #  WICHTIG!
-
-  terminal:
-    image: ctf-terminal
-    build:
-      context: ./ctf-terminal
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
-    networks:
-      - ctf-isolated
-    depends_on:
-      - kali-vm-tools
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   pgdata:

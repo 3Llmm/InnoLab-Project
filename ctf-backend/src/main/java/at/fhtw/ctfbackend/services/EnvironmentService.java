@@ -147,7 +147,68 @@ public class EnvironmentService {
 
         return true;
     }
+    // In EnvironmentService.java, add this method:
 
+    public ChallengeInstanceEntity buildAndStartChallenge(String username, String challengeId) {
+        // Check for existing instance
+        var existing = instanceRepo.findByUsernameAndChallengeIdAndStatus(
+                username, challengeId, "RUNNING"
+        );
+        if (!existing.isEmpty()) return existing.get(0);
+
+        // Load challenge metadata
+        ChallengeEntity challenge = challengeRepo.findById(challengeId)
+                .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
+
+        // Generate dynamic flag
+        String realFlag = generateFlag(challengeId);
+        String flagHash = sha256(realFlag);
+
+        // Allocate ports
+        int sshPort = allocatePort(SSH_BASE);
+        int vscodePort = allocatePort(VSCODE_BASE);
+        int desktopPort = allocatePort(DESKTOP_BASE);
+
+        // Create instance entry
+        String instanceId = UUID.randomUUID().toString();
+        String containerName = "ctf-" + instanceId.substring(0, 8);
+
+        ChallengeInstanceEntity inst = new ChallengeInstanceEntity();
+        inst.setInstanceId(instanceId);
+        inst.setUsername(username);
+        inst.setChallengeId(challengeId);
+        inst.setContainerName(containerName);
+        inst.setFlagHash(flagHash);
+        inst.setCreatedAt(Instant.now());
+        inst.setExpiresAt(Instant.now().plusSeconds(3600));
+        inst.setStatus("RUNNING");
+        inst.setSshPort(sshPort);
+        inst.setVscodePort(vscodePort);
+        inst.setDesktopPort(desktopPort);
+
+        try {
+            instanceRepo.save(inst);
+
+            // Build and run the challenge
+            dockerService.buildAndRun(
+                    challengeId,
+                    containerName,
+                    realFlag,
+                    sshPort,
+                    vscodePort,
+                    desktopPort
+            );
+
+            return inst;
+
+        } catch (Exception e) {
+            // Rollback port allocations
+            releasePort(sshPort);
+            releasePort(vscodePort);
+            releasePort(desktopPort);
+            throw new RuntimeException("Failed to build and start challenge", e);
+        }
+    }
 
     // ===== PORT MANAGEMENT =====
 

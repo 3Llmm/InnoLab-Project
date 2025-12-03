@@ -98,7 +98,7 @@ public class ChallengeController {
             @RequestParam String difficulty,
             @RequestParam Integer points,
             @RequestParam String flag,
-            @RequestParam MultipartFile file,
+            @RequestParam(required = false) MultipartFile file,
             @RequestParam(required = false) String dockerImageName,
             @RequestParam(required = false) Integer defaultSshPort,
             @RequestParam(required = false) Integer defaultVscodePort,

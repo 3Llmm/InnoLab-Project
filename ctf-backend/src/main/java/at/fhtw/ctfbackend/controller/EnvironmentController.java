@@ -58,4 +58,32 @@ public class EnvironmentController {
                 "stopped", stopped
         ));
     }
+    // 4) Build and start challenge environment
+    @PostMapping("/build/{challengeId}")
+    public ResponseEntity<?> buildAndStartChallenge(
+            Authentication auth,
+            @PathVariable String challengeId) {
+
+        String username = auth.getName();
+
+        try {
+            ChallengeInstanceEntity inst = envService.buildAndStartChallenge(username, challengeId);
+
+            return ResponseEntity.ok(Map.of(
+                    "instanceId", inst.getInstanceId(),
+                    "sshPort", inst.getSshPort(),
+                    "vscodePort", inst.getVscodePort(),
+                    "desktopPort", inst.getDesktopPort(),
+                    "expiresAt", inst.getExpiresAt(),
+                    "status", inst.getStatus(),
+                    "message", "Challenge built and started successfully"
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Failed to build and start challenge",
+                    "details", e.getMessage()
+            ));
+        }
+    }
 }
