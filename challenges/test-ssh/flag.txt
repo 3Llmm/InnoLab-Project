@@ -1,1 +1,0 @@
-flag{FINALLY_WORKING}

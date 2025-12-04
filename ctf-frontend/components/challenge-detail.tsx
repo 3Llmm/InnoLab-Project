@@ -638,6 +638,7 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
                 <KaliTerminal
                     instanceId={environment.instanceId}
                     sshPort={environment.sshPort}
+                    containerName={environment.containerName}  // ADD THIS
                     onClose={() => setShowTerminal(false)}
                 />
             )}

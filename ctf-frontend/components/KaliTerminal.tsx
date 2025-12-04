@@ -9,10 +9,10 @@ import { X } from "lucide-react";
 interface KaliTerminalProps {
     instanceId?: string;
     sshPort?: number;
+    containerName?: string;
     onClose: () => void;
 }
-
-export default function KaliTerminal({ instanceId, sshPort, onClose }: KaliTerminalProps) {
+export default function KaliTerminal({ instanceId, sshPort, containerName, onClose }: KaliTerminalProps) {
     const terminalRef = useRef<HTMLDivElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
     const terminalInstanceRef = useRef<Terminal | null>(null);
@@ -76,7 +76,7 @@ export default function KaliTerminal({ instanceId, sshPort, onClose }: KaliTermi
 
             // Welcome message
             terminal.writeln("\r\n\x1b[1;32m╔════════════════════════════════════════╗\x1b[0m");
-            terminal.writeln("\x1b[1;32m║   🐉 CTF Challenge Terminal           ║\x1b[0m");
+            terminal.writeln("\x1b[1;32m║   🐉 CTF Challenge Terminal             ║\x1b[0m");
             terminal.writeln("\x1b[1;32m╚════════════════════════════════════════╝\x1b[0m");
             terminal.writeln("");
             terminal.writeln(`Instance: ${instanceId}`);
@@ -96,7 +96,8 @@ export default function KaliTerminal({ instanceId, sshPort, onClose }: KaliTermi
 
             // WebSocket connection
             const terminalUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || "ws://localhost:3001";
-            const wsUrl = `${terminalUrl}/?instanceId=${instanceId}&sshPort=${sshPort}`;
+            const containerName = `ctf-${instanceId.substring(0, 8)}`;
+            const wsUrl = `${terminalUrl}/?instanceId=${instanceId}&containerName=${containerName}`;
             
             addDebugInfo(`🔌 Connecting WebSocket: ${wsUrl}`);
             terminal.writeln(`Connecting to: ${terminalUrl}`);
@@ -277,13 +278,13 @@ export default function KaliTerminal({ instanceId, sshPort, onClose }: KaliTermi
                 <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
                     <div className="flex-1">
                         <h2 className="text-lg font-semibold">Challenge Terminal</h2>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div>
-                                Status: <span className={getStatusColor()}>{getStatusMessage()}</span>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div>
+                                    Status: <span className={getStatusColor()}>{getStatusMessage()}</span>
+                                </div>
+                                <div>Instance: {instanceId}</div>
+                                <div>Container: {`ctf-${instanceId}`}</div>
                             </div>
-                            <div>Instance: {instanceId}</div>
-                            <div>Port: {sshPort}</div>
-                        </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg">
                         <X className="w-5 h-5" />

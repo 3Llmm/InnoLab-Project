@@ -1,16 +1,30 @@
-FROM ubuntu:22.04
+# challenges/base/Dockerfile
+FROM alpine:latest
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Install necessary packages
+RUN apk add --no-cache \
+    openssh-server \
+    bash \
+    sudo \
+    curl \
+    nano \
+    vim \
+    && mkdir -p /run/sshd
 
-RUN apt-get update && apt-get install -y \
-    openssh-server sudo bash \
-    && rm -rf /var/lib/apt/lists/*
+# Create CTF user
+RUN adduser -D -s /bin/bash ctfuser && \
+    echo "ctfuser:ctfpassword" | chpasswd
 
-RUN useradd -m -s /bin/bash ctfuser \
-    && echo "ctfuser:ctfpassword" | chpasswd
+# Configure SSH
+RUN sed -i 's/#PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#AllowTcpForwarding.*/AllowTcpForwarding yes/' /etc/ssh/sshd_config
 
-RUN mkdir /var/run/sshd
+# Create home directory and set permissions
+RUN mkdir -p /home/ctfuser && \
+    chown -R ctfuser:ctfuser /home/ctfuser
 
+# Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
