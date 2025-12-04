@@ -1,211 +1,252 @@
+// ctf-terminal/server.js
 const express = require("express");
 const WebSocket = require("ws");
 const http = require("http");
 const { Client } = require('ssh2');
+const net = require('net');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// Basic CORS
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     next();
 });
 
+// Health check
 app.get("/health", (req, res) => {
     res.json({ 
         status: "ok", 
-        activeConnections: wss.clients.size,
-        message: "CTF Terminal Gateway is running"
+        connections: wss.clients.size 
     });
 });
 
-wss.on("connection", (ws, req) => {
-    const clientIp = req.socket.remoteAddress;
+// Helper to check if SSH port is actually responding
+async function checkSSHPort(host, port, timeout = 10000) {
+    return new Promise((resolve) => {
+        const socket = net.createConnection({ 
+            host, 
+            port, 
+            timeout,
+            // Add lookup timeout for DNS resolution
+            lookup: (hostname, options, callback) => {
+                require('dns').lookup(hostname, options, callback);
+            }
+        });
+        
+        socket.setTimeout(timeout);
+        
+        socket.on('connect', () => {
+            socket.destroy();
+            console.log(`[SSH Check] ✅ Port ${port} on ${host} is reachable`);
+            resolve(true);
+        });
+        
+        socket.on('timeout', () => {
+            console.log(`[SSH Check] ⏱️ Timeout connecting to ${host}:${port}`);
+            socket.destroy();
+            resolve(false);
+        });
+        
+        socket.on('error', (err) => {
+            console.log(`[SSH Check] ❌ Error connecting to ${host}:${port}: ${err.code}`);
+            resolve(false);
+        });
+    });
+}
+
+// Helper to wait for SSH to be ready with exponential backoff
+async function waitForSSH(host, port, maxAttempts = 12, baseDelay = 2000) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        console.log(`[SSH Check] Attempt ${attempt}/${maxAttempts} for ${host}:${port}`);
+        
+        const isReady = await checkSSHPort(host, port);
+        
+        if (isReady) {
+            console.log(`[SSH Check] ✅ SSH is ready on ${host}:${port}`);
+            return true;
+        }
+        
+        if (attempt < maxAttempts) {
+            // Exponential backoff: 2s, 3s, 4.5s, 6.7s, etc (max ~60s total)
+            const delay = Math.min(baseDelay * Math.pow(1.5, attempt - 1), 10000);
+            console.log(`[SSH Check] Not ready yet, waiting ${Math.round(delay)}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    
+    console.log(`[SSH Check] ❌ SSH failed to become ready after ${maxAttempts} attempts`);
+    return false;
+}
+
+// Helper to connect SSH with retry
+async function connectSSHWithRetry(config, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const conn = new Client();
+            
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    conn.removeAllListeners();
+                    conn.end();
+                    reject(new Error('SSH handshake timeout'));
+                }, 10000);
+
+                conn.once('ready', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
+
+                conn.once('error', (err) => {
+                    clearTimeout(timeout);
+                    reject(err);
+                });
+
+                console.log(`[${config.instanceId}] SSH connection attempt ${attempt}/${maxRetries}`);
+                conn.connect(config);
+            });
+            
+            return conn; // Success!
+            
+        } catch (err) {
+            console.log(`[${config.instanceId}] SSH attempt ${attempt}/${maxRetries} failed: ${err.message}`);
+            
+            if (attempt === maxRetries) {
+                throw err; // Final attempt failed
+            }
+            
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+}
+
+// WebSocket connection handler
+wss.on("connection", async (ws, req) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const sshPort = url.searchParams.get("sshPort");
+    const containerName = url.searchParams.get("containerName");
     const instanceId = url.searchParams.get("instanceId");
 
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`🔌 NEW WebSocket Connection`);
-    console.log(`   Client IP: ${clientIp}`);
-    console.log(`   Instance: ${instanceId}`);
-    console.log(`   SSH Port: ${sshPort}`);
-    console.log(`${'='.repeat(60)}\n`);
+    console.log(`[${instanceId}] New connection → Container: ${containerName}`);
 
-    // Validate parameters
-    if (!sshPort) {
-        console.error("❌ Missing SSH port parameter");
-        ws.send("❌ Error: Missing SSH port parameter\r\n");
+    // Validate container name
+    if (!containerName) {
+        ws.send("Error: No container name specified\r\n");
         ws.close();
         return;
     }
 
-    const portNumber = parseInt(sshPort);
-    if (isNaN(portNumber) || portNumber < 1 || portNumber > 65535) {
-        console.error(`❌ Invalid SSH port: ${sshPort}`);
-        ws.send(`❌ Error: Invalid SSH port: ${sshPort}\r\n`);
+    console.log(`[${instanceId}] Connecting to container via Docker network DNS: ${containerName}`);
+
+    // Send status update to client
+    ws.send(`\r\n\x1b[1;36m🔍 Waiting for SSH service to start...\x1b[0m\r\n`);
+    
+    // Wait for SSH to be ready - USE CONTAINER NAME directly
+    const sshReady = await waitForSSH(containerName, 22);
+    
+    if (!sshReady) {
+        ws.send(`\r\n\x1b[1;31m❌ SSH service failed to start\x1b[0m\r\n`);
+        ws.send(`\x1b[1;33mPlease try again in a moment or contact support\x1b[0m\r\n`);
         ws.close();
         return;
     }
 
-    console.log(`✅ Valid parameters - Preparing SSH connection to port ${portNumber}`);
+    ws.send(`\r\n\x1b[1;32m✅ SSH service is ready!\x1b[0m\r\n`);
+    ws.send(`\x1b[1;36m🔐 Establishing secure connection...\x1b[0m\r\n`);
 
-    // Create SSH connection
-    const conn = new Client();
-    let shellStream = null;
+    // SSH connection with retry - USE CONTAINER NAME directly
+    let conn;
+    let shell = null;
 
-    conn.on('ready', () => {
-        console.log('✅ SSH Client Ready - Starting shell...');
-        ws.send("✅ SSH connection established\r\n");
-        
-        conn.shell({
-            term: 'xterm-256color',
-            cols: 80,
-            rows: 24
-        }, (err, stream) => {
-            if (err) {
-                console.error('❌ SSH Shell error:', err);
-                ws.send(`❌ SSH Shell error: ${err.message}\r\n`);
-                conn.end();
-                return;
-            }
-
-            shellStream = stream;
-            console.log('✅ SSH Shell started successfully');
-            ws.send("🔐 Starting shell session...\r\n");
-
-            // Stream data from SSH → WebSocket
-            stream.on('data', (data) => {
-                const preview = data.toString().substring(0, 50).replace(/\n/g, '\\n');
-                console.log(`📥 SSH → WS: ${data.length} bytes - "${preview}"`);
-                if (ws.readyState === WebSocket.OPEN) {
-                    try {
-                        ws.send(data);
-                        console.log(`   ✅ Sent to WebSocket`);
-                    } catch (err) {
-                        console.error(`   ❌ Failed to send: ${err.message}`);
-                    }
-                } else {
-                    console.error(`   ❌ WebSocket not open (state: ${ws.readyState})`);
-                }
-            });
-
-            stream.on('close', () => {
-                console.log('🔌 SSH Shell stream closed');
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send("\r\n🔌 Shell session closed\r\n");
-                    ws.close();
-                }
-                conn.end();
-            });
-
-            stream.stderr.on('data', (data) => {
-                console.log(`📥 SSH STDERR → WebSocket: ${data.length} bytes`);
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(data);
-                }
-            });
+    try {
+        conn = await connectSSHWithRetry({
+            host: containerName,  // 🔥 USE CONTAINER NAME instead of IP
+            port: 22,
+            username: 'ctfuser',
+            password: 'ctfpassword',
+            readyTimeout: 10000,
+            tryKeyboard: true,
+            instanceId: instanceId
         });
+    } catch (err) {
+        console.error(`[${instanceId}] All SSH connection attempts failed:`, err.message);
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(`\r\n\x1b[1;31m❌ Failed to establish SSH connection\x1b[0m\r\n`);
+            ws.send(`\x1b[1;33mError: ${err.message}\x1b[0m\r\n`);
+            ws.close();
+        }
+        return;
+    }
+
+    console.log(`[${instanceId}] SSH connected successfully to ${containerName}`);
+    console.log(`[${instanceId}] Requesting shell...`);
+
+    // Request shell immediately (connection is already ready)
+    conn.shell({ term: 'xterm-256color' }, (err, stream) => {
+        if (err) {
+            console.error(`[${instanceId}] Failed to create shell:`, err.message);
+            ws.send(`\r\n\x1b[1;31m❌ Error creating shell: ${err.message}\x1b[0m\r\n`);
+            conn.end();
+            ws.close();
+            return;
+        }
+
+        console.log(`[${instanceId}] Shell created successfully`);
+        shell = stream;
+
+        // SSH → WebSocket
+        stream.on('data', (data) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(data);
+            }
+        });
+
+        stream.on('close', () => {
+            console.log(`[${instanceId}] Shell closed`);
+            ws.close();
+            conn.end();
+        });
+
+        // Send success message
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(`\r\n\x1b[1;32m╔═══════════════════════════════════════╗\x1b[0m\r\n`);
+            ws.send(`\x1b[1;32m║   ✅ Connected to ${containerName.padEnd(18)} ║\x1b[0m\r\n`);
+            ws.send(`\x1b[1;32m╚═══════════════════════════════════════╝\x1b[0m\r\n`);
+            ws.send(`\r\n\x1b[1;33m💡 You are now logged in as ctfuser\x1b[0m\r\n`);
+            ws.send(`\x1b[1;33m🎯 Start exploring and find the flag!\x1b[0m\r\n\r\n`);
+        }
     });
 
     conn.on('error', (err) => {
-        console.error('❌ SSH Connection error:', err.message);
-        console.error('   Error details:', {
-            code: err.code,
-            level: err.level,
-            description: err.description
-        });
+        console.error(`[${instanceId}] SSH error for ${containerName}:`, err.message);
         if (ws.readyState === WebSocket.OPEN) {
-            ws.send(`❌ SSH Error: ${err.message}\r\n`);
-            ws.send(`   Check if SSH is running on port ${portNumber}\r\n`);
+            ws.send(`\r\n\x1b[1;31m❌ SSH Connection failed: ${err.message}\x1b[0m\r\n`);
             ws.close();
         }
     });
 
-    conn.on('close', (hadError) => {
-        console.log(`🔌 SSH Connection closed, Had error: ${hadError}`);
-        if (ws.readyState === WebSocket.OPEN && hadError) {
-            ws.send("\r\n🔌 SSH connection closed\r\n");
-            ws.close();
-        }
-    });
-
-    // WebSocket messages → SSH stream
-    ws.on('message', (message) => {
-        const char = message.toString();
-        console.log(`📤 WebSocket → SSH: "${char}" (code: ${char.charCodeAt(0)})`);
-        
-        if (shellStream && shellStream.writable) {
-            shellStream.write(message);
-            console.log(`   ✅ Written to SSH stream`);
+    // WebSocket → SSH
+    ws.on('message', (data) => {
+        if (shell && shell.writable) {
+            shell.write(data);
         } else {
-            console.error(`   ❌ Shell stream not ready or not writable`);
-            console.error(`   Stream state: ${shellStream ? 'exists' : 'null'}, writable: ${shellStream?.writable}`);
-            ws.send("\r\n❌ Shell not ready\r\n");
+            console.log(`[${instanceId}] Shell not ready, dropping input`);
         }
     });
 
-    // Handle WebSocket close
     ws.on('close', () => {
-        console.log(`🔌 WebSocket closed for instance ${instanceId}`);
-        if (shellStream) {
-            shellStream.end();
-        }
-        conn.end();
-    });
-
-    ws.on('error', (error) => {
-        console.error(`❌ WebSocket error: ${error.message}`);
-        if (shellStream) {
-            shellStream.end();
-        }
-        conn.end();
-    });
-
-    // Connect to SSH server
-    console.log(`🔐 Initiating SSH connection...`);
-    console.log(`   Target: localhost:${portNumber}`);
-    console.log(`   User: ctfuser`);
-    
-    conn.connect({
-        host: 'localhost',
-        port: portNumber,
-        username: 'ctfuser',
-        password: 'ctfpassword',
-        readyTimeout: 20000,
-        debug: (info) => {
-            console.log(`   [SSH DEBUG] ${info}`);
-        },
-        algorithms: {
-            kex: [
-                'ecdh-sha2-nistp256',
-                'ecdh-sha2-nistp384',
-                'ecdh-sha2-nistp521',
-                'diffie-hellman-group14-sha256',
-                'diffie-hellman-group14-sha1'
-            ],
-            cipher: [
-                'aes128-ctr',
-                'aes192-ctr',
-                'aes256-ctr',
-                'aes128-gcm',
-                'aes128-gcm@openssh.com',
-                'aes256-gcm',
-                'aes256-gcm@openssh.com'
-            ]
-        }
+        console.log(`[${instanceId}] WebSocket closed for ${containerName}`);
+        if (shell) shell.end();
+        if (conn) conn.end();
     });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`🚀 CTF Terminal Gateway Started`);
-    console.log(`   Port: ${PORT}`);
-    console.log(`   Health: http://localhost:${PORT}/health`);
-    console.log(`   WebSocket: ws://localhost:${PORT}`);
-    console.log(`${'='.repeat(60)}\n`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 CTF Terminal Gateway running on port ${PORT}`);
+    console.log(`📡 Listening on 0.0.0.0:${PORT}`);
+    console.log(`⏳ SSH readiness checks enabled with exponential backoff`);
+    console.log(`🌐 Using Docker network DNS for container connections`);
 });
