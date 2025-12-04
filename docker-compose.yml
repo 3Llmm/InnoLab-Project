@@ -1,19 +1,46 @@
 version: "3.9"
 
+networks:
+  ctf-isolated:
+    driver: bridge
+    external: true
+    name: ctf-isolated
 services:
+  terminal:
+    build:
+      context: ./ctf-terminal
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    networks:
+      - ctf-isolated
+    environment:
+      - PORT=3001
+    restart: unless-stopped
+
   app:
     image: ctf-backend
     build:
       context: ./ctf-backend
       dockerfile: Dockerfile
+    volumes:
+      - ./challenges:/app/challenges 
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8081:8080"
+    networks:
+      - ctf-isolated
     depends_on:
       - db
       - ldap
+      - terminal
     environment:
       - CONFLUENCE_EMAIL=${CONFLUENCE_EMAIL}
       - CONFLUENCE_API_TOKEN=${CONFLUENCE_API_TOKEN}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - TERMINAL_GATEWAY_URL=http://terminal:3001
+      - TERMINAL_WS_URL=ws://terminal:3001
+    restart: unless-stopped
 
   db:
     image: postgres:16
@@ -23,6 +50,8 @@ services:
       POSTGRES_DB: ctf
     ports:
       - "5432:5432"
+    networks:
+      - ctf-isolated
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -36,12 +65,14 @@ services:
       LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
     ports:
       - "389:389"
+    networks:
+      - ctf-isolated
     volumes:
       - ldapdata:/var/lib/ldap
       - ldapconfig:/etc/ldap/slapd.d
       - ./ldap/bootstrap/seed:/container/service/slapd/assets/config/bootstrap/ldif/custom
     restart: always
-  
+
   frontend:
     image: ctf-frontend
     build:
@@ -49,36 +80,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    networks:
+      - ctf-isolated
     environment:
-      - API_URL=http://app:8080 #no change needed because it is communicating via docker network
+      - API_URL=http://app:8081
       - NEXT_PUBLIC_API_URL=http://localhost:8081
-
-  kali-vm-tools:
-    image: ctf-kali-vm-tools
-    build:
-      context: ./ctf-terminal
-      dockerfile: Dockerfile.vm-tools
-
-  terminal:
-    image: ctf-terminal
-    build:
-      context: ./ctf-terminal
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
+      - TERMINAL_WS_URL=ws://localhost:3001
     depends_on:
-      - frontend
-      - kali-vm-tools
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock 
+      - app
+      - terminal
 
 volumes:
   pgdata:
   ldapdata:
   ldapconfig:
-
-
-
-
-
-

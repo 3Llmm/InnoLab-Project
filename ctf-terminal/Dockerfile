@@ -1,20 +1,18 @@
-FROM node:20-alpine
+FROM node:18-alpine
 
-# Update Alpine packages and install docker client
-RUN apk update && apk upgrade && apk add --no-cache make gcc g++ python3 docker
+# Install Docker CLI (needed for Docker socket access)
+RUN apk add --no-cache docker-cli
 
-# Set workdir
 WORKDIR /app
 
-# Copy source code
-COPY . .
+COPY package*.json ./
+RUN npm ci --only=production
 
-# Initialize package.json and install dependencies
-RUN npm init -y \
- && npm install express ws node-pty
+COPY server.js ./
 
-# Expose your server port
+# Ensure the app runs as root or docker group
+USER root
+
 EXPOSE 3001
 
-# Start server
 CMD ["node", "server.js"]

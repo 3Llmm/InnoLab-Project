@@ -6,7 +6,9 @@ import at.fhtw.ctfbackend.repository.ChallengeInstanceRepository;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -135,38 +137,130 @@ public class EnvironmentService {
             dockerService.stopContainer(inst.getContainerName());
         } catch (Exception e) {
             System.out.println("Container already stopped or missing");
+
+            // Even if Docker failed, clean up our port tracking
+            try {
+                // Kill container forcefully if normal stop failed
+                dockerService.killContainer(inst.getContainerName());
+            } catch (Exception e2) {
+                System.out.println("Container kill also failed, assuming it's already gone");
+            }
         }
 
-        // Release ports back to pool
+        // Release ports back to pool (CRITICAL!)
         releasePort(inst.getSshPort());
         releasePort(inst.getVscodePort());
         releasePort(inst.getDesktopPort());
 
         inst.setStatus("STOPPED");
         instanceRepo.save(inst);
+
         return true;
+    }
+    // In EnvironmentService.java, add this method:
+
+    public ChallengeInstanceEntity buildAndStartChallenge(String username, String challengeId) {
+        // Check for existing instance
+        var existing = instanceRepo.findByUsernameAndChallengeIdAndStatus(
+                username, challengeId, "RUNNING"
+        );
+        if (!existing.isEmpty()) return existing.get(0);
+
+        // Load challenge metadata
+        ChallengeEntity challenge = challengeRepo.findById(challengeId)
+                .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
+
+        // Generate dynamic flag
+        String realFlag = generateFlag(challengeId);
+        String flagHash = sha256(realFlag);
+
+        // Allocate ports
+        int sshPort = allocatePort(SSH_BASE);
+        int vscodePort = allocatePort(VSCODE_BASE);
+        int desktopPort = allocatePort(DESKTOP_BASE);
+
+        // Create instance entry
+        String instanceId = UUID.randomUUID().toString();
+        String containerName = "ctf-" + instanceId.substring(0, 8);
+
+        ChallengeInstanceEntity inst = new ChallengeInstanceEntity();
+        inst.setInstanceId(instanceId);
+        inst.setUsername(username);
+        inst.setChallengeId(challengeId);
+        inst.setContainerName(containerName);
+        inst.setFlagHash(flagHash);
+        inst.setCreatedAt(Instant.now());
+        inst.setExpiresAt(Instant.now().plusSeconds(3600));
+        inst.setStatus("RUNNING");
+        inst.setSshPort(sshPort);
+        inst.setVscodePort(vscodePort);
+        inst.setDesktopPort(desktopPort);
+
+        try {
+            instanceRepo.save(inst);
+
+            // Build and run the challenge
+            dockerService.buildAndRun(
+                    challengeId,
+                    containerName,
+                    realFlag,
+                    sshPort,
+                    vscodePort,
+                    desktopPort
+            );
+
+            return inst;
+
+        } catch (Exception e) {
+            // Rollback port allocations
+            releasePort(sshPort);
+            releasePort(vscodePort);
+            releasePort(desktopPort);
+            throw new RuntimeException("Failed to build and start challenge", e);
+        }
     }
 
     // ===== PORT MANAGEMENT =====
-
-    /**
-     * Allocate an available port from the given base range
-     */
     private synchronized int allocatePort(int basePort) {
-        for (int offset = 0; offset < PORT_RANGE; offset++) {
+        // Try multiple attempts with random offsets
+        List<Integer> triedPorts = new ArrayList<>();
+        Random random = new Random();
+
+        for (int attempt = 0; attempt < 50; attempt++) { // Try up to 50 ports
+            // Add some randomness to avoid predictable port allocation
+            int offset = random.nextInt(PORT_RANGE);
             int port = basePort + offset;
 
-            // Skip if already allocated
-            if (allocatedPorts.contains(port)) {
+            // Skip if already tried
+            if (triedPorts.contains(port)) {
                 continue;
             }
 
-            // Verify port is actually available on system
+            // Skip if already allocated in our tracking
+            if (allocatedPorts.contains(port)) {
+                triedPorts.add(port);
+                continue;
+            }
+
+            // Verify port is actually available
             if (isPortAvailable(port)) {
                 allocatedPorts.add(port);
                 return port;
             }
+
+            triedPorts.add(port);
         }
+
+        // If we can't find a port in the randomized range, try sequentially
+        for (int offset = 0; offset < PORT_RANGE; offset++) {
+            int port = basePort + offset;
+
+            if (!allocatedPorts.contains(port) && isPortAvailable(port)) {
+                allocatedPorts.add(port);
+                return port;
+            }
+        }
+
         throw new RuntimeException("No available ports in range " + basePort + "-" + (basePort + PORT_RANGE));
     }
 
@@ -178,9 +272,15 @@ public class EnvironmentService {
     }
 
     /**
-     * Check if port is available by attempting to bind to it
+     * Check if port is available by checking Docker and system usage
      */
     private boolean isPortAvailable(int port) {
+        // 1. First check if Docker is already using this port
+        if (isPortUsedByDocker(port)) {
+            return false;
+        }
+
+        // 2. Then check if system can bind to this port
         try (ServerSocket socket = new ServerSocket(port)) {
             socket.setReuseAddress(true);
             return true;
@@ -189,6 +289,38 @@ public class EnvironmentService {
         }
     }
 
+    /**
+     * Check if Docker is already using this port on the host
+     */
+    private boolean isPortUsedByDocker(int port) {
+        try {
+            // List all containers and their port mappings
+            ProcessBuilder pb = new ProcessBuilder(
+                    "docker", "ps",
+                    "--format", "{{.Ports}}"
+            );
+
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream())
+            );
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(":" + port + "->")) {
+                    return true; // Port is already mapped by Docker
+                }
+            }
+
+            process.waitFor();
+            return false;
+
+        } catch (Exception e) {
+            // If we can't check Docker, assume port might be in use
+            System.err.println("Warning: Could not check Docker port usage: " + e.getMessage());
+            return true; // Be conservative
+        }
+    }
     /**
      * Load currently allocated ports from database on startup
      */

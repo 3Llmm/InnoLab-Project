@@ -52,7 +52,7 @@ export async function createChallenge(challengeData: CreateChallengeData): Promi
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges`,
       {
         method: 'POST',
         body: formData,
@@ -92,7 +92,7 @@ export async function updateChallenge(id: string, challengeData: Partial<CreateC
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${id}`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges/${id}`,
       {
         method: 'PUT',
         body: formData,
@@ -123,7 +123,7 @@ export async function deleteChallenge(id: string): Promise<void> {
 export async function downloadChallengeFile(id: string): Promise<Blob> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${id}/download`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges/${id}/download`,
       {
         method: 'GET',
         credentials: 'include',

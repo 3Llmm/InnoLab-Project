@@ -1,6 +1,0 @@
-FROM kalilinux/kali-rolling
-
-RUN useradd -m -s /bin/bash ctf-user
-USER ctf-user
-
-WORKDIR /home/ctf-user
