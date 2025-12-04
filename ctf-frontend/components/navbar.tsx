@@ -76,7 +76,7 @@ export default function Navbar() {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 cursor-pointer bg-destructive text-destructive-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
+                  className="px-4 py-2 cursor-pointer bg-destructive text-white dark:text-foreground rounded-lg font-medium hover:opacity-80 transition-opacity"
                 >
                   Logout
                 </button>

@@ -142,13 +142,13 @@ export default function AdminDashboardPage() {
             title="Total Users"
             value={stats.totalUsers}
             icon={<Users className="w-6 h-6" />}
-            color="secondary"
+            color="primary"
           />
           <StatCard
             title="Total Submissions"
             value={stats.totalSubmissions}
             icon={<TrendingUp className="w-6 h-6" />}
-            color="accent"
+            color="primary"
           />
           <StatCard
             title="Active Challenges"

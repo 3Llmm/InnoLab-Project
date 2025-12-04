@@ -45,12 +45,12 @@ export default function HomePage() {
               description="Practice with challenges based on actual security scenarios"
             />
             <FeatureCard
-              icon={<Target className="w-12 h-12 text-secondary" />}
+              icon={<Target className="w-12 h-12 text-primary" />}
               title="Multiple Categories"
               description="Binary exploitation, cryptography, forensics, and more"
             />
             <FeatureCard
-              icon={<Trophy className="w-12 h-12 text-accent" />}
+              icon={<Trophy className="w-12 h-12 text-primary" />}
               title="Competitive Scoring"
               description="Track your progress and compete on the leaderboard"
             />

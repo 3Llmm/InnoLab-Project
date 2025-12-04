@@ -24,7 +24,7 @@ const challengeFormSchema = z.object({
   difficulty: z.enum(["easy", "medium", "hard"]),
   points: z.number().min(1, "Points must be at least 1"),
   flag: z.string().min(1, "Flag is required"),
-  file: z.instanceof(File).refine((file) => file.size > 0, "File is required"),
+  file: z.instanceof(File).refine((file) => file.size > 0, "File is required").optional(),
   
   // Instance fields
   requiresInstance: z.boolean().default(false),
