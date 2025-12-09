@@ -1,9 +1,6 @@
 package at.fhtw.ctfbackend.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,32 +10,32 @@ import lombok.Setter;
 @Setter
 public class ChallengeEntity {
     @Id
-    private String id;  // challenge ID: "rev-101"
+    private String id;
 
-    private String title;           // Changed from name to title for consistency
-
+    private String title;
     private String description;
-
-    private String category;        // Store category directly
-    private String difficulty;      // Store difficulty directly
-    private Integer points;         // Store points directly
-    private byte[] download;
-    private String originalFilename;
-    private boolean requiresInstance;
-
+    private String category;
+    private String difficulty;
+    private Integer points;
 
     @Lob
     private byte[] downloadZip;
 
-    private String flag;            // Internal only
+    private String originalFilename;
+    private boolean requiresInstance;
+    private String flag;
 
+    private String dockerImageName;
+    private Integer defaultSshPort;
+    private Integer defaultVscodePort;
+    private Integer defaultDesktopPort;
 
+    // Store file metadata as JSON
+    @Column(columnDefinition = "TEXT")
+    private String dockerFilesJson;
 
-    private String dockerImageName;  // e.g. "myctf/rev-101"
-    private Integer defaultSshPort;      //  22
-    private Integer defaultVscodePort;   // 8080 in container
-    private Integer defaultDesktopPort;  // 6080 in container
-
+    // Store the actual folder path on disk
+    private String challengeFolderPath;
 
     protected ChallengeEntity() { }
 
@@ -53,6 +50,14 @@ public class ChallengeEntity {
         this.points = points;
         this.downloadZip = downloadZip;
         this.flag = flag;
+        this.dockerFilesJson = "{}"; // Initialize empty JSON
+    }
 
+    public byte[] getDownload() {
+        return this.downloadZip;
+    }
+
+    public void setDownload(byte[] download) {
+        this.downloadZip = download;
     }
 }

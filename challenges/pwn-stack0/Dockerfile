@@ -1,11 +1,23 @@
 FROM myctf/base
 
-RUN apt-get update && apt-get install -y gcc gdb make && rm -rf /var/lib/apt/lists/*
+# Install gcc and C library
+RUN apk update && apk add gcc gdb make musl-dev
 
-COPY exploit.c /challenge/exploit.c
-COPY build.sh /challenge/build.sh
+# Copy challenge files to user's home directory
+COPY exploit.c /home/ctfuser/exploit.c
+COPY build.sh /home/ctfuser/build.sh
+COPY README.md /home/ctfuser/README.md
 
-RUN chmod +x /challenge/build.sh && cd /challenge && ./build.sh
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# challenge binary should be executed by user inside container
-RUN chown -R ctfuser:ctfuser /challenge
+# Set proper permissions
+RUN chown -R ctfuser:ctfuser /home/ctfuser
+
+# Default working directory for user
+WORKDIR /home/ctfuser
+
+EXPOSE 22
+
+ENTRYPOINT ["/entrypoint.sh"]

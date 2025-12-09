@@ -24,7 +24,7 @@ services:
       context: ./ctf-backend
       dockerfile: Dockerfile
     volumes:
-      - ./challenges:/app/challenges 
+      - challenges_data:/app/challenges
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8081:8080"
@@ -94,3 +94,4 @@ volumes:
   pgdata:
   ldapdata:
   ldapconfig:
+  challenges_data:

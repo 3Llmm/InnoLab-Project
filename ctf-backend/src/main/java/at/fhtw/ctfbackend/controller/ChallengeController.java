@@ -1,6 +1,5 @@
 package at.fhtw.ctfbackend.controller;
 
-import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.models.Challenge;
 import at.fhtw.ctfbackend.services.ChallengeService;
 import org.springframework.core.io.ByteArrayResource;
@@ -38,34 +37,68 @@ public class ChallengeController {
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<ByteArrayResource> download(@PathVariable String id) {
-        // Get the challenge entity to access both file and filename
-        Challenge challenge = challengeService.getChallengeById(id);
-        byte[] data = challengeService.getFile(id);
-        String filename = challengeService.getOriginalFilename(id);
+    public ResponseEntity<?> download(@PathVariable String id) {
+        try {
+            // Get the challenge entity to access both file and filename
+            byte[] data = challengeService.getFile(id);
 
-        // Debug logging
-        System.out.println("DEBUG: Challenge ID = " + id);
-        System.out.println("DEBUG: Retrieved filename = '" + filename + "'");
-        System.out.println("DEBUG: Is null? " + (filename == null));
-        System.out.println("DEBUG: Is empty? " + (filename != null && filename.trim().isEmpty()));
+            // Check if file data exists or is empty
+            if (data == null || data.length == 0) {
+                System.out.println("DEBUG: No file data found for challenge: " + id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(Map.of(
+                                "message", "No file available for this challenge",
+                                "error", "FILE_NOT_FOUND"
+                        ));
+            }
 
-        ByteArrayResource resource = new ByteArrayResource(data);
+            String filename = challengeService.getOriginalFilename(id);
 
-        // Better fallback logic
-        if (filename == null || filename.trim().isEmpty()) {
-            System.out.println("DEBUG: Falling back to file extension detection");
-            String fileExtension = determineFileExtension(data);
-            filename = id + fileExtension;
+            // Debug logging
+            System.out.println("DEBUG: Challenge ID = " + id);
+            System.out.println("DEBUG: Retrieved filename = '" + filename + "'");
+            System.out.println("DEBUG: Is null? " + (filename == null));
+            System.out.println("DEBUG: Is empty? " + (filename != null && filename.trim().isEmpty()));
+
+            ByteArrayResource resource = new ByteArrayResource(data);
+
+            // Better fallback logic
+            if (filename == null || filename.trim().isEmpty()) {
+                System.out.println("DEBUG: Falling back to file extension detection");
+                String fileExtension = determineFileExtension(data);
+                filename = id + fileExtension;
+            }
+
+            System.out.println("DEBUG: Final filename = '" + filename + "'");
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .body(resource);
+
+        } catch (RuntimeException e) {
+            // Return proper error response
+            System.out.println("ERROR: Download failed for challenge: " + id + " - " + e.getMessage());
+
+            if (e.getMessage().contains("Challenge not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(Map.of(
+                                "message", "Challenge not found: " + id,
+                                "error", "CHALLENGE_NOT_FOUND"
+                        ));
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(Map.of(
+                                "message", "Download failed: " + e.getMessage(),
+                                "error", "DOWNLOAD_ERROR"
+                        ));
+            }
         }
-
-        System.out.println("DEBUG: Final filename = '" + filename + "'");
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .body(resource);
     }
+
     // Helper method to determine file extension from content
     private String determineFileExtension(byte[] data) {
         if (data == null || data.length < 4) return "";
@@ -91,32 +124,48 @@ public class ChallengeController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Challenge> createChallenge(
+    public ResponseEntity<?> createChallenge(
             @RequestParam String title,
             @RequestParam String description,
             @RequestParam String category,
             @RequestParam String difficulty,
             @RequestParam Integer points,
-            @RequestParam String flag,
-            @RequestParam(required = false) MultipartFile file,
+            @RequestParam(required = false) String flag,
+            @RequestParam(required = false) MultipartFile downloadFile,
             @RequestParam(required = false) String dockerImageName,
             @RequestParam(required = false) Integer defaultSshPort,
             @RequestParam(required = false) Integer defaultVscodePort,
             @RequestParam(required = false) Integer defaultDesktopPort,
-            @RequestParam(required = false) Boolean requiresInstance) {
+            @RequestParam(required = false, defaultValue = "false") Boolean requiresInstance,
+            @RequestParam(required = false) MultipartFile[] dockerFiles) {
 
         try {
-            byte[] fileBytes = file.getBytes();
+            System.out.println("Creating challenge with parameters:");
+            System.out.println("  title: " + title);
+            System.out.println("  description: " + description);
+            System.out.println("  category: " + category);
+            System.out.println("  difficulty: " + difficulty);
+            System.out.println("  points: " + points);
+            System.out.println("  flag: " + (flag != null ? flag : "null"));
+            System.out.println("  requiresInstance: " + requiresInstance);
 
             Challenge createdChallenge = challengeService.createChallenge(
-                    title, description, category, difficulty, points, flag, fileBytes, file.getOriginalFilename(),
-                    dockerImageName, defaultSshPort, defaultVscodePort, defaultDesktopPort, requiresInstance
+                    title, description, category, difficulty, points, flag,
+                    downloadFile, dockerImageName, defaultSshPort, defaultVscodePort,
+                    defaultDesktopPort, requiresInstance, dockerFiles
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
 
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            System.err.println("Error creating challenge: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Failed to create challenge",
+                            "message", e.getMessage(),
+                            "details", e.toString()
+                    ));
         }
     }
 
@@ -129,16 +178,19 @@ public class ChallengeController {
             @RequestParam(required = false) String difficulty,
             @RequestParam(required = false) Integer points,
             @RequestParam(required = false) String flag,
-            @RequestParam(required = false) MultipartFile file) {
+            @RequestParam(required = false) MultipartFile downloadFile,
+            @RequestParam(required = false) String dockerImageName,
+            @RequestParam(required = false) Integer defaultSshPort,
+            @RequestParam(required = false) Integer defaultVscodePort,
+            @RequestParam(required = false) Integer defaultDesktopPort,
+            @RequestParam(required = false) Boolean requiresInstance,
+            @RequestParam(required = false) MultipartFile[] dockerFiles) {
 
         try {
-            byte[] fileBytes = null;
-            if (file != null && !file.isEmpty()) {
-                fileBytes = file.getBytes();
-            }
-
             Challenge updatedChallenge = challengeService.updateChallenge(
-                    id, title, description, category, difficulty, points, flag, fileBytes
+                    id, title, description, category, difficulty, points, flag,
+                    downloadFile, dockerImageName, defaultSshPort, defaultVscodePort,
+                    defaultDesktopPort, requiresInstance, dockerFiles
             );
 
             return ResponseEntity.ok(updatedChallenge);
@@ -147,15 +199,17 @@ public class ChallengeController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChallenge(@PathVariable String id) {
         try {
             challengeService.deleteChallenge(id);
             return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
+
     @GetMapping("/admin/stats")
     public Map<String, Object> getAdminStats() {
         return challengeService.getAdminStats();

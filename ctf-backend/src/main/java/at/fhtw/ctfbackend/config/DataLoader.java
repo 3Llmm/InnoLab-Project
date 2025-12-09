@@ -54,16 +54,26 @@ public class DataLoader {
             var resolver = new PathMatchingResourcePatternResolver();
             Resource[] resources = resolver.getResources("classpath:/files/*.zip");
 
+            System.out.println("=== LOADING CHALLENGES ===");
+            System.out.println("Found " + resources.length + " ZIP files to load");
+
             for (Resource r : resources) {
                 String filename = r.getFilename();
                 String id = filename.replace(".zip", "");
 
-                if (repo.existsById(id)) continue;
+                System.out.println("Processing: " + filename + " -> ID: " + id);
+
+                if (repo.existsById(id)) {
+                    System.out.println("  -> Already exists, skipping");
+                    continue;
+                }
 
                 byte[] zipBytes;
                 try (InputStream in = r.getInputStream()) {
                     zipBytes = in.readAllBytes();
                 }
+
+                System.out.println("  -> Read " + zipBytes.length + " bytes");
 
                 ChallengeEntity entity = new ChallengeEntity(
                         id,
@@ -76,8 +86,25 @@ public class DataLoader {
                         FLAGS.getOrDefault(id, "")
                 );
 
+                // *** FIX: Set the original filename ***
+                entity.setOriginalFilename(filename);
+                System.out.println("  -> Set originalFilename: " + filename);
+
                 repo.save(entity);
+                System.out.println("  -> Saved successfully");
             }
+
+            // Verify what was loaded
+            System.out.println("=== VERIFICATION ===");
+            repo.findAll().forEach(c -> {
+                String fileStatus = c.getDownload() != null ?
+                        c.getDownload().length + " bytes" : "NULL";
+                System.out.println("Challenge: " + c.getId() +
+                        " | Title: " + c.getTitle() +
+                        " | Filename: " + c.getOriginalFilename() +
+                        " | File: " + fileStatus);
+            });
+            System.out.println("=== LOADING COMPLETE ===");
         };
     }
 
@@ -102,7 +129,7 @@ public class DataLoader {
 
             for (CategoryEntity category : categories) {
                 String pageId = confluencePageIds.get(category.getId());
-                
+
                 if (pageId != null) {
                     String summary = confluenceClient.fetchSummaryFromConfluence(pageId);
                     String fileUrl = "https://technikum-wien-team-kjev9g23.atlassian.net/wiki/spaces/C/pages/" + pageId;
@@ -119,4 +146,3 @@ public class DataLoader {
         };
     }
 }
-

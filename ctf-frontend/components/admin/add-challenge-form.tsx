@@ -12,368 +12,597 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Terminal, Monitor, Code, Server } from "lucide-react"
-import { createChallenge } from "@/lib/api/challenges"
+import { Terminal, Monitor, Code, Server, File as Fileicon, X, Upload } from "lucide-react"
+import { createChallenge } from "@/lib/api/admin"
 import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
 
 // Form validation schema
 const challengeFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
-  category: z.string().min(1, "Category is required"),
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  points: z.number().min(1, "Points must be at least 1"),
-  flag: z.string().min(1, "Flag is required"),
-  file: z.instanceof(File).refine((file) => file.size > 0, "File is required").optional(),
-  
-  // Instance fields
-  requiresInstance: z.boolean().default(false),
-  dockerImageName: z.string().optional(),
-  defaultSshPort: z.number().min(1024).max(65535).optional(),
-  defaultVscodePort: z.number().min(1024).max(65535).optional(),
-  defaultDesktopPort: z.number().min(1024).max(65535).optional(),
+    title: z.string().min(1, "Title is required"),
+    description: z.string().min(1, "Description is required"),
+    category: z.string().min(1, "Category is required"),
+    difficulty: z.enum(["easy", "medium", "hard"]),
+    points: z.number().min(1, "Points must be at least 1"),
+    flag: z.string().optional(),
+
+    // Download file (optional for instance challenges)
+    file: z
+        .any()
+        .refine((val) => {
+            // If no file selected, that's okay (optional)
+            if (!val) return true;
+            // If file selected, validate it's a File
+            return val instanceof File;
+        }, "Please select a valid file")
+        .optional(),
+
+    // Instance fields
+    requiresInstance: z.boolean().default(false),
+    dockerImageName: z.string().optional(),
+    defaultSshPort: z.number().min(1024).max(65535).optional(),
+    defaultVscodePort: z.number().min(1024).max(65535).optional(),
+    defaultDesktopPort: z.number().min(1024).max(65535).optional(),
 })
 
 type ChallengeFormValues = z.infer<typeof challengeFormSchema>
 
+// Accepted file types for Docker challenges
+const ACCEPTED_DOCKER_FILES = [
+    ".dockerfile",
+    ".Dockerfile",
+    ".sh",
+    ".c",
+    ".cpp",
+    ".py",
+    ".js",
+    ".txt",
+    ".md",
+    ".yml",
+    ".yaml",
+    ".json"
+]
+
 export default function AddChallengeForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+    const [isLoading, setIsLoading] = useState(false)
+    const [dockerFiles, setDockerFiles] = useState<File[]>([])
+    const { toast } = useToast()
 
-  const form = useForm<ChallengeFormValues>({
-    resolver: zodResolver(challengeFormSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      category: "",
-      difficulty: "easy",
-      points: 100,
-      flag: "",
-      requiresInstance: false,
-      dockerImageName: "",
-      defaultSshPort: 30000,
-      defaultVscodePort: 31000,
-      defaultDesktopPort: 32000,
-    },
-  })
+    const form = useForm<ChallengeFormValues>({
+        resolver: zodResolver(challengeFormSchema),
+        defaultValues: {
+            title: "",
+            description: "",
+            category: "",
+            difficulty: "easy",
+            points: 100,
+            flag: "",
+            requiresInstance: false,
+            dockerImageName: "",
+            defaultSshPort: 30000,
+            defaultVscodePort: 31000,
+            defaultDesktopPort: 32000,
+        },
+    })
 
-  const requiresInstance = form.watch("requiresInstance")
+    const requiresInstance = form.watch("requiresInstance")
 
-  const onSubmit = async (data: ChallengeFormValues) => {
-    setIsLoading(true)
-    try {
-      await createChallenge({
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        difficulty: data.difficulty,
-        points: data.points,
-        flag: data.flag,
-        file: data.file,
-        requiresInstance: data.requiresInstance,
-        dockerImageName: data.requiresInstance ? data.dockerImageName : undefined,
-        defaultSshPort: data.requiresInstance ? data.defaultSshPort : undefined,
-        defaultVscodePort: data.requiresInstance ? data.defaultVscodePort : undefined,
-        defaultDesktopPort: data.requiresInstance ? data.defaultDesktopPort : undefined,
-      })
+    const handleDockerFileChange = (files: FileList | null) => {
+        if (!files) return;
 
-      toast({
-        title: "Challenge created!",
-        description: "The challenge has been successfully created.",
-      })
+        const newFiles = Array.from(files).filter(file => {
+            const name = file.name;
+            const lower = name.toLowerCase();
 
-      form.reset()
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create challenge",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+            // Detect extension safely
+            const dotIndex = name.lastIndexOf('.');
+            const extension = dotIndex !== -1 ? lower.substring(dotIndex) : '';
+
+            // Accept if extension matches OR filename is literally "Dockerfile"
+            const isDockerfile = name === "Dockerfile" || lower === "dockerfile";
+
+            return ACCEPTED_DOCKER_FILES.includes(extension) || isDockerfile;
+        });
+
+        setDockerFiles(prev => [...prev, ...newFiles]);
+    };
+
+
+    const removeDockerFile = (index: number) => {
+        setDockerFiles(prev => prev.filter((_, i) => i !== index))
     }
-  }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create New Challenge</CardTitle>
-        <CardDescription>
-          Add a new CTF challenge. Choose between static download or instance-based challenges.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Web SQL Injection" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    const getFileIcon = (fileName: string) => {
+        if (fileName === "Dockerfile" || fileName.endsWith(".dockerfile")) {
+            return "🐳"
+        } else if (fileName.endsWith(".sh")) {
+            return "📜"
+        } else if (fileName.endsWith(".c") || fileName.endsWith(".cpp")) {
+            return "⚙️"
+        } else if (fileName.endsWith(".py")) {
+            return "🐍"
+        } else if (fileName.endsWith(".js")) {
+            return "📘"
+        } else if (fileName.endsWith(".md")) {
+            return "📝"
+        } else {
+            return "📄"
+        }
+    }
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="web-exploitation">Web Exploitation</SelectItem>
-                        <SelectItem value="cryptography">Cryptography</SelectItem>
-                        <SelectItem value="reverse-engineering">Reverse Engineering</SelectItem>
-                        <SelectItem value="binary-exploitation">Binary Exploitation</SelectItem>
-                        <SelectItem value="forensics">Forensics</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+    const formatFileSize = (bytes: number) => {
+        if (bytes === 0) return '0 Bytes'
+        const k = 1024
+        const sizes = ['Bytes', 'KB', 'MB']
+        const i = Math.floor(Math.log(bytes) / Math.log(k))
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    }
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Describe the challenge and what players need to do..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    const onSubmit = async (data: ChallengeFormValues) => {
+        setIsLoading(true)
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField
-                control={form.control}
-                name="difficulty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Difficulty</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select difficulty" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        try {
+            const formData = new FormData()
 
-              <FormField
-                control={form.control}
-                name="points"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Points</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="100"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            // Add basic form data
+            formData.append("title", data.title)
+            formData.append("description", data.description)
+            formData.append("category", data.category)
+            formData.append("difficulty", data.difficulty)
+            formData.append("points", data.points.toString())
 
-              <FormField
-                control={form.control}
-                name="flag"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Flag</FormLabel>
-                    <FormControl>
-                      <Input placeholder="FLAG{example_flag}" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            if (data.flag) {
+                formData.append("flag", data.flag)
+            }
 
-            {/* File Upload */}
-            <FormField
-              control={form.control}
-              name="file"
-              render={({ field: { value, onChange, ...field } }) => (
-                <FormItem>
-                  <FormLabel>Challenge Files (ZIP)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="file"
-                      accept="*"
-                      onChange={(e) => onChange(e.target.files?.[0])}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Upload a ZIP file containing the challenge files
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            // Add download file if provided
+            if (data.file) {
+                formData.append("downloadFile", data.file)
+            }
 
-            {/* Instance Configuration */}
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="requiresInstance"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Requires Running Instance</FormLabel>
-                      <FormDescription>
-                        Enable if this challenge needs a Docker container with SSH, VSCode, or Desktop access
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+            // Add instance configuration
+            formData.append("requiresInstance", data.requiresInstance.toString())
+            if (data.requiresInstance) {
+                if (data.dockerImageName) {
+                    formData.append("dockerImageName", data.dockerImageName)
+                }
+                if (data.defaultSshPort) {
+                    formData.append("defaultSshPort", data.defaultSshPort.toString())
+                }
+                if (data.defaultVscodePort) {
+                    formData.append("defaultVscodePort", data.defaultVscodePort.toString())
+                }
+                if (data.defaultDesktopPort) {
+                    formData.append("defaultDesktopPort", data.defaultDesktopPort.toString())
+                }
 
-              {requiresInstance && (
-                <Alert>
-                  <Server className="h-4 w-4" />
-                  <AlertDescription>
-                    Instance-based challenge: Players will get a dedicated Docker container
-                  </AlertDescription>
-                </Alert>
-              )}
+                // Add Docker files
+                dockerFiles.forEach((file, index) => {
+                    formData.append(`dockerFiles`, file)
+                })
+            }
 
-              {requiresInstance && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-lg p-6 bg-muted/50">
-                  <FormField
-                    control={form.control}
-                    name="dockerImageName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Docker Image Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ctf/web-challenge" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Docker image that will be run for this challenge
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            await createChallenge(formData)
 
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="defaultSshPort"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Terminal className="h-4 w-4" />
-                            SSH Port
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="30000"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+            toast({
+                title: "Challenge created successfully!",
+                description: "The challenge has been added to the platform.",
+            })
+
+            // Reset form
+            form.reset({
+                title: "",
+                description: "",
+                category: "",
+                difficulty: "easy",
+                points: 100,
+                flag: "",
+                requiresInstance: false,
+                dockerImageName: "",
+                defaultSshPort: 30000,
+                defaultVscodePort: 31000,
+                defaultDesktopPort: 32000,
+            })
+            setDockerFiles([])
+
+        } catch (error) {
+            toast({
+                title: "Error creating challenge",
+                description: error instanceof Error ? error.message : "Failed to create challenge",
+                variant: "destructive",
+            })
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Create New Challenge</CardTitle>
+                <CardDescription>
+                    Add a new CTF challenge. Choose between static download or Docker instance-based challenges.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {/* Basic Information */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                                control={form.control}
+                                name="title"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Title</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Buffer Overflow Challenge" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
-                    <FormField
-                      control={form.control}
-                      name="defaultVscodePort"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Code className="h-4 w-4" />
-                            VSCode Port
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="31000"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            <FormField
+                                control={form.control}
+                                name="category"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Category</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a category" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="binary-exploitation">Binary Exploitation</SelectItem>
+                                                <SelectItem value="web-exploitation">Web Exploitation</SelectItem>
+                                                <SelectItem value="cryptography">Cryptography</SelectItem>
+                                                <SelectItem value="reverse-engineering">Reverse Engineering</SelectItem>
+                                                <SelectItem value="forensics">Forensics</SelectItem>
+                                                <SelectItem value="linux-basics">Linux Basics</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </div>
 
-                    <FormField
-                      control={form.control}
-                      name="defaultDesktopPort"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Monitor className="h-4 w-4" />
-                            Desktop Port
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="32000"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="Describe the challenge and what players need to do..."
+                                            className="min-h-[100px]"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <FormField
+                                control={form.control}
+                                name="difficulty"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Difficulty</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select difficulty" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="easy">Easy</SelectItem>
+                                                <SelectItem value="medium">Medium</SelectItem>
+                                                <SelectItem value="hard">Hard</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Creating Challenge..." : "Create Challenge"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
-  )
+                            <FormField
+                                control={form.control}
+                                name="points"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Points</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                placeholder="100"
+                                                {...field}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="flag"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Flag (Optional for Docker)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="FLAG{example_flag}" {...field} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            For Docker challenges, flag is usually generated automatically
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* Download File (Optional for instance challenges) */}
+                        <FormField
+                            control={form.control}
+                            name="file"
+                            render={({ field: { value, onChange, ...field } }) => (
+                                <FormItem>
+                                    <FormLabel>Download File (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="file"
+                                            accept="*"
+                                            onChange={(e) => onChange(e.target.files?.[0])}
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Upload files for static challenges (zip, pdf, etc.)
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Instance Configuration */}
+                        <div className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="requiresInstance"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base">Docker Instance Required</FormLabel>
+                                            <FormDescription>
+                                                Enable for challenges that need a Docker container with SSH access
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            {requiresInstance && (
+                                <Alert className="bg-blue-50 border-blue-200">
+                                    <Server className="h-4 w-4 text-blue-600" />
+                                    <AlertDescription className="text-blue-700">
+                                        Docker instance enabled. Players will get a dedicated container with SSH access.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
+                            {requiresInstance && (
+                                <div className="space-y-6 border rounded-lg p-6 bg-muted/30">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="dockerImageName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Docker Image Name</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="myctf/pwn-stack0"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormDescription>
+                                                        Optional: Name for the Docker image
+                                                    </FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="space-y-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="defaultSshPort"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="flex items-center gap-2">
+                                                            <Terminal className="h-4 w-4" />
+                                                            SSH Port
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="30000"
+                                                                {...field}
+                                                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={form.control}
+                                                name="defaultVscodePort"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="flex items-center gap-2">
+                                                            <Code className="h-4 w-4" />
+                                                            VSCode Port
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="31000"
+                                                                {...field}
+                                                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={form.control}
+                                                name="defaultDesktopPort"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="flex items-center gap-2">
+                                                            <Monitor className="h-4 w-4" />
+                                                            Desktop Port
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="32000"
+                                                                {...field}
+                                                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Docker Files Upload Section */}
+                                    <div className="space-y-4 pt-4 border-t">
+                                        <div className="space-y-2">
+                                            <FormLabel className="flex items-center gap-2">
+                                                <Fileicon className="h-4 w-4" />
+                                                Docker Challenge Files
+                                            </FormLabel>
+                                            <FormDescription>
+                                                Upload Dockerfile, source code, scripts, and other files needed for the challenge
+                                            </FormDescription>
+                                        </div>
+
+                                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 hover:border-primary/50 transition-colors">
+                                            <div className="flex flex-col items-center justify-center space-y-4">
+                                                <Upload className="h-8 w-8 text-muted-foreground" />
+                                                <div className="text-center">
+                                                    <p className="text-sm font-medium">Drag & drop files here, or click to browse</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        Accepted: Dockerfile, .sh, .c, .cpp, .py, .js, .txt, .md
+                                                    </p>
+                                                </div>
+                                                <Input
+                                                    type="file"
+                                                    multiple
+                                                    accept=".dockerfile,.Dockerfile,.sh,.c,.cpp,.py,.js,.txt,.md,.yml,.yaml,.json,*/*"
+                                                    onChange={(e) => handleDockerFileChange(e.target.files)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Uploaded Files List */}
+                                        {dockerFiles.length > 0 && (
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm font-medium">
+                                                        Uploaded Files ({dockerFiles.length})
+                                                    </p>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setDockerFiles([])}
+                                                        className="text-destructive hover:text-destructive/80"
+                                                    >
+                                                        Clear All
+                                                    </Button>
+                                                </div>
+
+                                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                                    {dockerFiles.map((file, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="flex items-center justify-between p-3 bg-background border rounded-lg hover:bg-accent/50 transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-lg">{getFileIcon(file.name)}</span>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-sm font-medium truncate max-w-[200px]">
+                                                                        {file.name}
+                                                                    </p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Badge variant="outline" className="text-xs">
+                                                                            {formatFileSize(file.size)}
+                                                                        </Badge>
+                                                                        <Badge variant="secondary" className="text-xs">
+                                                                            {file.name.split('.').pop()?.toUpperCase() || "FILE"}
+                                                                        </Badge>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => removeDockerFile(index)}
+                                                                className="h-8 w-8 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <Button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full"
+                            size="lg"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Creating Challenge...
+                                </>
+                            ) : (
+                                "Create Challenge"
+                            )}
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    )
 }

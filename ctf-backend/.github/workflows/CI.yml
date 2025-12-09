@@ -76,7 +76,7 @@ jobs:
 
       - name: Test backend API health
         run: |
-          curl --fail http://localhost:8080/api/health || exit 1
+          curl --fail http://localhost:8081/api/health || exit 1
 
       - name: Shut down containers
         if: always()

@@ -12,8 +12,8 @@ interface ChallengeInstance {
 
 interface ChallengeRunProps {
     challengeId: string;
-    backendUrl: string; // e.g. http://localhost:8080/api
-    domain: string;      // host where containers run
+    backendUrl: string;
+    domain: string;
 }
 
 const ChallengeRun: React.FC<ChallengeRunProps> = ({ challengeId, backendUrl, domain }) => {

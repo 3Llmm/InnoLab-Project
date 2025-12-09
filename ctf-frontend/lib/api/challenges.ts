@@ -20,6 +20,13 @@ export async function getChallenge(id: string): Promise<Challenge> {
     throw error
   }
 }
+export async function getChallengesByCategory(category: string): Promise<Challenge[]> {
+  const allChallenges = await getAllChallenges();
+  return allChallenges.filter(challenge => 
+    challenge.category.toLowerCase().includes(category.toLowerCase()) ||
+    category.toLowerCase().includes(challenge.category.toLowerCase())
+  );
+}
 
 export async function createChallenge(challengeData: CreateChallengeData): Promise<Challenge> {
   try {
