@@ -120,10 +120,45 @@ export async function updateChallenge(id: string, challengeData: Partial<CreateC
 
 export async function deleteChallenge(id: string): Promise<void> {
   try {
-    await apiClient.delete(`/api/challenges/${id}`)
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges/${id}`,
+      {
+        method: 'DELETE',
+        credentials: 'include',
+      }
+    )
+    
+    // Handle 204 No Content - successful deletion
+    if (response.status === 204) {
+      return
+    }
+    
+    // Handle 404 Not Found
+    if (response.status === 404) {
+      throw new Error('Challenge not found. It may have already been deleted.')
+    }
+    
+    // Handle other non-ok responses
+    if (!response.ok) {
+      throw new Error(`Failed to delete challenge: ${response.status}`)
+    }
+    
+    // Try to parse response if there's content
+    const contentLength = response.headers.get('content-length')
+    if (contentLength && contentLength !== '0') {
+      const text = await response.text()
+      if (text) {
+        return JSON.parse(text)
+      }
+    }
+    
+    return
   } catch (error) {
     console.error('Failed to delete challenge:', error)
-    throw error
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error('Failed to delete challenge. Please try again.')
   }
 }
 

@@ -149,6 +149,7 @@ public class ChallengeController {
             System.out.println("  flag: " + (flag != null ? flag : "null"));
             System.out.println("  requiresInstance: " + requiresInstance);
 
+
             Challenge createdChallenge = challengeService.createChallenge(
                     title, description, category, difficulty, points, flag,
                     downloadFile, dockerImageName, defaultSshPort, defaultVscodePort,

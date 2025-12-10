@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Play, Download } from "lucide-react"
+import { Edit, Trash2, Play, Download, Loader2 } from "lucide-react"
 import type { Challenge } from "@/lib/types"
 import EditChallengeModal from "./edit-challenge-modal"
 import { deleteChallenge } from "@/lib/api/challenges"
@@ -19,30 +19,40 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
   const [isDeleteLoading, setIsDeleteLoading] = useState<string | null>(null)
   const { toast } = useToast()
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this challenge?")) {
-      return
-    }
-
-    setIsDeleteLoading(id)
-    try {
-      await deleteChallenge(id)
-      toast({
-        title: "Challenge deleted",
-        description: "The challenge has been successfully deleted.",
-      })
-      // Refresh the page to show updated list
-      window.location.reload()
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete challenge",
-        variant: "destructive",
-      })
-    } finally {
-      setIsDeleteLoading(null)
-    }
+const handleDelete = async (challenge: Challenge) => {
+  if (!confirm(`Are you sure you want to delete "${challenge.title}"? This action cannot be undone.`)) {
+    return
   }
+
+  setIsDeleteLoading(challenge.id)
+  try {
+    await deleteChallenge(challenge.id)
+    
+    toast({
+      title: "🗑️ Challenge Deleted Successfully",
+      description: `"${challenge.title}" has been removed from the platform.`,
+      duration: 4000,
+    })
+    
+    // Instead of reloading, trigger a callback to parent to refresh data
+    // You'd need to pass this as a prop from the parent component
+    // onChallengeDeleted?.(challenge.id)
+    
+    // Or if you must reload, do it after showing toast
+    setTimeout(() => {
+      window.location.reload()
+    }, 2000)
+  } catch (error) {
+    console.error("Delete error:", error)
+    toast({
+      title: "❌ Error Deleting Challenge",
+      description: error instanceof Error ? error.message : "Failed to delete challenge. Please try again.",
+      variant: "destructive",
+      duration: 5000,
+    })
+    setIsDeleteLoading(null)
+  }
+}
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -148,16 +158,21 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingChallenge(challenge)}
+                        disabled={isDeleteLoading === challenge.id}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(challenge.id)}
+                        onClick={() => handleDelete(challenge)}
                         disabled={isDeleteLoading === challenge.id}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {isDeleteLoading === challenge.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </TableCell>
@@ -174,7 +189,14 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
         onClose={() => setEditingChallenge(null)}
         onSave={() => {
           setEditingChallenge(null)
-          window.location.reload() // Refresh to show updated data
+          toast({
+            title: "✅ Challenge Updated Successfully",
+            description: "The challenge has been updated and saved.",
+            duration: 4000,
+          })
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
         }}
       />
     </>
