@@ -107,4 +107,38 @@ public class AuthController {
         }
         return response;
     }
+
+    @GetMapping("/api/auth/me")
+    public Map<String, Object> getUserInfo(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        if (authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName();
+            boolean isAdmin = isAdminUser(username);
+
+            response.put("username", username);
+            response.put("email", username + "@ctf-platform.com"); // Default email format
+            response.put("createdAt", "2024-01-01T00:00:00Z"); // Default creation date
+            response.put("isAdmin", isAdmin);
+            response.put("status", "success");
+        } else {
+            response.put("status", "error");
+            response.put("message", "Not authenticated");
+        }
+        return response;
+    }
+
+    @GetMapping("/api/auth/admin-check")
+    public Map<String, Object> checkAdminStatus(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        if (authentication != null && authentication.isAuthenticated()) {
+            boolean isAdmin = isAdminUser(authentication.getName());
+            response.put("isAdmin", isAdmin);
+            response.put("status", "success");
+        } else {
+            response.put("isAdmin", false);
+            response.put("status", "error");
+            response.put("message", "Not authenticated");
+        }
+        return response;
+    }
 }

@@ -26,10 +26,12 @@ import { hasDownloadableFiles, requiresInstance } from "@/lib/types";
 
 interface ChallengeDetailProps {
     challenge: Challenge;
+    solveStats?: { solveCount: number; solvedByUser: boolean } | null;
+    setSolveStats?: (stats: { solveCount: number; solvedByUser: boolean } | null) => void;
 }
 
 
-export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
+export default function ChallengeDetail({ challenge, solveStats = null, setSolveStats }: ChallengeDetailProps) {
     const [flag, setFlag] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [downloading, setDownloading] = useState(false);
@@ -40,7 +42,7 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
         status: "success" | "error" | "warning" | "info";
         message: string;
     } | null>(null);
-    const [solved, setSolved] = useState<boolean>(!!challenge.solved);
+    const [solved, setSolved] = useState<boolean>(!!challenge.solved || !!solveStats?.solvedByUser);
     const [environment, setEnvironment] = useState<EnvironmentInstance | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<string>("");
 
@@ -205,6 +207,7 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
             const response = await apiClient.post<{
                 status: string;
                 message: string;
+                solveCount?: number;
             }>("/api/flags/submit", {
                 challengeId: challenge.id,
                 flag: flag.trim()
@@ -218,6 +221,34 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
             if (response?.status === "success") {
                 setFlag("");
                 setSolved(true);
+                
+                // Update solve stats if provided in response
+                if (response.solveCount !== undefined) {
+                    // Create new solve stats if none exist, or update existing ones
+                    const updatedSolveStats = solveStats ? {
+                        ...solveStats,
+                        solveCount: response.solveCount
+                    } : {
+                        solveCount: response.solveCount,
+                        solvedByUser: true
+                    };
+                    
+                    // Only update if we have the setter function
+                    if (setSolveStats) {
+                        setSolveStats(updatedSolveStats);
+                    }
+                    
+                    // Show success message with solve count
+                    setResult({
+                        status: "success",
+                        message: `Correct flag! ${response.solveCount} users have solved this challenge.`
+                    });
+                } else {
+                    setResult({
+                        status: "success",
+                        message: "Correct flag!"
+                    });
+                }
             }
         } catch (error: any) {
             setResult({
@@ -348,6 +379,12 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
                             {challenge.points}
                         </div>
                         <div className="text-sm text-muted-foreground">points</div>
+                        {solveStats && (
+                            <div className="mt-2 text-sm">
+                                <span className="text-muted-foreground">Solved by </span>
+                                <span className="font-semibold">{solveStats.solveCount} users</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -657,7 +694,7 @@ export default function ChallengeDetail({ challenge }: ChallengeDetailProps) {
                     <div className="p-4 bg-green-500/10 border border-green-500 rounded-lg flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-green-500" />
                         <div>
-                            <p className="text-green-500 font-semibold">Challenge Solved! 🎉</p>
+                            <p className="text-green-500 font-semibold">Challenge Solved!</p>
                             <p className="text-sm text-green-600/80 mt-1">
                                 You earned {challenge.points} points for solving this challenge.
                             </p>

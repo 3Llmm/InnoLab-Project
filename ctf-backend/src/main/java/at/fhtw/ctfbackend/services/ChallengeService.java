@@ -135,11 +135,11 @@ public class ChallengeService {
         entity.setRequiresInstance(requiresInstance != null ? requiresInstance : false);
 
         try {
-            ChallengeEntity savedEntity = repo.saveAndFlush(entity);
-            System.out.println("✅ Challenge created: " + challengeId);
+            ChallengeEntity savedEntity = repo.saveAndFlush(entity);    
+            System.out.println("Challenge created: " + challengeId);
             return toModel(savedEntity);
         } catch (Exception e) {
-            System.err.println("❌ Failed to save challenge: " + e.getMessage());
+            System.err.println("Failed to save challenge: " + e.getMessage());
             e.printStackTrace();
             throw e; // Re-throw the exception
         }
@@ -203,7 +203,7 @@ public class ChallengeService {
         }
 
         ChallengeEntity updatedEntity = repo.save(existingEntity);
-        System.out.println("✅ Challenge updated: " + id);
+        System.out.println("Challenge updated: " + id);
         return toModel(updatedEntity);
     }
 
@@ -223,7 +223,7 @@ public class ChallengeService {
         }
 
         repo.deleteById(id);
-        System.out.println("✅ Challenge deleted: " + id);
+        System.out.println("Challenge deleted: " + id);
     }
 
     /**

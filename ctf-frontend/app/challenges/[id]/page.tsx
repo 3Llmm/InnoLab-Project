@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { getChallenge } from '@/lib/api/challenges'
+import { getChallengeStatistics, checkIfSolved } from '@/lib/api/solves'
 import ChallengeDetail from '@/components/challenge-detail'
 import type { Challenge } from '@/lib/types'
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
@@ -16,6 +17,7 @@ export default function ChallengePage() {
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [solveStats, setSolveStats] = useState<{ solveCount: number; solvedByUser: boolean } | null>(null)
 
   const challengeId = params.id as string // ← Get ID directly from params
 
@@ -25,15 +27,102 @@ export default function ChallengePage() {
       router.push('/login')
     }
   }, [auth.isAuthenticated, authLoading, router])
+    // Fetch challenge and solve statistics
+    useEffect(() => {
+        if (auth.isAuthenticated && challengeId) {
+            setLoading(true)
 
-  // Fetch challenge
+            Promise.all([
+                getChallenge(challengeId),
+                getChallengeStatistics(challengeId),
+                checkIfSolved(challengeId)
+            ])
+                .then(([challengeData, statsData, solvedData]) => {
+                    console.log('📊 Stats Data:', statsData) // ADD THIS
+                    setChallenge(challengeData)
+
+                    // Handle stats data safely with proper error checking
+                    let stats = null
+                    let solved = false
+
+                    if (statsData && statsData.success && statsData.data) {
+                        stats = statsData.data
+                        console.log('✅ Stats extracted:', stats) // ADD THIS
+                    } else if (statsData && !statsData.success) {
+                        console.warn('Challenge statistics failed:', statsData.error)
+                    }
+
+                    if (solvedData && solvedData.success && solvedData.data) {
+                        solved = solvedData.data.solved || false
+                    } else if (solvedData && !solvedData.success) {
+                        console.warn('Solve check failed:', solvedData.error)
+                    }
+
+                    const newSolveStats = {
+                        solveCount: stats?.solveCount || 0,
+                        solvedByUser: solved
+                    }
+                    console.log('📦 Setting solve stats:', newSolveStats) // ADD THIS
+
+                    setSolveStats(newSolveStats)
+                })
+                .catch((err) => {
+                    console.error('Error fetching challenge data:', err)
+                    setError(err.message)
+                    setSolveStats({
+                        solveCount: 0,
+                        solvedByUser: false
+                    })
+                })
+                .finally(() => setLoading(false))
+        }
+    }, [auth.isAuthenticated, challengeId])
+
+
+  // Fetch challenge and solve statistics
   useEffect(() => {
     if (auth.isAuthenticated && challengeId) {
       setLoading(true)
-      getChallenge(challengeId)
-        .then(setChallenge)
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false))
+      
+      Promise.all([
+        getChallenge(challengeId),
+        getChallengeStatistics(challengeId),
+        checkIfSolved(challengeId)
+      ])
+      .then(([challengeData, statsData, solvedData]) => {
+        setChallenge(challengeData)
+        
+        // Handle stats data safely with proper error checking
+        let stats = null
+        let solved = false
+        
+        if (statsData && statsData.success && statsData.data) {
+          stats = statsData.data
+        } else if (statsData && !statsData.success) {
+          console.warn('Challenge statistics failed:', statsData.error)
+        }
+        
+        if (solvedData && solvedData.success && solvedData.data) {
+          solved = solvedData.data.solved || false
+        } else if (solvedData && !solvedData.success) {
+          console.warn('Solve check failed:', solvedData.error)
+        }
+        
+        setSolveStats({
+          solveCount: stats?.solveCount || 0,
+          solvedByUser: solved
+        })
+      })
+      .catch((err) => {
+        console.error('Error fetching challenge data:', err)
+        setError(err.message)
+        // Set default solve stats on error
+        setSolveStats({
+          solveCount: 0,
+          solvedByUser: false
+        })
+      })
+      .finally(() => setLoading(false))
     }
   }, [auth.isAuthenticated, challengeId]) 
 
@@ -97,7 +186,7 @@ export default function ChallengePage() {
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <ChallengeDetail challenge={challenge} />
+        <ChallengeDetail challenge={challenge} solveStats={solveStats} setSolveStats={setSolveStats} />
       </div>
     </div>
   )
