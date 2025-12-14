@@ -59,6 +59,12 @@ public class SecurityConfig {
         .requestMatchers("/api/auth/**").permitAll()
         .requestMatchers("/ws/**").permitAll()
         .requestMatchers("/api/categories").permitAll()  // Categories are public (theory content)
+        .requestMatchers("/api/solves/challenge/*/stats").permitAll()  // Challenge stats are public
+        .requestMatchers("/api/solves/challenge/*/count").permitAll()  // Challenge solve counts are public
+        .requestMatchers("/api/solves/recent").permitAll()  // Recent solves are public
+        .requestMatchers("/api/solves/top-solvers").permitAll()  // Top solvers are public
+        .requestMatchers("/api/solves/most-solved").permitAll()  // Most solved challenges are public
+        .requestMatchers("/api/solves/total-count").permitAll()  // Total solve count is public
 
         // Protected (token required)
         .requestMatchers("/api/challenges/**").authenticated()
@@ -66,6 +72,9 @@ public class SecurityConfig {
         .requestMatchers("/api/flags/**").authenticated()
         .requestMatchers("/api/user/me").authenticated()
         .requestMatchers("/api/files/**").authenticated()
+        .requestMatchers("/api/solves/me").authenticated()  // User's own solves require auth
+        .requestMatchers("/api/solves/check/**").authenticated()  // Checking if user solved requires auth
+        .requestMatchers("/api/solves/me/**").authenticated()  // User's own stats require auth
 
         .anyRequest().authenticated()
 )

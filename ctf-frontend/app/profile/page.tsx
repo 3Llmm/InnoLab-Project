@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { Trophy, Award, Zap, Clock } from "lucide-react"
-import { getMockProfile } from "@/lib/api/profile"
+import { getUserProfile } from "@/lib/api/profile"
 
-export default function ProfilePage() {
-  const profile = getMockProfile()
+export default async function ProfilePage() {
+  const profile = await getUserProfile()
 
   return (
     <div className="min-h-screen py-8 px-4">

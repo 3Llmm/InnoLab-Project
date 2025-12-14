@@ -60,4 +60,5 @@ public class ChallengeEntity {
     public void setDownload(byte[] download) {
         this.downloadZip = download;
     }
+
 }
