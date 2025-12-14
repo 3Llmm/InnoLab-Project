@@ -35,3 +35,5 @@ build/
 .env
 
 src/main/resources/files/file-102.zip
+
+.DS_Store

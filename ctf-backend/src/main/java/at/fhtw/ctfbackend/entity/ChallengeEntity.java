@@ -34,6 +34,10 @@ public class ChallengeEntity {
     // Store the actual folder path on disk
     private String challengeFolderPath;
 
+    // Store hints as JSON array
+    @Column(columnDefinition = "TEXT")
+    private String hintsJson;
+
     protected ChallengeEntity() { }
 
     public ChallengeEntity(String id, String title, String description,

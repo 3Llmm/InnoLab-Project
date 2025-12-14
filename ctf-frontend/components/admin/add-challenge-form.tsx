@@ -40,6 +40,9 @@ const challengeFormSchema = z.object({
     // Instance fields
     requiresInstance: z.boolean().default(false),
     dockerImageName: z.string().optional(),
+    
+    // Hints
+    hints: z.array(z.string()).optional(),
 })
 
 type ChallengeFormValues = z.infer<typeof challengeFormSchema>
@@ -63,6 +66,8 @@ const ACCEPTED_DOCKER_FILES = [
 export default function AddChallengeForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [dockerFiles, setDockerFiles] = useState<File[]>([])
+    const [hints, setHints] = useState<string[]>([])
+    const [newHint, setNewHint] = useState("")
     const [showSuccessAlert, setShowSuccessAlert] = useState(false)
     const { toast } = useToast()
 
@@ -168,6 +173,11 @@ export default function AddChallengeForm() {
                     formData.append(`dockerFiles`, file)
                 })
             }
+
+            // Add hints
+            hints.forEach((hint, index) => {
+                formData.append(`hints`, hint)
+            })
 
             await createChallenge(formData)
 
@@ -526,6 +536,59 @@ export default function AddChallengeForm() {
                                                     </div>
                                                 </div>
                                             )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Hints Section */}
+                            <div className="space-y-4">
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="text"
+                                        placeholder="Add a hint..."
+                                        value={newHint}
+                                        onChange={(e) => setNewHint(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter' && newHint.trim()) {
+                                                setHints([...hints, newHint.trim()])
+                                                setNewHint("")
+                                            }
+                                        }}
+                                        className="flex-1"
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            if (newHint.trim()) {
+                                                setHints([...hints, newHint.trim()])
+                                                setNewHint("")
+                                            }
+                                        }}
+                                        disabled={!newHint.trim()}
+                                    >
+                                        Add Hint
+                                    </Button>
+                                </div>
+
+                                {hints.length > 0 && (
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-muted-foreground">Hints ({hints.length}):</p>
+                                        <div className="space-y-2">
+                                            {hints.map((hint, index) => (
+                                                <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                                                    <span className="text-sm">{hint}</span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setHints(hints.filter((_, i) => i !== index))}
+                                                        className="h-6 w-6 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
