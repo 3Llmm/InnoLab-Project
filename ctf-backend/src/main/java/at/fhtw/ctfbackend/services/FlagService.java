@@ -15,38 +15,46 @@ public class FlagService {
     private final ChallengeInstanceRepository instanceRepo;
     private final EnvironmentService envService;
     private final ChallengeRepository challengeRepo;
+    private final SolveService solveService;
 
-    public FlagService(ChallengeInstanceRepository instanceRepo, EnvironmentService envService, ChallengeRepository challengeRepo) {
+    public FlagService(ChallengeInstanceRepository instanceRepo, EnvironmentService envService, ChallengeRepository challengeRepo, SolveService solveService) {
         this.instanceRepo = instanceRepo;
         this.envService = envService;
         this.challengeRepo = challengeRepo;
+        this.solveService = solveService;
     }
 
     public boolean validateFlag(String username, String challengeId, String submittedFlag) {
-        System.out.println("Validating flag for user: " + username + ", challenge: " + challengeId);
+        System.out.println("🔍 Validating flag for user: " + username + ", challenge: " + challengeId);
 
-        // 1. First, get the challenge
-        ChallengeEntity challenge = challengeRepo.findById(challengeId)
-                .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
+        try {
+            // 1. First, get the challenge
+            ChallengeEntity challenge = challengeRepo.findById(challengeId)
+                    .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
 
-        // 2. Determine if instance is needed based on Docker image presence
-        boolean requiresInstance = challenge.getDockerImageName() != null &&
-                !challenge.getDockerImageName().isEmpty();
+            // 2. Determine if instance is needed based on Docker image presence
+            boolean requiresInstance = challenge.getDockerImageName() != null &&
+                    !challenge.getDockerImageName().isEmpty();
 
-        System.out.println("Challenge " + challengeId + " requires instance: " + requiresInstance);
+            System.out.println("⚙️  Challenge " + challengeId + " requires instance: " + requiresInstance);
 
-        boolean isValid;
+            boolean isValid;
 
-        // 3. Route to appropriate validation
-        if (requiresInstance) {
-            isValid = validateDynamicFlag(username, challengeId, submittedFlag);
-            System.out.println("Dynamic validation result: " + isValid);
-        } else {
-            isValid = validateStaticFlag(challenge, submittedFlag);
-            System.out.println("Static validation result: " + isValid);
+            // 3. Route to appropriate validation
+            if (requiresInstance) {
+                isValid = validateDynamicFlag(username, challengeId, submittedFlag);
+                System.out.println("🔐 Dynamic validation result: " + isValid);
+            } else {
+                isValid = validateStaticFlag(challenge, submittedFlag);
+                System.out.println("🔐 Static validation result: " + isValid);
+            }
+
+            return isValid;
+        } catch (Exception e) {
+            System.err.println("❌ Error during flag validation: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
-
-        return isValid;
     }
 
     private boolean validateDynamicFlag(String username, String challengeId, String submittedFlag) {
@@ -92,22 +100,78 @@ public class FlagService {
     private final Map<String, Set<String>> solvedByUser = new ConcurrentHashMap<>();
 
     public boolean recordSolve(String username, String challengeId) {
-        Set<String> solved = solvedByUser.computeIfAbsent(username,
-                __ -> ConcurrentHashMap.newKeySet());
-        boolean isNewSolve = solved.add(challengeId);
+        System.out.println("📝 Attempting to record solve for user: " + username + ", challenge: " + challengeId);
 
-        System.out.println(
-                "Record solve - User: " + username +
-                        ", Challenge: " + challengeId +
-                        ", New solve: " + isNewSolve
-        );
+        try {
+            // First check in-memory cache
+            Set<String> solved = solvedByUser.computeIfAbsent(username,
+                    __ -> ConcurrentHashMap.newKeySet());
+            boolean isNewSolve = solved.add(challengeId);
 
-        return isNewSolve;
+            System.out.println("📊 Cache check - User already solved: " + !isNewSolve);
+
+            // Also persist to database using SolveService
+            if (isNewSolve) {
+                System.out.println("🆕 This is a new solve, recording in database...");
+                
+                ChallengeEntity challenge = challengeRepo.findById(challengeId)
+                        .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
+                
+                int pointsEarned = challenge.getPoints() != null ? challenge.getPoints() : 0;
+                System.out.println("💰 Points to award: " + pointsEarned);
+                
+                boolean dbSuccess = solveService.recordSolve(username, challengeId, pointsEarned);
+                System.out.println("🗃️  Database record result: " + dbSuccess);
+                
+                if (dbSuccess) {
+                    System.out.println("✅ Solve recorded successfully for user: " + username + ", challenge: " + challengeId);
+                } else {
+                    System.err.println("❌ Failed to record solve in database");
+                    // Remove from cache if database failed
+                    solved.remove(challengeId);
+                    isNewSolve = false;
+                }
+            } else {
+                System.out.println("ℹ️  User already solved this challenge, skipping database record");
+            }
+
+            System.out.println(
+                    "📋 Final result - User: " + username +
+                            ", Challenge: " + challengeId +
+                            ", New solve: " + isNewSolve
+            );
+
+            return isNewSolve;
+        } catch (Exception e) {
+            System.err.println("💥 Critical error recording solve: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public Set<String> getSolvedChallenges(String username) {
         Set<String> solved = solvedByUser.getOrDefault(username, Collections.emptySet());
         System.out.println("Retrieved solved challenges for " + username + ": " + solved.size() + " challenges");
         return Collections.unmodifiableSet(solved);
+    }
+
+
+    /**
+     * Check if a user has solved a specific challenge (using database)
+     * @param username The username to check
+     * @param challengeId The challenge ID to check
+     * @return true if the user has solved the challenge, false otherwise
+     */
+    public boolean hasUserSolvedChallenge(String username, String challengeId) {
+        return solveService.hasUserSolvedChallenge(username, challengeId);
+    }
+
+    /**
+     * Get the count of users who solved a specific challenge
+     * @param challengeId The challenge ID to query
+     * @return Number of users who solved the challenge
+     */
+    public long getSolveCountForChallenge(String challengeId) {
+        return solveService.getSolveCountForChallenge(challengeId);
     }
 }
