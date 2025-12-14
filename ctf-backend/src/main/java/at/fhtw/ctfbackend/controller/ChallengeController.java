@@ -134,7 +134,8 @@ public class ChallengeController {
             @RequestParam(required = false) MultipartFile downloadFile,
             @RequestParam(required = false) String dockerImageName,
             @RequestParam(required = false, defaultValue = "false") Boolean requiresInstance,
-            @RequestParam(required = false) MultipartFile[] dockerFiles) {
+            @RequestParam(required = false) MultipartFile[] dockerFiles,
+            @RequestParam(required = false) String[] hints) {
 
         try {
             System.out.println("Creating challenge with parameters:");
@@ -149,7 +150,7 @@ public class ChallengeController {
 
             Challenge createdChallenge = challengeService.createChallenge(
                     title, description, category, difficulty, points, flag,
-                    downloadFile, dockerImageName, requiresInstance, dockerFiles
+                    downloadFile, dockerImageName, requiresInstance, dockerFiles, hints
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
@@ -178,12 +179,13 @@ public class ChallengeController {
             @RequestParam(required = false) MultipartFile downloadFile,
             @RequestParam(required = false) String dockerImageName,
             @RequestParam(required = false) Boolean requiresInstance,
-            @RequestParam(required = false) MultipartFile[] dockerFiles) {
+            @RequestParam(required = false) MultipartFile[] dockerFiles,
+            @RequestParam(required = false) String[] hints) {
 
         try {
             Challenge updatedChallenge = challengeService.updateChallenge(
                     id, title, description, category, difficulty, points, flag,
-                    downloadFile, dockerImageName, requiresInstance, dockerFiles
+                    downloadFile, dockerImageName, requiresInstance, dockerFiles, hints
             );
 
             return ResponseEntity.ok(updatedChallenge);

@@ -19,6 +19,7 @@ public class Challenge {
     private Boolean solved = false;
     private Boolean requiresInstance = false;
     private String dockerImageName;
+    private String[] hints;
 
     // New fields for file storage
     private String challengeFolderPath;
@@ -61,7 +62,8 @@ public class Challenge {
                      String downloadUrl, String originalFilename,
                      Boolean requiresInstance, String dockerImageName,
                      String challengeFolderPath,
-                     String dockerFilesJson) {
+                     String dockerFilesJson,
+                     String[] hints) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -74,5 +76,6 @@ public class Challenge {
         this.dockerImageName = dockerImageName;
         this.challengeFolderPath = challengeFolderPath;
         this.dockerFilesJson = dockerFilesJson;
+        this.hints = hints;
     }
 }

@@ -624,6 +624,64 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                     </div>
                 )}
 
+
+                {/* Hints Section */}
+                {challenge.hints && challenge.hints.length > 0 && (
+                    <div className="mb-8">
+                        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <Info className="w-5 h-5" />
+                            Hints ({challenge.hints.length})
+                        </h2>
+
+                        <div className="space-y-4">
+                            {challenge.hints.map((hint, index) => (
+                                <details key={index} className="group">
+                                    <summary className="list-none cursor-pointer">
+                                        <div className="
+                            p-4
+                            bg-primary/5
+                            border border-primary/20
+                            hover:border-primary
+                            rounded-lg
+                            rounded-b-none
+                            transition-all
+                            hover:bg-primary/10
+                        ">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+
+                                                    <span className="text-sm text-primary/80">
+                                        Click to reveal hint
+                                    </span>
+                                                </div>
+                                                <div className="text-primary transition-transform group-open:rotate-180">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </summary>
+
+                                    <div className="
+                        p-4
+                        bg-primary/10
+                        border border-primary/20
+                        border-t-0
+                        rounded-b-lg
+                        rounded-t-none
+                    ">
+                                        <p className="text-sm text-primary/90">
+                                            {hint}
+                                        </p>
+                                    </div>
+                                </details>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+
                 {/* Info message if no download or environment */}
                 {!hasDownload && !showEnvironmentSection && (
                     <div className="mb-8 p-4 bg-blue-500/10 border border-blue-500 rounded-lg">

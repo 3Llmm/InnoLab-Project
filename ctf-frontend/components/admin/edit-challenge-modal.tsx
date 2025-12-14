@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Terminal, Monitor, Code, Server } from "lucide-react"
+import { Terminal, Monitor, Code, Server, X } from "lucide-react"
 import type { Challenge } from "@/lib/types"
 import { updateChallenge } from "@/lib/api/challenges"
 import { useToast } from "@/hooks/use-toast"
@@ -30,6 +30,9 @@ const challengeFormSchema = z.object({
   // Instance fields
   requiresInstance: z.boolean().default(false),
   dockerImageName: z.string().optional(),
+  
+  // Hints
+  hints: z.array(z.string()).optional(),
 })
 
 type ChallengeFormValues = z.infer<typeof challengeFormSchema>
@@ -43,6 +46,8 @@ interface EditChallengeModalProps {
 
 export default function EditChallengeModal({ challenge, isOpen, onClose, onSave }: EditChallengeModalProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [hints, setHints] = useState<string[]>(challenge?.hints || [])
+  const [newHint, setNewHint] = useState("")
   const { toast } = useToast()
 
   const form = useForm<ChallengeFormValues>({
@@ -95,6 +100,7 @@ export default function EditChallengeModal({ challenge, isOpen, onClose, onSave 
         file: data.file,
         requiresInstance: data.requiresInstance,
         dockerImageName: data.requiresInstance ? data.dockerImageName : undefined,
+        hints: hints.length > 0 ? hints : undefined,
       })
 
       toast({
@@ -317,6 +323,59 @@ export default function EditChallengeModal({ challenge, isOpen, onClose, onSave 
 
                   <div className="space-y-4">
                     {/* Port fields removed - allocation happens instantly on server */}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hints Section */}
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Add a hint..."
+                  value={newHint}
+                  onChange={(e) => setNewHint(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && newHint.trim()) {
+                      setHints([...hints, newHint.trim()])
+                      setNewHint("")
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (newHint.trim()) {
+                      setHints([...hints, newHint.trim()])
+                      setNewHint("")
+                    }
+                  }}
+                  disabled={!newHint.trim()}
+                >
+                  Add Hint
+                </Button>
+              </div>
+
+              {hints.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Hints ({hints.length}):</p>
+                  <div className="space-y-2">
+                    {hints.map((hint, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span className="text-sm">{hint}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setHints(hints.filter((_, i) => i !== index))}
+                          className="h-6 w-6 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

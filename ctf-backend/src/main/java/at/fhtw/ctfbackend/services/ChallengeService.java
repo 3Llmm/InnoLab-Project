@@ -52,7 +52,8 @@ public class ChallengeService {
                                      MultipartFile downloadFile,
                                      String dockerImageName,
                                      Boolean requiresInstance,
-                                     MultipartFile[] dockerFiles) throws IOException {
+                                     MultipartFile[] dockerFiles,
+                                     String[] hints) throws IOException {
 
         String challengeId = title.toLowerCase()
                 .replaceAll("[^a-z0-9]", "-")
@@ -128,6 +129,13 @@ public class ChallengeService {
         entity.setDockerImageName(dockerImageName);
         entity.setRequiresInstance(requiresInstance != null ? requiresInstance : false);
 
+        // Set hints
+        if (hints != null && hints.length > 0) {
+            entity.setHintsJson(objectMapper.writeValueAsString(hints));
+        } else {
+            entity.setHintsJson("[]");
+        }
+
         try {
             ChallengeEntity savedEntity = repo.saveAndFlush(entity);
             System.out.println("Challenge created: " + challengeId);
@@ -148,7 +156,8 @@ public class ChallengeService {
                                      MultipartFile downloadFile,
                                      String dockerImageName,
                                      Boolean requiresInstance,
-                                     MultipartFile[] dockerFiles) throws IOException {
+                                     MultipartFile[] dockerFiles,
+                                     String[] hints) throws IOException {
 
         ChallengeEntity existingEntity = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Challenge not found: " + id));
@@ -188,6 +197,13 @@ public class ChallengeService {
                 filesMap.put(fileName, getFileType(fileName));
             }
             existingEntity.setDockerFilesJson(objectMapper.writeValueAsString(filesMap));
+        }
+
+        // Handle hints update
+        if (hints != null && hints.length > 0) {
+            existingEntity.setHintsJson(objectMapper.writeValueAsString(hints));
+        } else {
+            existingEntity.setHintsJson("[]");
         }
 
         ChallengeEntity updatedEntity = repo.save(existingEntity);
@@ -332,6 +348,19 @@ public class ChallengeService {
         // Set file information
         challenge.setChallengeFolderPath(e.getChallengeFolderPath());
         challenge.setDockerFilesJson(e.getDockerFilesJson());
+
+        // Set hints
+        if (e.getHintsJson() != null && !e.getHintsJson().isEmpty()) {
+            try {
+                String[] hints = objectMapper.readValue(e.getHintsJson(), String[].class);
+                challenge.setHints(hints);
+            } catch (IOException ex) {
+                // If JSON parsing fails, set empty array
+                challenge.setHints(new String[0]);
+            }
+        } else {
+            challenge.setHints(new String[0]);
+        }
 
         return challenge;
     }
