@@ -51,9 +51,6 @@ public class ChallengeService {
                                      String difficulty, Integer points, String flag,
                                      MultipartFile downloadFile,
                                      String dockerImageName,
-                                     Integer defaultSshPort,
-                                     Integer defaultVscodePort,
-                                     Integer defaultDesktopPort,
                                      Boolean requiresInstance,
                                      MultipartFile[] dockerFiles) throws IOException {
 
@@ -129,17 +126,14 @@ public class ChallengeService {
 
         // Set other optional fields
         entity.setDockerImageName(dockerImageName);
-        entity.setDefaultSshPort(defaultSshPort);
-        entity.setDefaultVscodePort(defaultVscodePort);
-        entity.setDefaultDesktopPort(defaultDesktopPort);
         entity.setRequiresInstance(requiresInstance != null ? requiresInstance : false);
 
         try {
             ChallengeEntity savedEntity = repo.saveAndFlush(entity);
-            System.out.println("✅ Challenge created: " + challengeId);
+            System.out.println("Challenge created: " + challengeId);
             return toModel(savedEntity);
         } catch (Exception e) {
-            System.err.println("❌ Failed to save challenge: " + e.getMessage());
+            System.err.println("Failed to save challenge: " + e.getMessage());
             e.printStackTrace();
             throw e; // Re-throw the exception
         }
@@ -153,9 +147,6 @@ public class ChallengeService {
                                      String difficulty, Integer points, String flag,
                                      MultipartFile downloadFile,
                                      String dockerImageName,
-                                     Integer defaultSshPort,
-                                     Integer defaultVscodePort,
-                                     Integer defaultDesktopPort,
                                      Boolean requiresInstance,
                                      MultipartFile[] dockerFiles) throws IOException {
 
@@ -170,9 +161,6 @@ public class ChallengeService {
         if (points != null) existingEntity.setPoints(points);
         if (flag != null) existingEntity.setFlag(flag);
         if (dockerImageName != null) existingEntity.setDockerImageName(dockerImageName);
-        if (defaultSshPort != null) existingEntity.setDefaultSshPort(defaultSshPort);
-        if (defaultVscodePort != null) existingEntity.setDefaultVscodePort(defaultVscodePort);
-        if (defaultDesktopPort != null) existingEntity.setDefaultDesktopPort(defaultDesktopPort);
         if (requiresInstance != null) existingEntity.setRequiresInstance(requiresInstance);
 
         // Handle download file update
@@ -203,7 +191,7 @@ public class ChallengeService {
         }
 
         ChallengeEntity updatedEntity = repo.save(existingEntity);
-        System.out.println("✅ Challenge updated: " + id);
+        System.out.println("Challenge updated: " + id);
         return toModel(updatedEntity);
     }
 
@@ -223,7 +211,7 @@ public class ChallengeService {
         }
 
         repo.deleteById(id);
-        System.out.println("✅ Challenge deleted: " + id);
+        System.out.println("Challenge deleted: " + id);
     }
 
     /**
@@ -340,9 +328,6 @@ public class ChallengeService {
         // Set additional fields
         challenge.setRequiresInstance(e.isRequiresInstance());
         challenge.setDockerImageName(e.getDockerImageName());
-        challenge.setDefaultSshPort(e.getDefaultSshPort());
-        challenge.setDefaultVscodePort(e.getDefaultVscodePort());
-        challenge.setDefaultDesktopPort(e.getDefaultDesktopPort());
 
         // Set file information
         challenge.setChallengeFolderPath(e.getChallengeFolderPath());

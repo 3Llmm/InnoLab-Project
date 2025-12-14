@@ -45,15 +45,6 @@ export async function createChallenge(challengeData: CreateChallengeData): Promi
     if (challengeData.dockerImageName) {
       formData.append('dockerImageName', challengeData.dockerImageName)
     }
-    if (challengeData.defaultSshPort) {
-      formData.append('defaultSshPort', challengeData.defaultSshPort.toString())
-    }
-    if (challengeData.defaultVscodePort) {
-      formData.append('defaultVscodePort', challengeData.defaultVscodePort.toString())
-    }
-    if (challengeData.defaultDesktopPort) {
-      formData.append('defaultDesktopPort', challengeData.defaultDesktopPort.toString())
-    }
     if (challengeData.requiresInstance !== undefined) {
       formData.append('requiresInstance', challengeData.requiresInstance.toString())
     }
@@ -91,9 +82,6 @@ export async function updateChallenge(id: string, challengeData: Partial<CreateC
     if (challengeData.flag) formData.append('flag', challengeData.flag)
     if (challengeData.file) formData.append('file', challengeData.file)
     if (challengeData.dockerImageName) formData.append('dockerImageName', challengeData.dockerImageName)
-    if (challengeData.defaultSshPort) formData.append('defaultSshPort', challengeData.defaultSshPort.toString())
-    if (challengeData.defaultVscodePort) formData.append('defaultVscodePort', challengeData.defaultVscodePort.toString())
-    if (challengeData.defaultDesktopPort) formData.append('defaultDesktopPort', challengeData.defaultDesktopPort.toString())
     if (challengeData.requiresInstance !== undefined) {
       formData.append('requiresInstance', challengeData.requiresInstance.toString())
     }

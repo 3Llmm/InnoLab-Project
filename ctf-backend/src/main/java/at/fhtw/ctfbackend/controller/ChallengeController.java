@@ -133,9 +133,6 @@ public class ChallengeController {
             @RequestParam(required = false) String flag,
             @RequestParam(required = false) MultipartFile downloadFile,
             @RequestParam(required = false) String dockerImageName,
-            @RequestParam(required = false) Integer defaultSshPort,
-            @RequestParam(required = false) Integer defaultVscodePort,
-            @RequestParam(required = false) Integer defaultDesktopPort,
             @RequestParam(required = false, defaultValue = "false") Boolean requiresInstance,
             @RequestParam(required = false) MultipartFile[] dockerFiles) {
 
@@ -152,8 +149,7 @@ public class ChallengeController {
 
             Challenge createdChallenge = challengeService.createChallenge(
                     title, description, category, difficulty, points, flag,
-                    downloadFile, dockerImageName, defaultSshPort, defaultVscodePort,
-                    defaultDesktopPort, requiresInstance, dockerFiles
+                    downloadFile, dockerImageName, requiresInstance, dockerFiles
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
@@ -181,17 +177,13 @@ public class ChallengeController {
             @RequestParam(required = false) String flag,
             @RequestParam(required = false) MultipartFile downloadFile,
             @RequestParam(required = false) String dockerImageName,
-            @RequestParam(required = false) Integer defaultSshPort,
-            @RequestParam(required = false) Integer defaultVscodePort,
-            @RequestParam(required = false) Integer defaultDesktopPort,
             @RequestParam(required = false) Boolean requiresInstance,
             @RequestParam(required = false) MultipartFile[] dockerFiles) {
 
         try {
             Challenge updatedChallenge = challengeService.updateChallenge(
                     id, title, description, category, difficulty, points, flag,
-                    downloadFile, dockerImageName, defaultSshPort, defaultVscodePort,
-                    defaultDesktopPort, requiresInstance, dockerFiles
+                    downloadFile, dockerImageName, requiresInstance, dockerFiles
             );
 
             return ResponseEntity.ok(updatedChallenge);

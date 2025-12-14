@@ -30,9 +30,6 @@ const challengeFormSchema = z.object({
   // Instance fields
   requiresInstance: z.boolean().default(false),
   dockerImageName: z.string().optional(),
-  defaultSshPort: z.number().min(1024).max(65535).optional(),
-  defaultVscodePort: z.number().min(1024).max(65535).optional(),
-  defaultDesktopPort: z.number().min(1024).max(65535).optional(),
 })
 
 type ChallengeFormValues = z.infer<typeof challengeFormSchema>
@@ -59,9 +56,6 @@ export default function EditChallengeModal({ challenge, isOpen, onClose, onSave 
       flag: "",
       requiresInstance: false,
       dockerImageName: "",
-      defaultSshPort: 30000,
-      defaultVscodePort: 31000,
-      defaultDesktopPort: 32000,
     },
   })
 
@@ -101,9 +95,6 @@ export default function EditChallengeModal({ challenge, isOpen, onClose, onSave 
         file: data.file,
         requiresInstance: data.requiresInstance,
         dockerImageName: data.requiresInstance ? data.dockerImageName : undefined,
-        defaultSshPort: data.requiresInstance ? data.defaultSshPort : undefined,
-        defaultVscodePort: data.requiresInstance ? data.defaultVscodePort : undefined,
-        defaultDesktopPort: data.requiresInstance ? data.defaultDesktopPort : undefined,
       })
 
       toast({
@@ -325,71 +316,7 @@ export default function EditChallengeModal({ challenge, isOpen, onClose, onSave 
                   />
 
                   <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="defaultSshPort"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Terminal className="h-4 w-4" />
-                            SSH Port
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="30000"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="defaultVscodePort"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Code className="h-4 w-4" />
-                            VSCode Port
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="31000"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="defaultDesktopPort"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Monitor className="h-4 w-4" />
-                            Desktop Port
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="32000"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Port fields removed - allocation happens instantly on server */}
                   </div>
                 </div>
               )}

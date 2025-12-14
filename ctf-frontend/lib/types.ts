@@ -29,9 +29,6 @@ export interface Challenge {
 
     // NEW FIELDS for instance-based challenges (from backend)
     dockerImageName?: string
-    defaultSshPort?: number
-    defaultVscodePort?: number
-    defaultDesktopPort?: number
     requiresInstance?: boolean
     // Optional: instance ID if user has a running instance
     instanceId?: string
@@ -105,9 +102,6 @@ export interface CreateChallengeData {
     flag: string
     file: File
     dockerImageName?: string
-    defaultSshPort?: number
-    defaultVscodePort?: number
-    defaultDesktopPort?: number
     requiresInstance?: boolean
 }
 

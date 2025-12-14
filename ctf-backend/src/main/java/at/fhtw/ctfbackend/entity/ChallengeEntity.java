@@ -26,9 +26,6 @@ public class ChallengeEntity {
     private String flag;
 
     private String dockerImageName;
-    private Integer defaultSshPort;
-    private Integer defaultVscodePort;
-    private Integer defaultDesktopPort;
 
     // Store file metadata as JSON
     @Column(columnDefinition = "TEXT")

@@ -19,9 +19,6 @@ public class Challenge {
     private Boolean solved = false;
     private Boolean requiresInstance = false;
     private String dockerImageName;
-    private Integer defaultSshPort;
-    private Integer defaultVscodePort;
-    private Integer defaultDesktopPort;
 
     // New fields for file storage
     private String challengeFolderPath;
@@ -45,9 +42,7 @@ public class Challenge {
     public Challenge(String id, String title, String description,
                      String category, String difficulty, Integer points,
                      String downloadUrl, String originalFilename,
-                     Boolean requiresInstance, String dockerImageName,
-                     Integer defaultSshPort, Integer defaultVscodePort,
-                     Integer defaultDesktopPort) {
+                     Boolean requiresInstance, String dockerImageName) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -58,9 +53,6 @@ public class Challenge {
         this.originalFilename = originalFilename;
         this.requiresInstance = requiresInstance != null ? requiresInstance : false;
         this.dockerImageName = dockerImageName;
-        this.defaultSshPort = defaultSshPort;
-        this.defaultVscodePort = defaultVscodePort;
-        this.defaultDesktopPort = defaultDesktopPort;
     }
 
     // Additional constructor with all fields
@@ -68,8 +60,7 @@ public class Challenge {
                      String category, String difficulty, Integer points,
                      String downloadUrl, String originalFilename,
                      Boolean requiresInstance, String dockerImageName,
-                     Integer defaultSshPort, Integer defaultVscodePort,
-                     Integer defaultDesktopPort, String challengeFolderPath,
+                     String challengeFolderPath,
                      String dockerFilesJson) {
         this.id = id;
         this.title = title;
@@ -81,9 +72,6 @@ public class Challenge {
         this.originalFilename = originalFilename;
         this.requiresInstance = requiresInstance != null ? requiresInstance : false;
         this.dockerImageName = dockerImageName;
-        this.defaultSshPort = defaultSshPort;
-        this.defaultVscodePort = defaultVscodePort;
-        this.defaultDesktopPort = defaultDesktopPort;
         this.challengeFolderPath = challengeFolderPath;
         this.dockerFilesJson = dockerFilesJson;
     }
