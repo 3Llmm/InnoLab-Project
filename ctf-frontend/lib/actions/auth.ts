@@ -32,7 +32,7 @@ export async function loginUser(formData: FormData): Promise<ApiResult> {
 
 export async function logoutUser(): Promise<void> {
   try {
-    await apiClient.post('/api/logout')
+    await apiClient.post('/api/logout',null)
   } catch (error) {
     console.error('Logout error:', error)
   }
