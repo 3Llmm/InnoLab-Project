@@ -1,8 +1,36 @@
-ctf-terminal/node_modules/
+# =====================
+# Node / JS
+# =====================
+node_modules/
+**/node_modules/
+
+# =====================
+# Environment files
+# =====================
 .env
-.env.Confluence
-git-sim_media
-material
-ctf-frontend-next/node_modules/
-.idea
+.env
+!.env.example
+
+# =====================
+# IDE / OS
+# =====================
+.idea/
 .DS_Store
+
+# =====================
+# Cypress
+# =====================
+cypress/videos/
+cypress/screenshots/
+
+# =====================
+# Project-specific
+# =====================
+git-sim_media/
+material/
+
+# =====================
+# Temporary / misc
+# =====================
+*.log
+dummy.txt
