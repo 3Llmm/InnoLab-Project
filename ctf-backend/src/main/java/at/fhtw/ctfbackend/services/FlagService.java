@@ -25,7 +25,7 @@ public class FlagService {
     }
 
     public boolean validateFlag(String username, String challengeId, String submittedFlag) {
-        System.out.println("🔍 Validating flag for user: " + username + ", challenge: " + challengeId);
+        System.out.println(" Validating flag for user: " + username + ", challenge: " + challengeId);
 
         try {
             // 1. First, get the challenge
@@ -36,22 +36,22 @@ public class FlagService {
             boolean requiresInstance = challenge.getDockerImageName() != null &&
                     !challenge.getDockerImageName().isEmpty();
 
-            System.out.println("⚙️  Challenge " + challengeId + " requires instance: " + requiresInstance);
+            System.out.println("  Challenge " + challengeId + " requires instance: " + requiresInstance);
 
             boolean isValid;
 
             // 3. Route to appropriate validation
             if (requiresInstance) {
                 isValid = validateDynamicFlag(username, challengeId, submittedFlag);
-                System.out.println("🔐 Dynamic validation result: " + isValid);
+                System.out.println(" Dynamic validation result: " + isValid);
             } else {
                 isValid = validateStaticFlag(challenge, submittedFlag);
-                System.out.println("🔐 Static validation result: " + isValid);
+                System.out.println(" Static validation result: " + isValid);
             }
 
             return isValid;
         } catch (Exception e) {
-            System.err.println("❌ Error during flag validation: " + e.getMessage());
+            System.err.println(" Error during flag validation: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -90,7 +90,7 @@ public class FlagService {
         // Direct string comparison for static challenges
         boolean isValid = challenge.getFlag().equals(submittedFlag);
 
-        System.out.println("🔍 Static flag comparison: " +
+        System.out.println(" Static flag comparison: " +
                 "Submitted: " + submittedFlag +
                 " vs Stored: " + challenge.getFlag() +
                 " -> " + isValid);
@@ -100,7 +100,7 @@ public class FlagService {
     private final Map<String, Set<String>> solvedByUser = new ConcurrentHashMap<>();
 
     public boolean recordSolve(String username, String challengeId) {
-        System.out.println("📝 Attempting to record solve for user: " + username + ", challenge: " + challengeId);
+        System.out.println(" Attempting to record solve for user: " + username + ", challenge: " + challengeId);
 
         try {
             // First check in-memory cache
@@ -108,42 +108,42 @@ public class FlagService {
                     __ -> ConcurrentHashMap.newKeySet());
             boolean isNewSolve = solved.add(challengeId);
 
-            System.out.println("📊 Cache check - User already solved: " + !isNewSolve);
+            System.out.println(" Cache check - User already solved: " + !isNewSolve);
 
             // Also persist to database using SolveService
             if (isNewSolve) {
-                System.out.println("🆕 This is a new solve, recording in database...");
+                System.out.println(" This is a new solve, recording in database...");
                 
                 ChallengeEntity challenge = challengeRepo.findById(challengeId)
                         .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
                 
                 int pointsEarned = challenge.getPoints() != null ? challenge.getPoints() : 0;
-                System.out.println("💰 Points to award: " + pointsEarned);
+                System.out.println(" Points to award: " + pointsEarned);
                 
                 boolean dbSuccess = solveService.recordSolve(username, challengeId, pointsEarned);
-                System.out.println("🗃️  Database record result: " + dbSuccess);
+                System.out.println("  Database record result: " + dbSuccess);
                 
                 if (dbSuccess) {
-                    System.out.println("✅ Solve recorded successfully for user: " + username + ", challenge: " + challengeId);
+                    System.out.println(" Solve recorded successfully for user: " + username + ", challenge: " + challengeId);
                 } else {
-                    System.err.println("❌ Failed to record solve in database");
+                    System.err.println(" Failed to record solve in database");
                     // Remove from cache if database failed
                     solved.remove(challengeId);
                     isNewSolve = false;
                 }
             } else {
-                System.out.println("ℹ️  User already solved this challenge, skipping database record");
+                System.out.println("ℹ  User already solved this challenge, skipping database record");
             }
 
             System.out.println(
-                    "📋 Final result - User: " + username +
+                    " Final result - User: " + username +
                             ", Challenge: " + challengeId +
                             ", New solve: " + isNewSolve
             );
 
             return isNewSolve;
         } catch (Exception e) {
-            System.err.println("💥 Critical error recording solve: " + e.getMessage());
+            System.err.println(" Critical error recording solve: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

@@ -49,11 +49,11 @@ public class DockerService {
             command.add(dockerfilePath);
             command.add(buildContextDir);
 
-            System.out.println("🛠️ === BUILDING DOCKER IMAGE ===");
-            System.out.println("📁 Build context: " + buildContextDir);
-            System.out.println("📄 Dockerfile: " + dockerfilePath);
-            System.out.println("🏷️ Tag: " + tag);
-            System.out.println("💻 Command: " + String.join(" ", command));
+            System.out.println(" === BUILDING DOCKER IMAGE ===");
+            System.out.println(" Build context: " + buildContextDir);
+            System.out.println(" Dockerfile: " + dockerfilePath);
+            System.out.println(" Tag: " + tag);
+            System.out.println(" Command: " + String.join(" ", command));
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
@@ -82,7 +82,7 @@ public class DockerService {
                 throw new RuntimeException("Docker build failed with exit code " + exitCode + ":\n" + output);
             }
 
-            System.out.println("✅ Image built successfully: " + tag);
+            System.out.println(" Image built successfully: " + tag);
             return tag;
 
         } catch (IOException | InterruptedException e) {
@@ -104,7 +104,7 @@ public class DockerService {
 
         // Ensure challenge has a valid Dockerfile
         String dockerfilePath = getDockerfilePath(challengeId);
-        System.out.println("🔍 Checking Dockerfile at: " + dockerfilePath);
+        System.out.println(" Checking Dockerfile at: " + dockerfilePath);
 
         if (!Files.exists(Paths.get(dockerfilePath))) {
             throw new RuntimeException("Dockerfile not found for challenge: " + challengeId +
@@ -113,11 +113,11 @@ public class DockerService {
 
         // Build image
         String imageTag = "ctf-" + challengeId.toLowerCase().replaceAll("[^a-z0-9-]", "");
-        System.out.println("🔨 Building image: " + imageTag);
+        System.out.println(" Building image: " + imageTag);
         buildImage(challengeId, imageTag);
 
         // Run container
-        System.out.println("🚀 Running container: " + containerName);
+        System.out.println(" Running container: " + containerName);
         runContainer(containerName, imageTag, flag, sshPort, vscodePort, desktopPort);
 
         return containerName;
@@ -159,7 +159,7 @@ public class DockerService {
 
         for (Path dockerfilePath : possiblePaths) {
             if (Files.exists(dockerfilePath) && Files.isRegularFile(dockerfilePath)) {
-                System.out.println("📄 Found Dockerfile at: " + dockerfilePath);
+                System.out.println(" Found Dockerfile at: " + dockerfilePath);
                 return dockerfilePath.toAbsolutePath().toString();
             }
         }
@@ -211,7 +211,7 @@ public class DockerService {
                 """;
 
             Files.writeString(dockerfilePath, minimalDockerfile);
-            System.out.println("📝 Created minimal Dockerfile at: " + dockerfilePath);
+            System.out.println(" Created minimal Dockerfile at: " + dockerfilePath);
 
             return dockerfilePath.toAbsolutePath().toString();
 
@@ -226,11 +226,11 @@ public class DockerService {
     public void runContainer(String containerName, String imageName, String flag,
                              int sshPort, int vscodePort, int desktopPort) {
 
-        System.out.println("🟢 === RUN CONTAINER ===");
-        System.out.println("📦 Image: " + imageName);
-        System.out.println("🏷️ Container: " + containerName);
-        System.out.println("🔌 Ports: SSH=" + sshPort + ", VSCode=" + vscodePort + ", Desktop=" + desktopPort);
-        System.out.println("🚩 Flag: " + (flag != null ? flag.substring(0, Math.min(flag.length(), 20)) : "null"));
+        System.out.println(" === RUN CONTAINER ===");
+        System.out.println(" Image: " + imageName);
+        System.out.println(" Container: " + containerName);
+        System.out.println(" Ports: SSH=" + sshPort + ", VSCode=" + vscodePort + ", Desktop=" + desktopPort);
+        System.out.println(" Flag: " + (flag != null ? flag.substring(0, Math.min(flag.length(), 20)) : "null"));
 
         try {
             // Build command
@@ -262,7 +262,7 @@ public class DockerService {
 
             command.add(imageName);
 
-            System.out.println("💻 Command: " + String.join(" ", command));
+            System.out.println(" Command: " + String.join(" ", command));
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
@@ -272,7 +272,7 @@ public class DockerService {
             StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
-                System.out.println("📋 Docker output:");
+                System.out.println(" Docker output:");
                 while ((line = reader.readLine()) != null) {
                     System.out.println("   " + line);
                     output.append(line).append("\n");
@@ -281,23 +281,23 @@ public class DockerService {
 
             // Wait for process to complete
             int exitCode = process.waitFor();
-            System.out.println("🔚 Exit code: " + exitCode);
+            System.out.println(" Exit code: " + exitCode);
 
             if (exitCode != 0) {
                 throw new RuntimeException("Docker run failed with exit code " + exitCode + ":\n" + output);
             }
 
-            System.out.println("✅ Container started successfully!");
+            System.out.println(" Container started successfully!");
 
             // Wait a moment for container to fully initialize
             Thread.sleep(2000);
 
             // Check if container is actually running
             String status = getContainerStatus(containerName);
-            System.out.println("📊 Container status: " + status);
+            System.out.println(" Container status: " + status);
 
         } catch (Exception e) {
-            System.out.println("❌ ERROR in runContainer: " + e.getMessage());
+            System.out.println(" ERROR in runContainer: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to run container: " + e.getMessage(), e);
         }
@@ -310,7 +310,7 @@ public class DockerService {
         validateContainerName(containerName);
 
         try {
-            System.out.println("🛑 Stopping container: " + containerName);
+            System.out.println(" Stopping container: " + containerName);
 
             // Stop container (timeout after 10 seconds)
             ProcessBuilder stopCmd = new ProcessBuilder("docker", "stop", "-t", "10", containerName);
@@ -322,7 +322,7 @@ public class DockerService {
             Process rmProc = rmCmd.start();
             rmProc.waitFor();
 
-            System.out.println("✅ Container stopped and removed: " + containerName);
+            System.out.println(" Container stopped and removed: " + containerName);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to stop container: " + e.getMessage(), e);
@@ -368,11 +368,11 @@ public class DockerService {
         validateImageName(imageName);
 
         try {
-            System.out.println("🗑️ Removing image: " + imageName);
+            System.out.println(" Removing image: " + imageName);
             ProcessBuilder pb = new ProcessBuilder("docker", "rmi", "-f", imageName);
             Process p = pb.start();
             p.waitFor();
-            System.out.println("✅ Image removed: " + imageName);
+            System.out.println(" Image removed: " + imageName);
         } catch (Exception e) {
             System.err.println("Failed to remove image " + imageName + ": " + e.getMessage());
         }
@@ -388,7 +388,7 @@ public class DockerService {
             ProcessBuilder pb = new ProcessBuilder("docker", "kill", containerName);
             Process p = pb.start();
             p.waitFor();
-            System.out.println("☠️ Container killed: " + containerName);
+            System.out.println(" Container killed: " + containerName);
         } catch (Exception e) {
             System.err.println("Failed to kill container " + containerName + ": " + e.getMessage());
         }

@@ -33,18 +33,18 @@ public class SolveService {
      */
     @Transactional
     public boolean recordSolve(String username, String challengeId, int pointsEarned) {
-        System.out.println("🔍 SolveService.recordSolve called for user: " + username + ", challenge: " + challengeId);
+        System.out.println(" SolveService.recordSolve called for user: " + username + ", challenge: " + challengeId);
 
         try {
             // Check if user already solved this challenge
             Optional<Solve> existingSolve = solveRepository.findByUsernameAndChallengeId(username, challengeId);
 
             if (existingSolve.isPresent()) {
-                System.out.println("⚠️  User already solved this challenge, returning false");
+                System.out.println("  User already solved this challenge, returning false");
                 return false; // User already solved this challenge
             }
 
-            System.out.println("🆕 This is a new solve, creating database record...");
+            System.out.println(" This is a new solve, creating database record...");
 
             // Get the challenge entity
             ChallengeEntity challenge = challengeRepository.findById(challengeId)
@@ -52,13 +52,13 @@ public class SolveService {
 
             // Create and save the new solve record
             Solve solve = new Solve(username, challenge, pointsEarned);
-            Solve savedSolve = solveRepository.saveAndFlush(solve);  // ✅ Changed from save() to saveAndFlush()
+            Solve savedSolve = solveRepository.saveAndFlush(solve);  //  Changed from save() to saveAndFlush()
 
-            System.out.println("✅ Solve saved to database with ID: " + savedSolve.getId());
+            System.out.println(" Solve saved to database with ID: " + savedSolve.getId());
 
             return true; // This is a new solve
         } catch (Exception e) {
-            System.err.println("💥 Error in SolveService.recordSolve: " + e.getMessage());
+            System.err.println(" Error in SolveService.recordSolve: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -98,15 +98,15 @@ public class SolveService {
      * @return Number of users who solved the challenge
      */
     public long getSolveCountForChallenge(String challengeId) {
-        System.out.println("🔢 getSolveCountForChallenge called for: " + challengeId);
+        System.out.println(" getSolveCountForChallenge called for: " + challengeId);
 
         // Try JPA query
         long countJpa = solveRepository.countByChallengeId(challengeId);
-        System.out.println("🔢 JPA Count result: " + countJpa);
+        System.out.println(" JPA Count result: " + countJpa);
 
         // Try native query
         long countNative = solveRepository.countByChallengeIdNative(challengeId);
-        System.out.println("🔢 Native Count result: " + countNative);
+        System.out.println(" Native Count result: " + countNative);
 
         // Use native for now since JPA seems broken
         return countNative;
@@ -222,12 +222,12 @@ public class SolveService {
      * @return Map containing various statistics about the challenge
      */
     public Map<String, Object> getChallengeStatistics(String challengeId) {
-        System.out.println("🔍 getChallengeStatistics called for challenge: " + challengeId);
+        System.out.println(" getChallengeStatistics called for challenge: " + challengeId);
 
         Map<String, Object> stats = new HashMap<>();
 
         long solveCount = getSolveCountForChallenge(challengeId);
-        System.out.println("📊 Solve count from database: " + solveCount);
+        System.out.println(" Solve count from database: " + solveCount);
 
         ChallengeEntity challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
@@ -240,7 +240,7 @@ public class SolveService {
         stats.put("points", challenge.getPoints());
         stats.put("solveRate", "N/A");
 
-        System.out.println("📦 Returning stats: " + stats);
+        System.out.println(" Returning stats: " + stats);
 
         return stats;
     }

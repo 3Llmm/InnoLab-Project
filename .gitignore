@@ -6,3 +6,4 @@ material
 ctf-frontend-next/node_modules/
 .idea
 .DS_Store
+.qwen

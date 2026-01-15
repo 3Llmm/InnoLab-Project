@@ -29,7 +29,7 @@ const handleDelete = async (challenge: Challenge) => {
     await deleteChallenge(challenge.id)
     
     toast({
-      title: "🗑️ Challenge Deleted Successfully",
+      title: " Challenge Deleted Successfully",
       description: `"${challenge.title}" has been removed from the platform.`,
       duration: 4000,
     })
@@ -45,7 +45,7 @@ const handleDelete = async (challenge: Challenge) => {
   } catch (error) {
     console.error("Delete error:", error)
     toast({
-      title: "❌ Error Deleting Challenge",
+      title: " Error Deleting Challenge",
       description: error instanceof Error ? error.message : "Failed to delete challenge. Please try again.",
       variant: "destructive",
       duration: 5000,
@@ -190,7 +190,7 @@ const handleDelete = async (challenge: Challenge) => {
         onSave={() => {
           setEditingChallenge(null)
           toast({
-            title: "✅ Challenge Updated Successfully",
+            title: " Challenge Updated Successfully",
             description: "The challenge has been updated and saved.",
             duration: 4000,
           })

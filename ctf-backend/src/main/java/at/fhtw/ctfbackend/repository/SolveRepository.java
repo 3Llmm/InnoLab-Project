@@ -23,7 +23,7 @@ public interface SolveRepository extends JpaRepository<Solve, Long> {
     @Query(value = "SELECT COUNT(*) FROM solves WHERE challenge_id = :challengeId", nativeQuery = true)
     long countByChallengeIdNative(@Param("challengeId") String challengeId);
 
-    // ✅ FIXED - Custom queries for challenge ID navigation
+    //  FIXED - Custom queries for challenge ID navigation
     @Query("SELECT s FROM Solve s WHERE s.challenge.id = :challengeId")
     List<Solve> findByChallengeId(@Param("challengeId") String challengeId);
 
@@ -36,21 +36,21 @@ public interface SolveRepository extends JpaRepository<Solve, Long> {
     // Count how many challenges a user has solved
     long countByUsername(String username);
 
-    // ✅ FIXED - Use Pageable
+    //  FIXED - Use Pageable
     @Query("SELECT s FROM Solve s ORDER BY s.solvedAt DESC")
     List<Solve> findRecentSolves(Pageable pageable);
 
     // Find solves within a time range
     List<Solve> findBySolvedAtBetween(LocalDateTime start, LocalDateTime end);
 
-    // ✅ FIXED - Use Pageable with limit
+    //  FIXED - Use Pageable with limit
     @Query("SELECT s.username, COUNT(s) as solveCount FROM Solve s GROUP BY s.username ORDER BY solveCount DESC")
     List<Object[]> findTopSolvers(Pageable pageable);
 
     @Query("SELECT s.challenge.id, COUNT(s) as solveCount FROM Solve s GROUP BY s.challenge.id ORDER BY solveCount DESC")
     List<Object[]> findMostSolvedChallenges(Pageable pageable);
 
-    // ✅ FIXED - Add @Param
+    //  FIXED - Add @Param
     @Query("SELECT s FROM Solve s WHERE s.challenge.category = :category")
     List<Solve> findByCategory(@Param("category") String category);
 

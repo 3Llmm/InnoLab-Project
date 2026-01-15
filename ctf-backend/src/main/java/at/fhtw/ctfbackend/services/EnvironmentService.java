@@ -157,7 +157,7 @@ public class EnvironmentService {
 
         return true;
     }
-    // In EnvironmentService.java, add this method:
+    // In EnvironmentService.java, add this method: 
 
     public ChallengeInstanceEntity buildAndStartChallenge(String username, String challengeId) {
         // Check for existing instance

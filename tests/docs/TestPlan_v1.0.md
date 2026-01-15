@@ -44,7 +44,7 @@ Testing covers backend & frontend REST API endpoints, authentication, challenge 
 
 ## 4. Scope Definition
 
-### 4.1 Features IN SCOPE ✅
+### 4.1 Features IN SCOPE 
 
 | Feature | Description | Priority |
 |---------|-----------|----------|
@@ -59,7 +59,7 @@ Testing covers backend & frontend REST API endpoints, authentication, challenge 
 | **Security Controls** | SQL injection, XSS, path traversal prevention | HIGH     |
 | **Frontend testing** |  | HIGH     |
 
-### 4.2 Features OUT OF SCOPE ❌
+### 4.2 Features OUT OF SCOPE 
 
 - Frontend testing (separate project)
 - LDAP server configuration (infrastructure)
@@ -104,7 +104,7 @@ Testing covers backend & frontend REST API endpoints, authentication, challenge 
 
 ### 5.2 Risk-Based Approach
 
-#### HIGH RISK Areas (Test First) 🔴
+#### HIGH RISK Areas (Test First) 
 1. **Authentication/Authorization**
     - Risk: Unauthorized access to system
     - Impact: Security breach, data exposure
@@ -120,12 +120,12 @@ Testing covers backend & frontend REST API endpoints, authentication, challenge 
     - Impact: Access to system files (/etc/passwd)
     - Tests: 10+ tests for path traversal attacks
 
-#### MEDIUM RISK Areas 🟡
+#### MEDIUM RISK Areas 
 4. **Challenge Management** - 8 tests
 5. **Category Management** - 8 tests
 6. **Solve Tracking** - 6 tests
 
-#### LOW RISK Areas 🟢
+#### LOW RISK Areas 
 7. **DTOs/Models** - Minimal testing (getters/setters)
 8. **Configuration Classes** - Excluded from coverage
 
@@ -174,14 +174,14 @@ ID: rev-201, Flag: flag{reverse_master}
 
 ## 7. Entry and Exit Criteria
 
-### 7.1 Entry Criteria ✅
+### 7.1 Entry Criteria 
 - [ ] Development code is committed and stable
 - [ ] Test environment (H2, embedded LDAP) is configured
 - [ ] Test data (users, challenges) is prepared
 - [ ] All dependencies (pom.xml) are resolved
 - [ ] Test structure (src/test/java) is created
 
-### 7.2 Exit Criteria 🏁
+### 7.2 Exit Criteria 
 - [ ] All HIGH priority tests pass (100%)
 - [ ] MEDIUM priority tests pass (95%+)
 - [ ] Code coverage ≥ 80% overall
@@ -402,12 +402,12 @@ Certain classes are excluded from code coverage analysis to maintain meaningful 
 ### C. Test Data Locations
 ```
 ctf-backend/
-├── src/
-│   ├── main/java/at/fhtw/ctfbackend/...   application code
-│   └── test/java/at/fhtw/ctfbackend/...   test classes
-│         ├── service/
-│         ├── controller/
-│         └── repository/
+ src/
+    main/java/at/fhtw/ctfbackend/...   application code
+    test/java/at/fhtw/ctfbackend/...   test classes
+          service/
+          controller/
+          repository/
 
 ```
 

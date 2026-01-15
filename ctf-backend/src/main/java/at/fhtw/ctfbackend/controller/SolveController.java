@@ -151,9 +151,9 @@ public class SolveController {
      */
     @GetMapping("/challenge/{challengeId}/stats")
     public ResponseEntity<Map<String, Object>> getChallengeStatistics(@PathVariable String challengeId) {
-        System.out.println("📊 Controller: getChallengeStatistics endpoint called for: " + challengeId);
+        System.out.println(" Controller: getChallengeStatistics endpoint called for: " + challengeId);
         Map<String, Object> stats = solveService.getChallengeStatistics(challengeId);
-        System.out.println("📊 Controller: Returning stats: " + stats);
+        System.out.println(" Controller: Returning stats: " + stats);
         return ResponseEntity.ok(stats);
     }
 

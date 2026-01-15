@@ -38,7 +38,7 @@ export default function ChallengePage() {
                 checkIfSolved(challengeId)
             ])
                 .then(([challengeData, statsData, solvedData]) => {
-                    console.log('📊 Stats Data:', statsData) // ADD THIS
+                    console.log(' Stats Data:', statsData) // ADD THIS
                     setChallenge(challengeData)
 
                     // Handle stats data safely with proper error checking
@@ -47,7 +47,7 @@ export default function ChallengePage() {
 
                     if (statsData && statsData.success && statsData.data) {
                         stats = statsData.data
-                        console.log('✅ Stats extracted:', stats) // ADD THIS
+                        console.log(' Stats extracted:', stats) // ADD THIS
                     } else if (statsData && !statsData.success) {
                         console.warn('Challenge statistics failed:', statsData.error)
                     }
@@ -62,7 +62,7 @@ export default function ChallengePage() {
                         solveCount: stats?.solveCount || 0,
                         solvedByUser: solved
                     }
-                    console.log('📦 Setting solve stats:', newSolveStats) // ADD THIS
+                    console.log(' Setting solve stats:', newSolveStats) // ADD THIS
 
                     setSolveStats(newSolveStats)
                 })

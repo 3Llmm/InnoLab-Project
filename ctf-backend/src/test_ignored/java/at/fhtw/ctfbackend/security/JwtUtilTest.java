@@ -213,7 +213,7 @@ class JwtUtilTest {
     @Test
     void generateToken_UsernameWithUnicode_GeneratesToken() {
         // Arrange
-        String username = "用户名"; // Chinese characters
+        String username = ""; // Chinese characters
 
         // Act
         String token = jwtUtil.generateToken(username);

@@ -41,12 +41,12 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
 
         // CRITICAL: Prevent React Strict Mode double initialization
         if (isInitializedRef.current) {
-            addDebugInfo("⚠️ Already initialized, preventing duplicate");
+            addDebugInfo(" Already initialized, preventing duplicate");
             return;
         }
 
         isInitializedRef.current = true;
-        addDebugInfo("🔧 Starting initialization...");
+        addDebugInfo(" Starting initialization...");
 
         try {
             // Initialize terminal
@@ -72,12 +72,12 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             fitAddonRef.current = fitAddon;
 
             terminal.open(terminalRef.current);
-            addDebugInfo("✅ Terminal opened");
+            addDebugInfo(" Terminal opened");
 
             // Welcome message
-            terminal.writeln("\r\n\x1b[1;32m╔════════════════════════════════════════╗\x1b[0m");
-            terminal.writeln("\x1b[1;32m║   🐉 CTF Challenge Terminal             ║\x1b[0m");
-            terminal.writeln("\x1b[1;32m╚════════════════════════════════════════╝\x1b[0m");
+            terminal.writeln("\r\n\x1b[1;32m\x1b[0m");
+            terminal.writeln("\x1b[1;32m    CTF Challenge Terminal             \x1b[0m");
+            terminal.writeln("\x1b[1;32m\x1b[0m");
             terminal.writeln("");
             terminal.writeln(`Instance: ${instanceId}`);
             terminal.writeln(`SSH Port: ${sshPort}`);
@@ -88,9 +88,9 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                 try {
                     fitAddon.fit();
                     terminal.focus();
-                    addDebugInfo("✅ Terminal fitted and focused");
+                    addDebugInfo(" Terminal fitted and focused");
                 } catch (error) {
-                    addDebugInfo(`⚠️ Fit error: ${error}`);
+                    addDebugInfo(` Fit error: ${error}`);
                 }
             }, 100);
 
@@ -99,7 +99,7 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             const containerName = `ctf-${instanceId.substring(0, 8)}`;
             const wsUrl = `${terminalUrl}/?instanceId=${instanceId}&containerName=${containerName}`;
             
-            addDebugInfo(`🔌 Connecting WebSocket: ${wsUrl}`);
+            addDebugInfo(` Connecting WebSocket: ${wsUrl}`);
             terminal.writeln(`Connecting to: ${terminalUrl}`);
             terminal.writeln("");
 
@@ -108,15 +108,15 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             wsRef.current = ws;
 
             ws.onopen = () => {
-                addDebugInfo("✅ WebSocket OPEN");
+                addDebugInfo(" WebSocket OPEN");
                 setConnectionStatus("connected");
-                terminal.writeln("\r\n\x1b[1;32m✅ Connected!\x1b[0m");
-                terminal.writeln("\x1b[1;33m🔐 Establishing SSH...\x1b[0m");
+                terminal.writeln("\r\n\x1b[1;32m Connected!\x1b[0m");
+                terminal.writeln("\x1b[1;33m Establishing SSH...\x1b[0m");
                 terminal.writeln("");
                 
                 setTimeout(() => {
                     terminal.focus();
-                    addDebugInfo("✅ Refocused");
+                    addDebugInfo(" Refocused");
                 }, 500);
             };
 
@@ -128,39 +128,39 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                     if (data instanceof ArrayBuffer) {
                         // Convert ArrayBuffer to Uint8Array
                         const uint8Array = new Uint8Array(data);
-                        addDebugInfo(`📥 ArrayBuffer: ${uint8Array.length} bytes`);
+                        addDebugInfo(` ArrayBuffer: ${uint8Array.length} bytes`);
                         terminal.write(uint8Array);
                     } else if (typeof data === 'string') {
-                        addDebugInfo(`📥 String: ${data.length} chars`);
+                        addDebugInfo(` String: ${data.length} chars`);
                         terminal.write(data);
                     } else if (data instanceof Blob) {
                         // Handle Blob (shouldn't happen with arraybuffer type, but just in case)
-                        addDebugInfo(`📥 Blob: ${data.size} bytes (converting...)`);
+                        addDebugInfo(` Blob: ${data.size} bytes (converting...)`);
                         data.arrayBuffer().then(buffer => {
                             terminal.write(new Uint8Array(buffer));
                         });
                     } else {
-                        addDebugInfo(`⚠️ Unknown data type: ${typeof data}`);
+                        addDebugInfo(` Unknown data type: ${typeof data}`);
                         console.log('Raw data:', data);
                     }
                 } catch (error) {
-                    addDebugInfo(`❌ Write error: ${error}`);
+                    addDebugInfo(` Write error: ${error}`);
                     console.error('Message handler error:', error);
                 }
             };
 
             ws.onerror = (error) => {
-                addDebugInfo(`❌ WebSocket error`);
+                addDebugInfo(` WebSocket error`);
                 setConnectionStatus("error");
-                terminal.writeln("\r\n\x1b[1;31m❌ Connection Failed\x1b[0m");
+                terminal.writeln("\r\n\x1b[1;31m Connection Failed\x1b[0m");
             };
 
             ws.onclose = (event) => {
-                addDebugInfo(`🔌 WebSocket closed: ${event.code} - ${event.reason}`);
+                addDebugInfo(` WebSocket closed: ${event.code} - ${event.reason}`);
                 setConnectionStatus("disconnected");
                 
                 if (event.code !== 1000) {
-                    terminal.writeln(`\r\n\x1b[1;33m🔌 Disconnected (${event.code})\x1b[0m`);
+                    terminal.writeln(`\r\n\x1b[1;33m Disconnected (${event.code})\x1b[0m`);
                 }
             };
 
@@ -169,19 +169,19 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                 if (ws.readyState === WebSocket.OPEN) {
                     try {
                         ws.send(data);
-                        addDebugInfo(`📤 Sent: char ${data.charCodeAt(0)}`);
+                        addDebugInfo(` Sent: char ${data.charCodeAt(0)}`);
                     } catch (error) {
-                        addDebugInfo(`❌ Send error: ${error}`);
+                        addDebugInfo(` Send error: ${error}`);
                     }
                 } else {
-                    addDebugInfo(`⚠️ WS not open: ${ws.readyState}`);
-                    terminal.write('\r\n\x1b[1;31m❌ Not connected\x1b[0m\r\n');
+                    addDebugInfo(` WS not open: ${ws.readyState}`);
+                    terminal.write('\r\n\x1b[1;31m Not connected\x1b[0m\r\n');
                 }
             });
 
             // Cleanup
             return () => {
-                addDebugInfo("🧹 Cleanup triggered");
+                addDebugInfo(" Cleanup triggered");
                 
                 disposable.dispose();
                 
@@ -201,7 +201,7 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             };
 
         } catch (error) {
-            addDebugInfo(`💥 Init error: ${error}`);
+            addDebugInfo(` Init error: ${error}`);
             setConnectionStatus("error");
         }
     }, [instanceId, sshPort]);
@@ -225,7 +225,7 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
     const handleTerminalClick = () => {
         if (terminalInstanceRef.current) {
             terminalInstanceRef.current.focus();
-            addDebugInfo('🖱️ Clicked & focused');
+            addDebugInfo(' Clicked & focused');
         }
     };
 
@@ -241,11 +241,11 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
 
     const getStatusMessage = () => {
         switch (connectionStatus) {
-            case "connected": return "✅ CONNECTED - Ready";
-            case "connecting": return "🔄 CONNECTING...";
-            case "error": return "❌ ERROR";
-            case "missing_props": return "⚠️ MISSING DATA";
-            default: return "🔌 DISCONNECTED";
+            case "connected": return " CONNECTED - Ready";
+            case "connecting": return " CONNECTING...";
+            case "error": return " ERROR";
+            case "missing_props": return " MISSING DATA";
+            default: return " DISCONNECTED";
         }
     };
 
@@ -302,7 +302,7 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                     
                     <details className="mt-2 text-xs">
                         <summary className="cursor-pointer text-muted-foreground hover:text-foreground p-2 bg-muted rounded">
-                            🔧 Debug Info
+                             Debug Info
                         </summary>
                         <pre className="mt-1 p-2 bg-muted rounded text-xs max-h-32 overflow-auto whitespace-pre-wrap">
                             {debugInfo || "No debug info..."}
@@ -313,7 +313,7 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                 <div className="p-3 border-t border-border text-xs text-muted-foreground bg-muted/30">
                     <div className="flex justify-between items-center">
                         <div><strong>Credentials:</strong> ctfuser / ctfpassword</div>
-                        <div>💡 Click terminal to type</div>
+                        <div> Click terminal to type</div>
                     </div>
                 </div>
             </div>

@@ -205,7 +205,7 @@ export async function getUserStatistics(): Promise<ApiResult<SolveStatistics>> {
 export async function getChallengeStatistics(challengeId: string): Promise<ApiResult<ChallengeStatistics>> {
     try {
         const response = await apiClient.get(`/api/solves/challenge/${challengeId}/stats`)
-        console.log('🔍 Raw API Response:', response)
+        console.log(' Raw API Response:', response)
 
         // The data is directly on response, not response.data
         const data = response || {}

@@ -128,7 +128,7 @@ function ChallengeCard({ challenge }: { challenge: Challenge }) {
 
         {challenge.solved && (
           <div className="mt-4 pt-4 border-t border-border">
-            <span className="text-xs text-accent font-semibold">✓ SOLVED</span>
+            <span className="text-xs text-accent font-semibold"> SOLVED</span>
           </div>
         )}
       </div>

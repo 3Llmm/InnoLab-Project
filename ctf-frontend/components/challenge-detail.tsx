@@ -146,14 +146,14 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
         setResult(null);
 
         try {
-            console.log("🚀 Building and starting environment for challenge:", challenge.id);
+            console.log(" Building and starting environment for challenge:", challenge.id);
 
             // ALWAYS use the build endpoint for now
             const res = await apiClient.post<EnvironmentInstance>(
                 `/api/environment/build/${challenge.id}`
             );
 
-            console.log("✅ Environment built and started:", res);
+            console.log(" Environment built and started:", res);
             setEnvironment(res);
             setShowTerminal(true);
 
@@ -162,7 +162,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                 message: `Environment built and started successfully! SSH Port: ${res.sshPort}`
             });
         } catch (error: any) {
-            console.error("❌ Failed to build and start environment:", error);
+            console.error(" Failed to build and start environment:", error);
             setResult({
                 status: "error",
                 message: `Failed to start environment: ${error?.message || "Unknown error"}`,
@@ -186,7 +186,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                 message: "Environment stopped successfully"
             });
         } catch (error: any) {
-            console.error("❌ Failed to stop environment:", error);
+            console.error(" Failed to stop environment:", error);
             setResult({
                 status: "error",
                 message: `Failed to stop environment: ${error?.message || "Unknown error"}`,
@@ -368,7 +368,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                             </span>
                             {solved && (
                                 <span className="text-sm px-3 py-1 bg-green-500/10 text-green-500 rounded-full">
-                                    SOLVED ✓
+                                    SOLVED 
                                 </span>
                             )}
                         </div>

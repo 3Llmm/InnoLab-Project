@@ -34,12 +34,12 @@ It combines the Quick Start Guide (QSG), Test Plan, Test Summary Report, and App
 
 ```
 InnoLab-Project/
-├── ctf-backend/              → Backend Spring Boot application
-├── ctf-frontend-next/        → LDAP configuration & seed files                  
-├── ctf-terminal/             → CLI and tools
-├── ldap/                     → LDAP configuration & seed files
-├── tests/                    → QA documentation 
-├── docker-compose.yml        → Starts complete environment
+ ctf-backend/              → Backend Spring Boot application
+ ctf-frontend-next/        → LDAP configuration & seed files                  
+ ctf-terminal/             → CLI and tools
+ ldap/                     → LDAP configuration & seed files
+ tests/                    → QA documentation 
+ docker-compose.yml        → Starts complete environment
 
 ```
 
@@ -98,7 +98,7 @@ Reports (optional):
 Located in:
 ```
 InnoLab-Project/
-├── tests/docs/CTF_Testing.xlsx
+ tests/docs/CTF_Testing.xlsx
 ```
 
 Includes detailed steps, expected results, and pass/fail status.
@@ -233,7 +233,7 @@ to-do: Fill in after test execution
 
 ---
 
-# 📘 Section V – Appendices
+#  Section V – Appendices
 
 ## A. Test Naming Convention
 
@@ -273,14 +273,14 @@ src/test/java/at/fhtw/ctfbackend
 
 **Structure:**
 ```
-├── controller/
-│     └── AuthControllerTest.java
-├── service/
-│     └── FlagServiceTest.java
-├── repository/
-│     └── ChallengeRepositoryTest.java
-└── integration/
-      └── CtfIntegrationTests.java
+ controller/
+      AuthControllerTest.java
+ service/
+      FlagServiceTest.java
+ repository/
+      ChallengeRepositoryTest.java
+ integration/
+       CtfIntegrationTests.java
 ```
 
 Test resources:

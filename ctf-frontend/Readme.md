@@ -2,7 +2,7 @@
 
 A modern, full-stack Capture The Flag (CTF) training platform built with Next.js 15, TypeScript, and Tailwind CSS.
 
-## 🚀 Features
+##  Features
 
 - **Modern Tech Stack**: Next.js 15 App Router, TypeScript, Tailwind CSS v4
 - **Authentication**: JWT-based auth with secure cookie storage
@@ -12,53 +12,53 @@ A modern, full-stack Capture The Flag (CTF) training platform built with Next.js
 - **Category Pages**: Dedicated pages for each CTF category
 - **Course Structure**: Organized learning paths for systematic skill development
 
-## 📁 Project Structure
+##  Project Structure
 
 \`\`\`
 ctf-frontend-next/
-├── app/                          # Next.js App Router pages
-│   ├── layout.tsx               # Root layout with navbar/footer
-│   ├── page.tsx                 # Homepage
-│   ├── login/page.tsx           # Login page
-│   ├── challenges/              # Challenge pages
-│   │   ├── page.tsx            # Challenge list
-│   │   └── [id]/page.tsx       # Individual challenge
-│   ├── scoreboard/page.tsx      # Leaderboard
-│   ├── courses/page.tsx         # Course catalog
-│   ├── about/page.tsx           # About page
-│   ├── help/page.tsx            # Help center
-│   ├── binary-exploitation/     # Category pages
-│   ├── cryptography/
-│   ├── forensics/
-│   ├── reverse-engineering/
-│   ├── web-exploitation/
-│   └── globals.css              # Global styles with Tailwind v4
-├── components/                   # React components
-│   ├── navbar.tsx               # Navigation bar
-│   ├── footer.tsx               # Footer
-│   ├── login-form.tsx           # Login form
-│   ├── challenge-list.tsx       # Challenge grid with filters
-│   ├── challenge-detail.tsx     # Challenge detail view
-│   └── category-page.tsx        # Reusable category page
-├── lib/                         # Utilities and business logic
-│   ├── types.ts                 # TypeScript type definitions
-│   ├── actions/                 # Server Actions
-│   │   ├── auth.ts             # Authentication actions
-│   │   └── challenges.ts       # Challenge submission
-│   ├── api/                     # API client functions
-│   │   ├── challenges.ts       # Challenge data fetching
-│   │   └── scoreboard.ts       # Scoreboard data
-│   └── hooks/                   # Custom React hooks
-│       └── use-auth.ts         # Authentication hook
-├── public/                      # Static assets
-│   └── images/                 # Image files
-├── package.json                 # Dependencies
-├── tsconfig.json               # TypeScript config
-├── next.config.js              # Next.js config
-└── README.md                   # This file
+ app/                          # Next.js App Router pages
+    layout.tsx               # Root layout with navbar/footer
+    page.tsx                 # Homepage
+    login/page.tsx           # Login page
+    challenges/              # Challenge pages
+       page.tsx            # Challenge list
+       [id]/page.tsx       # Individual challenge
+    scoreboard/page.tsx      # Leaderboard
+    courses/page.tsx         # Course catalog
+    about/page.tsx           # About page
+    help/page.tsx            # Help center
+    binary-exploitation/     # Category pages
+    cryptography/
+    forensics/
+    reverse-engineering/
+    web-exploitation/
+    globals.css              # Global styles with Tailwind v4
+ components/                   # React components
+    navbar.tsx               # Navigation bar
+    footer.tsx               # Footer
+    login-form.tsx           # Login form
+    challenge-list.tsx       # Challenge grid with filters
+    challenge-detail.tsx     # Challenge detail view
+    category-page.tsx        # Reusable category page
+ lib/                         # Utilities and business logic
+    types.ts                 # TypeScript type definitions
+    actions/                 # Server Actions
+       auth.ts             # Authentication actions
+       challenges.ts       # Challenge submission
+    api/                     # API client functions
+       challenges.ts       # Challenge data fetching
+       scoreboard.ts       # Scoreboard data
+    hooks/                   # Custom React hooks
+        use-auth.ts         # Authentication hook
+ public/                      # Static assets
+    images/                 # Image files
+ package.json                 # Dependencies
+ tsconfig.json               # TypeScript config
+ next.config.js              # Next.js config
+ README.md                   # This file
 \`\`\`
 
-## 🛠️ Installation
+##  Installation
 
 1. **Clone the repository**
    \`\`\`bash
@@ -86,7 +86,7 @@ ctf-frontend-next/
 5. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 🔧 Configuration
+##  Configuration
 
 ### Tailwind CSS v4
 Tailwind configuration is done in `app/globals.css` using the new `@theme` directive. Customize colors, fonts, and other design tokens there.
@@ -105,7 +105,7 @@ export async function getAllChallenges(): Promise<Challenge[]> {
 }
 \`\`\`
 
-## 🔐 Backend Integration Checklist
+##  Backend Integration Checklist
 
 - [ ] Set up database (PostgreSQL, MySQL, MongoDB, etc.)
 - [ ] Create user authentication endpoints
@@ -117,7 +117,7 @@ export async function getAllChallenges(): Promise<Challenge[]> {
 - [ ] Add user profile management
 - [ ] Create admin panel for challenge management
 
-## 📝 Key Files to Customize
+##  Key Files to Customize
 
 1. **`lib/actions/auth.ts`** - Replace mock user storage with database
 2. **`lib/api/challenges.ts`** - Connect to your challenge API
@@ -125,7 +125,7 @@ export async function getAllChallenges(): Promise<Challenge[]> {
 4. **`app/globals.css`** - Customize theme colors and design tokens
 5. **`lib/types.ts`** - Add/modify types as your data structure evolves
 
-## 🎨 Design System
+##  Design System
 
 The platform uses a dark theme with cyber-inspired colors:
 - **Primary**: Cyan (`#00d9ff`) - Main brand color
@@ -134,7 +134,7 @@ The platform uses a dark theme with cyber-inspired colors:
 - **Background**: Dark blue (`#0a0e27`)
 - **Card**: Lighter dark (`#1a1f3a`)
 
-## 🚀 Deployment
+##  Deployment
 
 ### Vercel (Recommended)
 \`\`\`bash
@@ -148,7 +148,7 @@ npm run build
 npm start
 \`\`\`
 
-## 📚 Technologies Used
+##  Technologies Used
 
 - **Next.js 15** - React framework with App Router
 - **TypeScript** - Type safety
@@ -157,7 +157,7 @@ npm start
 - **jose** - JWT token handling
 - **Lucide React** - Icon library
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -165,11 +165,11 @@ npm start
 4. Push to the branch
 5. Open a Pull Request
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License.
 
-## 🆘 Support
+##  Support
 
 For help and support:
 - Check the `/help` page in the app

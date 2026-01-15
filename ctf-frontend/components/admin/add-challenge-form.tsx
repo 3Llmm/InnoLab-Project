@@ -114,19 +114,19 @@ export default function AddChallengeForm() {
 
     const getFileIcon = (fileName: string) => {
         if (fileName === "Dockerfile" || fileName.endsWith(".dockerfile")) {
-            return "🐳"
+            return ""
         } else if (fileName.endsWith(".sh")) {
-            return "📜"
+            return ""
         } else if (fileName.endsWith(".c") || fileName.endsWith(".cpp")) {
-            return "⚙️"
+            return ""
         } else if (fileName.endsWith(".py")) {
-            return "🐍"
+            return ""
         } else if (fileName.endsWith(".js")) {
-            return "📘"
+            return ""
         } else if (fileName.endsWith(".md")) {
-            return "📝"
+            return ""
         } else {
-            return "📄"
+            return ""
         }
     }
 
@@ -183,7 +183,7 @@ export default function AddChallengeForm() {
 
             // Show success toast
             toast({
-                title: "✅ Challenge Created Successfully!",
+                title: " Challenge Created Successfully!",
                 description: `"${data.title}" has been added to the platform and is now available to players.`,
                 duration: 5000,
             })
@@ -215,7 +215,7 @@ export default function AddChallengeForm() {
             console.error("Challenge creation error:", error)
             
             toast({
-                title: "❌ Error Creating Challenge",
+                title: " Error Creating Challenge",
                 description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
                 variant: "destructive",
                 duration: 7000,

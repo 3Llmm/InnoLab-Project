@@ -59,7 +59,7 @@ export default async function ProfilePage() {
                   <p className="text-xs text-muted-foreground">{sub.category}</p>
                 </div>
                 <div className="text-right">
-                  <span className={sub.solved ? "text-accent" : "text-destructive"}>{sub.solved ? "✓" : "✗"}</span>
+                  <span className={sub.solved ? "text-accent" : "text-destructive"}>{sub.solved ? "" : ""}</span>
                   <p className="text-xs text-muted-foreground">{sub.time}</p>
                 </div>
               </div>

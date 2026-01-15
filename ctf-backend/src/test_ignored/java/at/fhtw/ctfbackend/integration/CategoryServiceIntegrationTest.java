@@ -33,9 +33,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    // ────────────────────────────────
+    // 
     // Category Listing
-    // ────────────────────────────────
+    // 
     @Nested
     @DisplayName("Category Listing")
     class CategoryListing {
@@ -74,9 +74,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
-    // ────────────────────────────────
+    // 
     // Create Single Category
-    // ────────────────────────────────
+    // 
     @Nested
     @DisplayName("Create Single Category")
     class CreateSingleCategory {
@@ -138,9 +138,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
-    // ────────────────────────────────
+    // 
     // Create Multiple Categories
-    // ────────────────────────────────
+    // 
     @Nested
     @DisplayName("Create Multiple Categories")
     class CreateMultipleCategories {
@@ -187,9 +187,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
-    // ────────────────────────────────
+    // 
     // Confluence Integration
-    // ────────────────────────────────
+    // 
     @Nested
     @DisplayName("Confluence Integration")
     class ConfluenceIntegration {
@@ -223,9 +223,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
-    // ────────────────────────────────
+    // 
     // JSON Parsing & Validation
-    // ────────────────────────────────
+    // 
     @Nested
     @DisplayName("JSON Parsing & Validation")
     class JsonParsing {
@@ -265,9 +265,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
-    // ────────────────────────────────
+    // 
     // Database Integrity
-    // ────────────────────────────────
+    // 
     @Nested
     @Transactional
     @DisplayName("Database Integrity")
@@ -310,9 +310,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
-    // ────────────────────────────────
+    // 
     // Mapping
-    // ────────────────────────────────
+    // 
     @Nested
     @DisplayName("Entity ↔ Model Mapping")
     class Mapping {
@@ -350,9 +350,9 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
-    // ────────────────────────────────
+    // 
     // Edge Cases
-    // ────────────────────────────────
+    // 
     @Nested
     @DisplayName("Edge Cases")
     class EdgeCases {
@@ -369,12 +369,12 @@ class CategoryServiceIntegrationTest extends BaseIntegrationTest {
         @Test
         void unicodeCharacters_Supported() throws JsonProcessingException {
             String json = """
-                { "id": "unicode", "name": "Тест 测试 ", "pageId": "12345" }
+                { "id": "unicode", "name": "Тест  ", "pageId": "12345" }
                 """;
             categoryService.createCategory(json);
 
             CategoryEntity saved = categoryRepository.findById("unicode").orElseThrow();
-            assertEquals("Тест 测试 ", saved.getName());
+            assertEquals("Тест  ", saved.getName());
         }
 
         @Test

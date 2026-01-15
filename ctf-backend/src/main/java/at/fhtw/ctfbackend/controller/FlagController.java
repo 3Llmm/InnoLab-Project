@@ -20,7 +20,7 @@ public class FlagController {
     }
 
     @PostMapping("/submit")
-    @Transactional  // ✅ Add this annotation
+    @Transactional  //  Add this annotation
     public ResponseEntity<Map<String, Object>> submitFlag(
             Authentication auth,
             @RequestBody SubmitFlagRequest request) {
@@ -67,7 +67,7 @@ public class FlagController {
                     ));
         }
 
-        // ✅ Get the updated solve count AFTER the transaction commits
+        //  Get the updated solve count AFTER the transaction commits
         long solveCount = flagService.getSolveCountForChallenge(challengeId);
 
         Map<String, Object> response = new java.util.HashMap<>();
