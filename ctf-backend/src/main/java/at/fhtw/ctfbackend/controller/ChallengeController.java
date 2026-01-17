@@ -133,7 +133,7 @@ public class ChallengeController {
             @RequestParam(required = false) String flag,
             @RequestParam(required = false) MultipartFile downloadFile,
             @RequestParam(required = false) String dockerImageName,
-            @RequestParam(required = false, defaultValue = "false") Boolean requiresInstance,
+            @RequestParam(required = false, defaultValue = "false") String requiresInstance,
             @RequestParam(required = false) MultipartFile[] dockerFiles,
             @RequestParam(required = false) String[] hints) {
 
@@ -145,12 +145,34 @@ public class ChallengeController {
             System.out.println("  difficulty: " + difficulty);
             System.out.println("  points: " + points);
             System.out.println("  flag: " + (flag != null ? flag : "null"));
-            System.out.println("  requiresInstance: " + requiresInstance);
+            System.out.println("  requiresInstance (raw): " + requiresInstance);
+            System.out.println("  requiresInstance type: " + (requiresInstance != null ? requiresInstance.getClass().getName() : "null"));
 
+            // Convert string to boolean
+            Boolean requiresInstanceBoolean = Boolean.parseBoolean(requiresInstance);
+            System.out.println("  requiresInstance (raw): " + requiresInstance);
+            System.out.println("  requiresInstance (converted): " + requiresInstanceBoolean);
+            System.out.println("  requiresInstance (converted type): " + (requiresInstanceBoolean != null ? requiresInstanceBoolean.getClass().getName() : "null"));
+            System.out.println("  requiresInstance (converted value check): " + (requiresInstanceBoolean != null && requiresInstanceBoolean));
+
+            // Additional debug: print all parameters
+            System.out.println("=== DEBUG: All parameters received ===");
+            System.out.println("title: " + title);
+            System.out.println("description: " + description);
+            System.out.println("category: " + category);
+            System.out.println("difficulty: " + difficulty);
+            System.out.println("points: " + points);
+            System.out.println("flag: " + flag);
+            System.out.println("dockerImageName: " + dockerImageName);
+            System.out.println("requiresInstance (final): " + requiresInstanceBoolean);
+            System.out.println("downloadFile: " + (downloadFile != null ? downloadFile.getOriginalFilename() : "null"));
+            System.out.println("dockerFiles: " + (dockerFiles != null ? dockerFiles.length : 0));
+            System.out.println("hints: " + (hints != null ? hints.length : 0));
+            System.out.println("=== END DEBUG ===");
 
             Challenge createdChallenge = challengeService.createChallenge(
                     title, description, category, difficulty, points, flag,
-                    downloadFile, dockerImageName, requiresInstance, dockerFiles, hints
+                    downloadFile, dockerImageName, requiresInstanceBoolean, dockerFiles, hints
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
@@ -178,14 +200,17 @@ public class ChallengeController {
             @RequestParam(required = false) String flag,
             @RequestParam(required = false) MultipartFile downloadFile,
             @RequestParam(required = false) String dockerImageName,
-            @RequestParam(required = false) Boolean requiresInstance,
+            @RequestParam(required = false) String requiresInstance,
             @RequestParam(required = false) MultipartFile[] dockerFiles,
             @RequestParam(required = false) String[] hints) {
 
         try {
+            // Convert string to boolean for update as well
+            Boolean requiresInstanceBoolean = requiresInstance != null ? Boolean.parseBoolean(requiresInstance) : null;
+            
             Challenge updatedChallenge = challengeService.updateChallenge(
                     id, title, description, category, difficulty, points, flag,
-                    downloadFile, dockerImageName, requiresInstance, dockerFiles, hints
+                    downloadFile, dockerImageName, requiresInstanceBoolean, dockerFiles, hints
             );
 
             return ResponseEntity.ok(updatedChallenge);

@@ -127,7 +127,21 @@ public class ChallengeService {
 
         // Set other optional fields
         entity.setDockerImageName(dockerImageName);
-        entity.setRequiresInstance(requiresInstance != null ? requiresInstance : false);
+        
+        // Detailed debug for requiresInstance
+        System.out.println("=== DEBUG: ChallengeService requiresInstance processing ===");
+        System.out.println("DEBUG: requiresInstance parameter received: " + requiresInstance);
+        System.out.println("DEBUG: requiresInstance parameter type: " + (requiresInstance != null ? requiresInstance.getClass().getName() : "null"));
+        
+        boolean finalRequiresInstanceValue = requiresInstance != null ? requiresInstance : false;
+        System.out.println("DEBUG: Final boolean value to set: " + finalRequiresInstanceValue);
+        System.out.println("DEBUG: Final boolean value type: " + Boolean.class.getName());
+        
+        entity.setRequiresInstance(finalRequiresInstanceValue);
+        
+        // Verify what was actually set in the entity
+        System.out.println("DEBUG: Entity requiresInstance after setting: " + entity.isRequiresInstance());
+        System.out.println("=== END DEBUG ===");
 
         // Set hints
         if (hints != null && hints.length > 0) {
@@ -137,7 +151,27 @@ public class ChallengeService {
         }
 
         try {
+            // Debug: Before save
+            System.out.println("=== DEBUG: Before database save ===");
+            System.out.println("DEBUG: Entity ID: " + entity.getId());
+            System.out.println("DEBUG: Entity requiresInstance before save: " + entity.isRequiresInstance());
+            System.out.println("DEBUG: Entity dockerImageName before save: " + entity.getDockerImageName());
+            System.out.println("=== END DEBUG ===");
+            
             ChallengeEntity savedEntity = repo.saveAndFlush(entity);
+            
+            // Debug: Check what was actually saved to database
+            System.out.println("=== DEBUG: After database save ===");
+            System.out.println("DEBUG: Saved entity ID: " + savedEntity.getId());
+            System.out.println("DEBUG: Saved entity requiresInstance: " + savedEntity.isRequiresInstance());
+            System.out.println("DEBUG: Saved entity dockerImageName: " + savedEntity.getDockerImageName());
+            
+            // Check if the saved entity is the same object
+            System.out.println("DEBUG: Same object reference: " + (entity == savedEntity));
+            System.out.println("DEBUG: Entity hashCode: " + entity.hashCode());
+            System.out.println("DEBUG: Saved entity hashCode: " + savedEntity.hashCode());
+            System.out.println("=== END DEBUG ===");
+            
             System.out.println("Challenge created: " + challengeId);
             return toModel(savedEntity);
         } catch (Exception e) {
@@ -342,8 +376,11 @@ public class ChallengeService {
         );
 
         // Set additional fields
-        challenge.setRequiresInstance(e.isRequiresInstance());
+        boolean entityRequiresInstance = e.isRequiresInstance();
+        System.out.println("DEBUG: toModel - entity requiresInstance: " + entityRequiresInstance);
+        challenge.setRequiresInstance(entityRequiresInstance);
         challenge.setDockerImageName(e.getDockerImageName());
+        System.out.println("DEBUG: toModel - challenge requiresInstance after setting: " + challenge.getRequiresInstance());
 
         // Set file information
         challenge.setChallengeFolderPath(e.getChallengeFolderPath());

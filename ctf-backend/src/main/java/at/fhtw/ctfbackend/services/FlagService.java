@@ -32,11 +32,11 @@ public class FlagService {
             ChallengeEntity challenge = challengeRepo.findById(challengeId)
                     .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
 
-            // 2. Determine if instance is needed based on Docker image presence
-            boolean requiresInstance = challenge.getDockerImageName() != null &&
-                    !challenge.getDockerImageName().isEmpty();
+            // 2. Use the explicit requiresInstance field from the challenge
+            boolean requiresInstance = challenge.isRequiresInstance();
 
             System.out.println("  Challenge " + challengeId + " requires instance: " + requiresInstance);
+            System.out.println("  Challenge dockerImageName: " + challenge.getDockerImageName());
 
             boolean isValid;
 

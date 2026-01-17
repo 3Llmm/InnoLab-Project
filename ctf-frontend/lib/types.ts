@@ -47,6 +47,12 @@ export function hasDownloadableFiles(challenge: Challenge): boolean {
 
 // Helper function to check if challenge requires instance
 export function requiresInstance(challenge: Challenge): boolean {
+    console.log("DEBUG: requiresInstance check - challenge.requiresInstance:", challenge.requiresInstance);
+    console.log("DEBUG: requiresInstance check - type:", typeof challenge.requiresInstance);
+    console.log("DEBUG: requiresInstance check - strict equality (=== true):", challenge.requiresInstance === true);
+    console.log("DEBUG: requiresInstance check - loose equality (== true):", challenge.requiresInstance == true);
+    console.log("DEBUG: requiresInstance check - Boolean():", Boolean(challenge.requiresInstance));
+    
     return challenge.requiresInstance === true;
 }
 

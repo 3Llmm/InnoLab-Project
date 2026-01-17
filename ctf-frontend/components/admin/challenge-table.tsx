@@ -134,17 +134,20 @@ const handleDelete = async (challenge: Challenge) => {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="flex items-center gap-1 w-20 justify-center">
-                      {challenge.requiresInstance ? (
-                        <>
-                          <Play className="h-3 w-3" />
-                          Instance
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-3 w-3" />
-                          Static
-                        </>
-                      )}
+                      {(() => {
+                        console.log("DEBUG: Challenge table - challenge:", challenge.title, "requiresInstance:", challenge.requiresInstance, "type:", typeof challenge.requiresInstance);
+                        return challenge.requiresInstance ? (
+                          <>
+                            <Play className="h-3 w-3" />
+                            Instance
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-3 w-3" />
+                            Static
+                          </>
+                        );
+                      })()}
                     </Badge>
                   </TableCell>
                   <TableCell>
