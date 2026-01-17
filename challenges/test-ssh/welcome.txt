@@ -1,4 +1,0 @@
-Welcome to your test challenge!
-
-Your unique FLAG is stored in /flag.txt.
-Try reading it using: cat /flag.txt

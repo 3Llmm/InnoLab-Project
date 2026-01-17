@@ -257,7 +257,6 @@ public class DockerService {
             // Add memory limits and security constraints
             command.add("--memory=512m");
             command.add("--cpus=1.0");
-            command.add("--read-only");
             command.add("--tmpfs=/tmp:rw,noexec,nosuid,size=100m");
 
             command.add(imageName);
