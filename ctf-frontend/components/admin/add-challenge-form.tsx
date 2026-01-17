@@ -428,31 +428,7 @@ export default function AddChallengeForm() {
 
                                 {requiresInstance && (
                                     <div className="space-y-6 border rounded-lg p-6 bg-muted/30">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <FormField
-                                                control={form.control}
-                                                name="dockerImageName"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Docker Image Name</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                placeholder="myctf/pwn-stack0"
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                        <FormDescription>
-                                                            Optional: Name for the Docker image
-                                                        </FormDescription>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
 
-                                            <div className="space-y-4">
-                                                {/* Port fields removed - allocation happens instantly on server */}
-                                            </div>
-                                        </div>
 
                                         {/* Docker Files Upload Section */}
                                         <div className="space-y-4 pt-4 border-t">
@@ -478,7 +454,7 @@ export default function AddChallengeForm() {
                                                     <Input
                                                         type="file"
                                                         multiple
-                                                        accept=".dockerfile,.Dockerfile,.sh,.c,.cpp,.py,.js,.txt,.md,.yml,.yaml,.json,*/*"
+                                                        accept="*"
                                                         onChange={(e) => handleDockerFileChange(e.target.files)}
                                                     />
                                                 </div>
