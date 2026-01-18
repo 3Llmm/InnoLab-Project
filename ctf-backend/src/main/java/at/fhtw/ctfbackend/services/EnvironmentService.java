@@ -26,8 +26,6 @@ public class EnvironmentService {
     // Thread-safe port allocation tracking
     private final Set<Integer> allocatedPorts = ConcurrentHashMap.newKeySet();
     private static final int SSH_BASE = 30000;
-    private static final int VSCODE_BASE = 31000;
-    private static final int DESKTOP_BASE = 32000;
     private static final int PORT_RANGE = 1000;
 
     public EnvironmentService(
@@ -59,23 +57,19 @@ public class EnvironmentService {
         String realFlag = generateFlag(challengeId);
         String flagHash = sha256(realFlag);
 
-        // 4. Allocate available ports (with retry logic)
+        // 4. Allocate available SSH port (with retry logic)
         int maxRetries = 3;
-        int sshPort = 0, vscodePort = 0, desktopPort = 0;
+        int sshPort = 0;
 
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
                 sshPort = allocatePort(SSH_BASE);
-                vscodePort = allocatePort(VSCODE_BASE);
-                desktopPort = allocatePort(DESKTOP_BASE);
                 break; // Success
             } catch (RuntimeException e) {
                 if (attempt == maxRetries - 1) {
                     // Release any partially allocated ports
                     if (sshPort != 0) releasePort(sshPort);
-                    if (vscodePort != 0) releasePort(vscodePort);
-                    if (desktopPort != 0) releasePort(desktopPort);
-                    throw new RuntimeException("Failed to allocate ports after " + maxRetries + " attempts", e);
+                    throw new RuntimeException("Failed to allocate SSH port after " + maxRetries + " attempts", e);
                 }
                 // Wait before retry
                 try { Thread.sleep(100); } catch (InterruptedException ignored) {}
@@ -96,20 +90,17 @@ public class EnvironmentService {
         inst.setExpiresAt(Instant.now().plusSeconds(3600)); // 1 hour
         inst.setStatus("RUNNING");
         inst.setSshPort(sshPort);
-        inst.setVscodePort(vscodePort);
-        inst.setDesktopPort(desktopPort);
 
         try {
             instanceRepo.save(inst);
 
-            // 6. Start Docker container with real FLAG
+            // 6. Generate image name from challenge ID and start Docker container with real FLAG
+            String imageName = "ctf-" + challengeId.toLowerCase().replaceAll("[^a-z0-9-]", "");
             dockerService.runContainer(
                     containerName,
-                    challenge.getDockerImageName(),
+                    imageName,
                     realFlag,
-                    sshPort,
-                    vscodePort,
-                    desktopPort
+                    sshPort
             );
 
             return inst;
@@ -117,8 +108,7 @@ public class EnvironmentService {
         } catch (Exception e) {
             // Rollback port allocations if container start fails
             releasePort(sshPort);
-            releasePort(vscodePort);
-            releasePort(desktopPort);
+
             throw new RuntimeException("Failed to start container", e);
         }
     }
@@ -147,10 +137,8 @@ public class EnvironmentService {
             }
         }
 
-        // Release ports back to pool (CRITICAL!)
+        // Release SSH port back to pool (CRITICAL!)
         releasePort(inst.getSshPort());
-        releasePort(inst.getVscodePort());
-        releasePort(inst.getDesktopPort());
 
         inst.setStatus("STOPPED");
         instanceRepo.save(inst);
@@ -174,10 +162,8 @@ public class EnvironmentService {
         String realFlag = generateFlag(challengeId);
         String flagHash = sha256(realFlag);
 
-        // Allocate ports
+        // Allocate SSH port
         int sshPort = allocatePort(SSH_BASE);
-        int vscodePort = allocatePort(VSCODE_BASE);
-        int desktopPort = allocatePort(DESKTOP_BASE);
 
         // Create instance entry
         String instanceId = UUID.randomUUID().toString();
@@ -193,8 +179,6 @@ public class EnvironmentService {
         inst.setExpiresAt(Instant.now().plusSeconds(3600));
         inst.setStatus("RUNNING");
         inst.setSshPort(sshPort);
-        inst.setVscodePort(vscodePort);
-        inst.setDesktopPort(desktopPort);
 
         try {
             instanceRepo.save(inst);
@@ -204,9 +188,7 @@ public class EnvironmentService {
                     challengeId,
                     containerName,
                     realFlag,
-                    sshPort,
-                    vscodePort,
-                    desktopPort
+                    sshPort
             );
 
             return inst;
@@ -214,8 +196,7 @@ public class EnvironmentService {
         } catch (Exception e) {
             // Rollback port allocations
             releasePort(sshPort);
-            releasePort(vscodePort);
-            releasePort(desktopPort);
+
             throw new RuntimeException("Failed to build and start challenge", e);
         }
     }
@@ -332,8 +313,6 @@ public class EnvironmentService {
 
         for (ChallengeInstanceEntity inst : runningInstances) {
             allocatedPorts.add(inst.getSshPort());
-            allocatedPorts.add(inst.getVscodePort());
-            allocatedPorts.add(inst.getDesktopPort());
         }
 
         System.out.println("Loaded " + allocatedPorts.size() + " allocated ports from database");

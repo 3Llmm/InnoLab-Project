@@ -40,7 +40,7 @@ export async function getAdminStats(): Promise<AdminStats> {
 // Add the missing createChallenge function
 export async function createChallenge(formData: FormData): Promise<any> {
     try {
-        console.log('Sending create challenge request to http://localhost:8081/api/challenges...');
+        console.log('Sending create challenge request to http://localhost:8080/api/challenges...');
 
         // Log FormData contents for debugging
         for (const [key, value] of formData.entries()) {
@@ -51,7 +51,7 @@ export async function createChallenge(formData: FormData): Promise<any> {
             }
         }
 
-        const response = await fetch('http://localhost:8081/api/challenges', {
+        const response = await fetch('http://localhost:8080/api/challenges', {
             method: 'POST',
             body: formData,
             credentials: 'include',

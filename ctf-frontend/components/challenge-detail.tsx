@@ -566,47 +566,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                                             </code>
                                         </div>
 
-                                        {/* VS Code Access */}
-                                        <div className="border rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Code className="w-4 h-4 text-muted-foreground" />
-                                                    <span className="text-sm font-medium">VS Code</span>
-                                                </div>
-                                                <a
-                                                    href={`http://localhost:${environment.vscodePort}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs text-primary hover:underline flex items-center gap-1"
-                                                >
-                                                    Open <ExternalLink className="w-3 h-3" />
-                                                </a>
-                                            </div>
-                                            <code className="text-xs bg-muted p-2 rounded block font-mono">
-                                                http://localhost:{environment.vscodePort}
-                                            </code>
-                                        </div>
 
-                                        {/* Desktop Access */}
-                                        <div className="border rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Monitor className="w-4 h-4 text-muted-foreground" />
-                                                    <span className="text-sm font-medium">Desktop GUI</span>
-                                                </div>
-                                                <a
-                                                    href={`http://localhost:${environment.desktopPort}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs text-primary hover:underline flex items-center gap-1"
-                                                >
-                                                    Open <ExternalLink className="w-3 h-3" />
-                                                </a>
-                                            </div>
-                                            <code className="text-xs bg-muted p-2 rounded block font-mono">
-                                                http://localhost:{environment.desktopPort}
-                                            </code>
-                                        </div>
                                     </div>
 
                                     <div className="text-xs text-muted-foreground pt-2 border-t">
@@ -617,7 +577,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
 
                             {!environment && (
                                 <p className="text-sm text-muted-foreground">
-                                    Start an environment to get SSH access, a web-based VS Code editor, and a desktop GUI with Kali Linux tools.
+                                    Start an environment to get SSH access and solve the challenge.
                                 </p>
                             )}
                         </div>

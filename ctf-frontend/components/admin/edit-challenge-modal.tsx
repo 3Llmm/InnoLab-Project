@@ -24,13 +24,13 @@ const challengeFormSchema = z.object({
   category: z.string().min(1, "Category is required"),
   difficulty: z.enum(["easy", "medium", "hard"]),
   points: z.number().min(1, "Points must be at least 1"),
-  flag: z.string().min(1, "Flag is required"),
+  flag: z.string().optional(),
   file: z.instanceof(File).optional(),
-  
+
   // Instance fields
   requiresInstance: z.boolean().default(false),
   dockerImageName: z.string().optional(),
-  
+
   // Hints
   hints: z.array(z.string()).optional(),
 })

@@ -96,9 +96,7 @@ public class DockerService {
     public String buildAndRun(String challengeId,
                               String containerName,
                               String flag,
-                              int sshPort,
-                              int vscodePort,
-                              int desktopPort) {
+                              int sshPort) {
 
         validateChallengeId(challengeId);
 
@@ -118,7 +116,7 @@ public class DockerService {
 
         // Run container
         System.out.println(" Running container: " + containerName);
-        runContainer(containerName, imageTag, flag, sshPort, vscodePort, desktopPort);
+        runContainer(containerName, imageTag, flag, sshPort);
 
         return containerName;
     }
@@ -224,12 +222,12 @@ public class DockerService {
      * Run a container with security constraints
      */
     public void runContainer(String containerName, String imageName, String flag,
-                             int sshPort, int vscodePort, int desktopPort) {
+                             int sshPort) {
 
         System.out.println(" === RUN CONTAINER ===");
         System.out.println(" Image: " + imageName);
         System.out.println(" Container: " + containerName);
-        System.out.println(" Ports: SSH=" + sshPort + ", VSCode=" + vscodePort + ", Desktop=" + desktopPort);
+        System.out.println(" Ports: SSH=" + sshPort);
         System.out.println(" Flag: " + (flag != null ? flag.substring(0, Math.min(flag.length(), 20)) : "null"));
 
         try {
@@ -242,17 +240,7 @@ public class DockerService {
                     "-p", sshPort + ":22"
             ));
 
-            // Add VSCode port if specified and valid
-            if (vscodePort > 0) {
-                command.add("-p");
-                command.add(vscodePort + ":8080");
-            }
 
-            // Add Desktop port if specified and valid
-            if (desktopPort > 0) {
-                command.add("-p");
-                command.add(desktopPort + ":6080");
-            }
 
             // Add memory limits and security constraints
             command.add("--memory=512m");

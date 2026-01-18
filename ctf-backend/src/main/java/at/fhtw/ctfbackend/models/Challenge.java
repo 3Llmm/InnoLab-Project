@@ -18,7 +18,7 @@ public class Challenge {
     // New fields for instance-based challenges
     private Boolean solved = false;
     private Boolean requiresInstance = false;
-    private String dockerImageName;
+
     private String[] hints;
 
     // New fields for file storage
@@ -43,7 +43,7 @@ public class Challenge {
     public Challenge(String id, String title, String description,
                      String category, String difficulty, Integer points,
                      String downloadUrl, String originalFilename,
-                     Boolean requiresInstance, String dockerImageName) {
+                     Boolean requiresInstance) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -53,14 +53,13 @@ public class Challenge {
         this.downloadUrl = downloadUrl;
         this.originalFilename = originalFilename;
         this.requiresInstance = requiresInstance != null ? requiresInstance : false;
-        this.dockerImageName = dockerImageName;
     }
 
     // Additional constructor with all fields
     public Challenge(String id, String title, String description,
                      String category, String difficulty, Integer points,
                      String downloadUrl, String originalFilename,
-                     Boolean requiresInstance, String dockerImageName,
+                     Boolean requiresInstance,
                      String challengeFolderPath,
                      String dockerFilesJson,
                      String[] hints) {
@@ -73,7 +72,6 @@ public class Challenge {
         this.downloadUrl = downloadUrl;
         this.originalFilename = originalFilename;
         this.requiresInstance = requiresInstance != null ? requiresInstance : false;
-        this.dockerImageName = dockerImageName;
         this.challengeFolderPath = challengeFolderPath;
         this.dockerFilesJson = dockerFilesJson;
         this.hints = hints;

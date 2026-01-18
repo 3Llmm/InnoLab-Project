@@ -27,7 +27,7 @@ services:
       - challenges_data:/app/challenges
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "8081:8080"
+      - "8080:8080"
     networks:
       - ctf-isolated
     depends_on:
@@ -40,6 +40,7 @@ services:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - TERMINAL_GATEWAY_URL=http://terminal:3001
       - TERMINAL_WS_URL=ws://terminal:3001
+    command: bash -c "java -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStorePassword=changeit -jar app.jar"
     restart: unless-stopped
 
   db:
@@ -83,8 +84,8 @@ services:
     networks:
       - ctf-isolated
     environment:
-      - API_URL=http://app:8081
-      - NEXT_PUBLIC_API_URL=http://localhost:8081
+      - API_URL=http://app:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
       - TERMINAL_WS_URL=ws://localhost:3001
     depends_on:
       - app

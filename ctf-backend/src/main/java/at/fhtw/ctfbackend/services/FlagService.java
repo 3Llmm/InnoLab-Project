@@ -36,7 +36,7 @@ public class FlagService {
             boolean requiresInstance = challenge.isRequiresInstance();
 
             System.out.println("  Challenge " + challengeId + " requires instance: " + requiresInstance);
-            System.out.println("  Challenge dockerImageName: " + challenge.getDockerImageName());
+
 
             boolean isValid;
 

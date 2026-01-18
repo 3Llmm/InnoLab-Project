@@ -7,6 +7,16 @@ export async function getAllChallenges(): Promise<Challenge[]> {
     return response
   } catch (error) {
     console.error('Failed to fetch challenges:', error)
+    // Check if this is an authentication error (shouldn't happen for GET requests now)
+    if (error instanceof Error && error.message.includes('403')) {
+      console.warn('Unexpected authentication error for challenges endpoint')
+      // Fallback: try to show user-friendly message
+      throw new Error('Failed to load challenges. Please try again later.')
+    }
+    // Handle other errors
+    if (error instanceof Error) {
+      throw new Error('Failed to load challenges. Please try again later.')
+    }
     throw error
   }
 }
@@ -50,7 +60,7 @@ export async function createChallenge(challengeData: CreateChallengeData): Promi
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges`,
       {
         method: 'POST',
         body: formData,
@@ -87,7 +97,7 @@ export async function updateChallenge(id: string, challengeData: Partial<CreateC
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges/${id}`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${id}`,
       {
         method: 'PUT',
         body: formData,
@@ -109,7 +119,7 @@ export async function updateChallenge(id: string, challengeData: Partial<CreateC
 export async function deleteChallenge(id: string): Promise<void> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges/${id}`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${id}`,
       {
         method: 'DELETE',
         credentials: 'include',
@@ -153,7 +163,7 @@ export async function deleteChallenge(id: string): Promise<void> {
 export async function downloadChallengeFile(id: string): Promise<Blob> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/challenges/${id}/download`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/challenges/${id}/download`,
       {
         method: 'GET',
         credentials: 'include',

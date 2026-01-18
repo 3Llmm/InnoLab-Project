@@ -44,14 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  // Clear all cookies on app startup
-  useEffect(() => {
-    document.cookie.split(";").forEach((c) => {
-      document.cookie = c
-        .replace(/^ +/, "")
-        .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
-    });
-  }, []) // Empty array = runs once on mount
+  // Note: Removed cookie clearing on app startup as it was causing authentication issues
+  // by deleting the auth_token cookie immediately after login
 
   const checkAuth = async () => {
     try {

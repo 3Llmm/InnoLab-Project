@@ -5,17 +5,17 @@ const getApiBaseUrl = () => {
     if (process.env.NEXT_PUBLIC_API_URL) {
         // If we're on the server (SSR), use the internal Docker service name
         if (typeof window === 'undefined') {
-            return process.env.API_URL || 'http://app:8081';
+            return process.env.API_URL || 'http://app:8080';
         }
         // If we're in the browser, use the public URL
         return process.env.NEXT_PUBLIC_API_URL;
     }
     // If running on server (SSR), use Docker service name
     if (typeof window === 'undefined') {
-        return process.env.API_URL || 'http://app:8081';
+        return process.env.API_URL || 'http://app:8080';
     }
     // If running in browser, use localhost
-    return 'http://localhost:8081';
+    return 'http://localhost:8080';
 };
 
 // Helper function to extract filename from Content-Disposition header

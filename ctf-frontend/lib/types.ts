@@ -105,7 +105,7 @@ export interface CreateChallengeData {
     category: string
     difficulty: string
     points: number
-    flag: string
+    flag?: string
     file: File
     dockerImageName?: string
     requiresInstance?: boolean

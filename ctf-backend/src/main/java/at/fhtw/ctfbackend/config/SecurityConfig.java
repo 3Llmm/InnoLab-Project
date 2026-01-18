@@ -10,6 +10,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
@@ -67,7 +68,10 @@ public class SecurityConfig {
         .requestMatchers("/api/solves/total-count").permitAll()  // Total solve count is public
 
         // Protected (token required)
-        .requestMatchers("/api/challenges/**").authenticated()
+        .requestMatchers(HttpMethod.POST, "/api/challenges/**").authenticated()
+        .requestMatchers(HttpMethod.PUT, "/api/challenges/**").authenticated()
+        .requestMatchers(HttpMethod.DELETE, "/api/challenges/**").authenticated()
+        .requestMatchers("/api/challenges/**").permitAll()
         .requestMatchers("/api/environment/**").authenticated()
         .requestMatchers("/api/flags/**").authenticated()
         .requestMatchers("/api/user/me").authenticated()

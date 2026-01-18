@@ -25,7 +25,7 @@ public class ChallengeEntity {
     private boolean requiresInstance;
     private String flag;
 
-    private String dockerImageName;
+
 
     // Store file metadata as JSON
     @Column(columnDefinition = "TEXT")

@@ -31,8 +31,6 @@ public class EnvironmentController {
         return ResponseEntity.ok(Map.of(
                 "instanceId", inst.getInstanceId(),
                 "sshPort", inst.getSshPort(),
-                "vscodePort", inst.getVscodePort(),
-                "desktopPort", inst.getDesktopPort(),
                 "expiresAt", inst.getExpiresAt(),
                 "status", inst.getStatus()
         ));
@@ -72,8 +70,6 @@ public class EnvironmentController {
             return ResponseEntity.ok(Map.of(
                     "instanceId", inst.getInstanceId(),
                     "sshPort", inst.getSshPort(),
-                    "vscodePort", inst.getVscodePort(),
-                    "desktopPort", inst.getDesktopPort(),
                     "expiresAt", inst.getExpiresAt(),
                     "status", inst.getStatus(),
                     "message", "Challenge built and started successfully"

@@ -3,6 +3,7 @@ import { ArrowLeft, BookOpen, ExternalLink } from "lucide-react"
 import ChallengeList from "@/components/challenge-list"
 import { getChallengesByCategory } from "@/lib/api/challenges"
 import { getCategoryByFrontendName } from "@/lib/api/categories"
+import type { Challenge } from '@/lib/types'
 
 interface CategoryPageProps {
   category: string
@@ -13,10 +14,25 @@ interface CategoryPageProps {
 
 export default async function CategoryPage({ category, title, description, color }: CategoryPageProps) {
   // Fetch both challenges and category data (theory from Confluence)
-  const [challenges, categoryData] = await Promise.all([
-    getChallengesByCategory(category),
-    getCategoryByFrontendName(category)
-  ])
+  let challenges: Challenge[] = []
+  let categoryData: any = null
+
+  try {
+    const [challengesResult, categoryDataResult] = await Promise.all([
+      getChallengesByCategory(category),
+      getCategoryByFrontendName(category)
+    ])
+    challenges = challengesResult
+    categoryData = categoryDataResult
+  } catch (error) {
+    console.error('Error loading category data:', error)
+    // If challenges fail to load but categories work, we can still show the page
+    try {
+      categoryData = await getCategoryByFrontendName(category)
+    } catch (categoryError) {
+      console.error('Error loading category data:', categoryError)
+    }
+  }
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -45,7 +61,7 @@ export default async function CategoryPage({ category, title, description, color
               <div className="space-y-4 text-sm">
                 <div>
                   <div className="text-muted-foreground mb-1">Total Challenges</div>
-                  <div className="text-2xl font-bold text-primary">{challenges.length}</div>
+                  <div className="text-2xl font-bold text-primary">{challenges.length > 0 ? challenges.length : 'N/A'}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground mb-1">Difficulty Range</div>
@@ -53,7 +69,7 @@ export default async function CategoryPage({ category, title, description, color
                 </div>
                 <div>
                   <div className="text-muted-foreground mb-1">Total Points</div>
-                  <div className="font-semibold">{challenges.reduce((sum, c) => sum + c.points, 0)} pts</div>
+                  <div className="font-semibold">{challenges.length > 0 ? challenges.reduce((sum, c) => sum + c.points, 0) : 'N/A'} pts</div>
                 </div>
                 {categoryData?.fileUrl && (
                   <div className="pt-4 border-t border-border">
@@ -100,11 +116,6 @@ export default async function CategoryPage({ category, title, description, color
               </div>
             )}
 
-            {/* Challenges Section - Show After Theory */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-6">Challenges</h2>
-              <ChallengeList challenges={challenges} />
-            </div>
           </div>
         </div>
       </div>

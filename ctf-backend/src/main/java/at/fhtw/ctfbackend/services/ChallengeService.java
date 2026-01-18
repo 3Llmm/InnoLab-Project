@@ -50,7 +50,6 @@ public class ChallengeService {
     public Challenge createChallenge(String title, String description, String category,
                                      String difficulty, Integer points, String flag,
                                      MultipartFile downloadFile,
-                                     String dockerImageName,
                                      Boolean requiresInstance,
                                      MultipartFile[] dockerFiles,
                                      String[] hints) throws IOException {
@@ -126,7 +125,7 @@ public class ChallengeService {
         }
 
         // Set other optional fields
-        entity.setDockerImageName(dockerImageName);
+
         
         // Detailed debug for requiresInstance
         System.out.println("=== DEBUG: ChallengeService requiresInstance processing ===");
@@ -155,7 +154,7 @@ public class ChallengeService {
             System.out.println("=== DEBUG: Before database save ===");
             System.out.println("DEBUG: Entity ID: " + entity.getId());
             System.out.println("DEBUG: Entity requiresInstance before save: " + entity.isRequiresInstance());
-            System.out.println("DEBUG: Entity dockerImageName before save: " + entity.getDockerImageName());
+
             System.out.println("=== END DEBUG ===");
             
             ChallengeEntity savedEntity = repo.saveAndFlush(entity);
@@ -164,7 +163,7 @@ public class ChallengeService {
             System.out.println("=== DEBUG: After database save ===");
             System.out.println("DEBUG: Saved entity ID: " + savedEntity.getId());
             System.out.println("DEBUG: Saved entity requiresInstance: " + savedEntity.isRequiresInstance());
-            System.out.println("DEBUG: Saved entity dockerImageName: " + savedEntity.getDockerImageName());
+
             
             // Check if the saved entity is the same object
             System.out.println("DEBUG: Same object reference: " + (entity == savedEntity));
@@ -188,7 +187,6 @@ public class ChallengeService {
     public Challenge updateChallenge(String id, String title, String description, String category,
                                      String difficulty, Integer points, String flag,
                                      MultipartFile downloadFile,
-                                     String dockerImageName,
                                      Boolean requiresInstance,
                                      MultipartFile[] dockerFiles,
                                      String[] hints) throws IOException {
@@ -203,7 +201,6 @@ public class ChallengeService {
         if (difficulty != null) existingEntity.setDifficulty(difficulty);
         if (points != null) existingEntity.setPoints(points);
         if (flag != null) existingEntity.setFlag(flag);
-        if (dockerImageName != null) existingEntity.setDockerImageName(dockerImageName);
         if (requiresInstance != null) existingEntity.setRequiresInstance(requiresInstance);
 
         // Handle download file update
@@ -360,7 +357,7 @@ public class ChallengeService {
         // Only create download URL if there's a file
         String downloadUrl = null;
         if (e.getDownloadZip() != null && e.getDownloadZip().length > 0) {
-            downloadUrl = "http://localhost:8081/api/challenges/" + e.getId() + "/download";
+            downloadUrl = "http://localhost:8080/api/challenges/" + e.getId() + "/download";
         }
 
         // Create challenge with full constructor
@@ -379,7 +376,6 @@ public class ChallengeService {
         boolean entityRequiresInstance = e.isRequiresInstance();
         System.out.println("DEBUG: toModel - entity requiresInstance: " + entityRequiresInstance);
         challenge.setRequiresInstance(entityRequiresInstance);
-        challenge.setDockerImageName(e.getDockerImageName());
         System.out.println("DEBUG: toModel - challenge requiresInstance after setting: " + challenge.getRequiresInstance());
 
         // Set file information

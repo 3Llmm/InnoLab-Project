@@ -29,6 +29,4 @@ public class ChallengeInstanceEntity {
     private String status;      // RUNNING, STOPPED, EXPIRED
 
     private Integer sshPort;
-    private Integer vscodePort;
-    private Integer desktopPort;
 }
