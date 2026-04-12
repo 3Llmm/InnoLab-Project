@@ -56,8 +56,8 @@ export async function generateStaticParams() {
 }
 
 function findLesson(modules: any[], lessonId: number): Lesson | null {
-  for (const module of modules) {
-    for (const lesson of module.lessons) {
+  for (const mod of modules) {
+    for (const lesson of mod.lessons) {
       if (lesson.id === lessonId) {
         return lesson
       }

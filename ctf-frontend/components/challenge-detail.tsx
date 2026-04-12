@@ -103,6 +103,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
         const intervalId = setInterval(updateTimeRemaining, 1000);
 
         return () => clearInterval(intervalId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [environment]);
 
     // Auto-poll environment status every 30 seconds when terminal is open
@@ -650,7 +651,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                             <div>
                                 <h3 className="font-medium text-blue-500 mb-1">No Additional Files or Environment Needed</h3>
                                 <p className="text-sm text-blue-600/80">
-                                    This challenge doesn't require any downloadable files or a separate environment.
+                                    This challenge doesn&apos;t require any downloadable files or a separate environment.
                                     Use your existing tools and knowledge to analyze and solve the challenge.
                                 </p>
                             </div>

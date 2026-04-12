@@ -184,9 +184,10 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
         };
 
         // Capture phase to intercept before browser
-        terminalRef.current.addEventListener('keydown', handleKeyDown, true);
+        const terminal = terminalRef.current;
+        terminal.addEventListener('keydown', handleKeyDown, true);
         return () => {
-            terminalRef.current?.removeEventListener('keydown', handleKeyDown, true);
+            terminal.removeEventListener('keydown', handleKeyDown, true);
         };
     }, []);
 

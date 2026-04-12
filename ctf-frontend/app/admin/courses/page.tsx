@@ -436,8 +436,8 @@ export default function AdminCoursesPage() {
               </div>
             ) : (
               lessons.map((lesson) => {
-                const module = modules.find((m) => m.id === lesson.moduleId)
-                const course = courses.find((c) => c.id === module?.courseId)
+                const lessonModule = modules.find((m) => m.id === lesson.moduleId)
+                const course = courses.find((c) => c.id === lessonModule?.courseId)
 
                 return (
                   <div
@@ -453,7 +453,7 @@ export default function AdminCoursesPage() {
                         <div>
                           <h3 className="font-semibold text-foreground">{lesson.title}</h3>
                           <p className="text-sm text-muted-foreground">
-                            Module: {module?.title ?? "Unknown module"} • Course:{" "}
+                            Module: {lessonModule?.title ?? "Unknown module"} • Course:{" "}
                             {course?.title ?? "Unknown course"}
                           </p>
                         </div>

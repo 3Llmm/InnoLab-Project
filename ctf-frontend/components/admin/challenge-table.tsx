@@ -215,7 +215,7 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Challenge</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <span className="font-semibold text-foreground">"{deleteTarget?.title}"</span>? 
+              Are you sure you want to delete <span className="font-semibold text-foreground">&quot;{deleteTarget?.title}&quot;</span>? 
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
