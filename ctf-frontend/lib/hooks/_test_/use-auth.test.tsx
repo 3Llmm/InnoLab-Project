@@ -8,21 +8,16 @@ const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'auth_user'
 
 function expectLoggedOut(result: any) {
-    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
-    expect(localStorage.getItem(USER_KEY)).toBeNull()
     const { auth } = result.current
     expect(auth.isAuthenticated).toBe(false)
     expect(auth.user).toBeNull()
     expect(auth.token).toBeNull()
 }
 
-function expectLoggedIn(result: any, { user, token }: { user: string; token: string }) {
-    expect(localStorage.getItem(TOKEN_KEY)).toBe(token)
-    expect(localStorage.getItem(USER_KEY)).toBe(user)
+function expectLoggedIn(result: any, { user }: { user: string }) {
     const { auth } = result.current
     expect(auth.isAuthenticated).toBe(true)
     expect(auth.user).toBe(user)
-    expect(auth.token).toBe(token)
 }
 
 
@@ -32,10 +27,17 @@ function wrapper({ children }: { children: React.ReactNode }) {
 
 beforeEach(() => {
     localStorage.clear()
+    Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: 'XSRF-TOKEN=test-csrf-token; path=/',
+    })
     global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
         json: async () => ({}),
+        headers: {
+            get: (name: string) => name === 'Content-Type' ? 'application/json' : null,
+        },
     } as any)
 })
 
@@ -43,6 +45,10 @@ afterEach(() => {
     localStorage.clear()
     global.fetch = ORIGINAL_FETCH
     vi.clearAllMocks()
+    Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: '',
+    })
 })
 
 describe('useAuth basic flow', () => {
@@ -56,7 +62,10 @@ describe('useAuth basic flow', () => {
         ;(global.fetch as any).mockResolvedValueOnce({
             ok: true,
             status: 200,
-            json: async () => ({ token: 'TEST_TOKEN', user: { id: 'u1', name: 'Alice' } }),
+            headers: {
+                get: (name: string) => name === 'Content-Type' ? 'application/json' : null,
+            },
+            json: async () => ({ status: 'success', username: 'Alice', isAdmin: false }),
         })
 
         const { result } = renderHook(() => useAuth(), { wrapper })
@@ -66,28 +75,49 @@ describe('useAuth basic flow', () => {
         })
 
         await waitFor(() => {
-            expectLoggedIn(result, { user: 'Alice', token: 'TEST_TOKEN' })
+            expectLoggedIn(result, { user: 'Alice' })
         })
     })
 
     it('logout() deletes token and sets status back', async () => {
-        localStorage.setItem(TOKEN_KEY, 'TEST_TOKEN')
-        localStorage.setItem(USER_KEY,'Alice')
-
-        const { result } = renderHook(() => useAuth(), { wrapper })
-        act(() => {
-            result.current.logout?.()
+        ;(global.fetch as any).mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            headers: {
+                get: (name: string) => name === 'Content-Type' ? 'application/json' : null,
+            },
+            json: async () => ({}),
         })
 
-        expectLoggedOut(result)
+        const { result } = renderHook(() => useAuth(), { wrapper })
+        
+        await act(async () => {
+            await result.current.logout?.()
+        })
+
+        await waitFor(() => {
+            expectLoggedOut(result)
+        })
     })
 
     it('login() throws understandable error if not ok', async () => {
-        ;(global.fetch as any).mockResolvedValueOnce({
-            ok: false,
-            status: 401,
-            json: async () => ({ message: 'Login failed' }),
-        })
+        ;(global.fetch as any)
+            .mockResolvedValueOnce({
+                ok: false,
+                status: 401,
+                headers: {
+                    get: (name: string) => name === 'Content-Type' ? 'application/json' : null,
+                },
+                json: async () => ({ message: 'Login failed' }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                headers: {
+                    get: (name: string) => name === 'Content-Type' ? 'application/json' : null,
+                },
+                json: async () => ({}),
+            })
 
         const { result } = renderHook(() => useAuth(), { wrapper })
 
