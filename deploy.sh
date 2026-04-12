@@ -99,7 +99,17 @@ log_info "Frontend: OK"
 curl -sf http://localhost:3001/health > /dev/null 2>&1 || log_error "Terminal health check failed"
 log_info "Terminal: OK"
 
-curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1 || curl -sf http://localhost:8080/api/challenges > /dev/null 2>&1 || log_error "Backend health check failed"
+BACKEND_READY=false
+for i in {1..30}; do
+    echo -n "." 
+    if curl -sf http://localhost:8080/api/health > /dev/null 2>&1; then
+        BACKEND_READY=true    
+        break
+    fi
+    sleep 1
+done
+echo ""  
+[[ "$BACKEND_READY" == "true" ]] || log_error "Backend failed to start within 30 seconds"
 log_info "Backend: OK"
 
 log_info "Deployment complete!"
