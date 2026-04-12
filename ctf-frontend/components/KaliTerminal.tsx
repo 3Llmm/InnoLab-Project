@@ -1,19 +1,16 @@
 "use client";
-
 import React, { useEffect, useRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import "xterm/css/xterm.css";
 import { X } from "lucide-react";
-
 interface KaliTerminalProps {
     instanceId?: string;
     sshPort?: number;
     containerName?: string;
     onClose: () => void;
 }
-
 export default function KaliTerminal({ instanceId, sshPort, containerName, onClose }: KaliTerminalProps) {
     const terminalRef = useRef<HTMLDivElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
@@ -21,7 +18,6 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
     const fitAddonRef = useRef<FitAddon | null>(null);
     const isInitializedRef = useRef(false);
     const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error" | "missing_props">("connecting");
-
     useEffect(() => {
         if (!sshPort || !instanceId || !terminalRef.current || isInitializedRef.current) {
             if (!sshPort || !instanceId) {
@@ -29,11 +25,9 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             }
             return;
         }
-
         isInitializedRef.current = true;
-
         try {
-            const terminal = new Terminal({
+            const term = new Terminal({
                 cursorBlink: true,
                 fontSize: 14,
                 fontFamily: 'Consolas, "Courier New", monospace',
@@ -48,79 +42,64 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                 convertEol: true,
                 scrollback: 1000,
             });
-
             const fitAddon = new FitAddon();
-            terminal.loadAddon(fitAddon);
-            terminal.loadAddon(new WebLinksAddon());
-
-            terminalInstanceRef.current = terminal;
+            term.loadAddon(fitAddon);
+            term.loadAddon(new WebLinksAddon());
+            terminalInstanceRef.current = term;
             fitAddonRef.current = fitAddon;
-
-            terminal.open(terminalRef.current);
-
-            // Simple welcome message without control characters
-            terminal.writeln("CTF Challenge Terminal");
-            terminal.writeln("Connecting...\r\n");
-
+            term.open(terminalRef.current);
+            term.writeln("CTF Challenge Terminal");
+            term.writeln("Connecting...\r\n");
             setTimeout(() => {
                 fitAddon.fit();
-                terminal.focus();
+                term.focus();
             }, 100);
-
             const terminalUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || "ws://localhost:3001";
             const wsUrl = `${terminalUrl}/?instanceId=${instanceId}&containerName=${containerName || `ctf-${instanceId.substring(0, 8)}`}&sshPort=${sshPort}`;
-
             const ws = new WebSocket(wsUrl);
             ws.binaryType = 'arraybuffer';
             wsRef.current = ws;
-
             ws.onopen = () => {
                 setConnectionStatus("connected");
-                terminal.writeln("Connected!\r\n");
+                term.writeln("Connected!\r\n");
             };
-
             ws.onmessage = (event) => {
                 try {
                     let data = event.data;
-
                     if (data instanceof ArrayBuffer) {
-                        terminal.write(new Uint8Array(data));
+                        term.write(new Uint8Array(data));
                     } else if (typeof data === 'string') {
-                        terminal.write(data);
+                        term.write(data);
                     } else if (data instanceof Blob) {
                         data.arrayBuffer().then(buffer => {
-                            terminal.write(new Uint8Array(buffer));
+                            term.write(new Uint8Array(buffer));
                         });
                     }
                 } catch (error) {
                     console.error('Message handler error:', error);
                 }
             };
-
             ws.onerror = () => {
                 setConnectionStatus("error");
-                terminal.writeln("\r\nConnection error");
+                term.writeln("\r\nConnection error");
             };
-
             ws.onclose = () => {
                 setConnectionStatus("disconnected");
             };
-
-            const disposable = terminal.onData((data) => {
+            const disposable = term.onData((data) => {
                 if (ws.readyState === WebSocket.OPEN) {
                     ws.send(data);
                 } else {
-                    terminal.write('\r\nNot connected\r\n');
+                    term.write('\r\nNot connected\r\n');
                 }
             });
-
             return () => {
                 disposable.dispose();
                 if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
                     ws.close(1000, "Unmounting");
                 }
                 try {
-                    terminal.dispose();
+                    term.dispose();
                 } catch (error) {
                     console.error("Dispose error:", error);
                 }
@@ -133,7 +112,6 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             setConnectionStatus("error");
         }
     }, [instanceId, sshPort, containerName]);
-
     useEffect(() => {
         const handleResize = () => {
             try {
@@ -144,33 +122,28 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                 // Ignore
             }
         };
-
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
-
     const handleTerminalClick = () => {
         if (terminalInstanceRef.current) {
             terminalInstanceRef.current.focus();
         }
     };
-
     useEffect(() => {
-        const terminal = terminalInstanceRef.current;
-        if (!terminal || !terminalRef.current) return;
-
+        const termEl = terminalInstanceRef.current;
+        const domEl = terminalRef.current;
+        if (!termEl || !domEl) return;
         const handleKeyDown = (event: KeyboardEvent) => {
-            // Ctrl+Shift+C - Copy
             if (event.ctrlKey && event.shiftKey && event.code === 'KeyC') {
                 event.preventDefault();
                 event.stopPropagation();
-                const selection = terminal.getSelection();
+                const selection = termEl.getSelection();
                 if (selection) {
                     navigator.clipboard.writeText(selection);
                 }
                 return false;
             }
-            // Ctrl+Shift+V - Paste
             if (event.ctrlKey && event.shiftKey && event.code === 'KeyV') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -182,15 +155,11 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                 return false;
             }
         };
-
-        // Capture phase to intercept before browser
-        const terminal = terminalRef.current;
-        terminal.addEventListener('keydown', handleKeyDown, true);
+        domEl.addEventListener('keydown', handleKeyDown, true);
         return () => {
-            terminal.removeEventListener('keydown', handleKeyDown, true);
+            domEl.removeEventListener('keydown', handleKeyDown, true);
         };
     }, []);
-
     const getStatusColor = () => {
         switch (connectionStatus) {
             case "connected": return "text-green-500";
@@ -200,7 +169,6 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             default: return "text-gray-500";
         }
     };
-
     const getStatusText = () => {
         switch (connectionStatus) {
             case "connected": return "Connected";
@@ -210,7 +178,6 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             default: return "Disconnected";
         }
     };
-
     if (!sshPort || !instanceId) {
         return (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -227,11 +194,9 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             </div>
         );
     }
-
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col">
-                {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
                     <div>
                         <h2 className="text-lg font-semibold mb-1">Challenge Terminal</h2>
@@ -244,8 +209,6 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-
-                {/* Terminal */}
                 <div className="flex-1 p-4 overflow-hidden">
                     <div
                         ref={terminalRef}
@@ -255,8 +218,6 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                         onMouseDown={handleTerminalClick}
                     />
                 </div>
-
-                {/* Footer */}
                 <div className="p-3 border-t border-border text-xs text-muted-foreground bg-muted/30">
                     <div className="flex justify-between items-center">
                         <div>User: ctfuser</div>

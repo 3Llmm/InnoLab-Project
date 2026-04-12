@@ -248,7 +248,7 @@ export default function AddChallengeForm() {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <div onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             {/* Basic Information */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
@@ -573,8 +573,7 @@ export default function AddChallengeForm() {
                             </div>
 
                             <Button
-                                type="button"
-                                onClick={form.handleSubmit(onSubmit)}
+                                type="submit"
                                 disabled={isLoading}
                                 className="w-full"
                                 size="lg"
@@ -588,7 +587,7 @@ export default function AddChallengeForm() {
                                     "Create Challenge"
                                 )}
                             </Button>
-                        </div>
+                        </form>
                     </Form>
                 </CardContent>
             </Card>
