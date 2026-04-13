@@ -81,18 +81,17 @@ public class DataLoader {
 
                 System.out.println("  -> Read " + zipBytes.length + " bytes");
 
-                ChallengeEntity entity = new ChallengeEntity(
-                        id,
-                        TITLES.getOrDefault(id, id),
-                        DESCRIPTIONS.getOrDefault(id, ""),
-                        CATEGORIES.getOrDefault(id, "web-exploitation"),
-                        DIFFICULTIES.getOrDefault(id, "easy"),
-                        POINTS.getOrDefault(id, 100),
-                        zipBytes,
-                        FLAGS.getOrDefault(id, "")
-                );
-
-                entity.setOriginalFilename(filename);
+                ChallengeEntity entity = ChallengeEntity.builder()
+                        .id(id)
+                        .title(TITLES.getOrDefault(id, id))
+                        .description(DESCRIPTIONS.getOrDefault(id, ""))
+                        .category(CATEGORIES.getOrDefault(id, "web-exploitation"))
+                        .difficulty(DIFFICULTIES.getOrDefault(id, "easy"))
+                        .points(POINTS.getOrDefault(id, 100))
+                        .downloadZip(zipBytes)
+                        .flag(FLAGS.getOrDefault(id, ""))
+                        .originalFilename(filename)
+                        .build();
                 System.out.println("  -> Set originalFilename: " + filename);
 
                 repo.save(entity);

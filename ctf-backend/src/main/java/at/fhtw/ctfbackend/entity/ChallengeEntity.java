@@ -1,13 +1,15 @@
 package at.fhtw.ctfbackend.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "challenges")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ChallengeEntity {
     @Id
     private String id;
@@ -38,24 +40,8 @@ public class ChallengeEntity {
     @Column(columnDefinition = "TEXT")
     private String hintsJson;
 
-    protected ChallengeEntity() { }
-
-    public ChallengeEntity(String id, String title, String description,
-                           String category, String difficulty, Integer points,
-                           byte[] downloadZip, String flag) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.category = category;
-        this.difficulty = difficulty;
-        this.points = points;
-        this.downloadZip = downloadZip;
-        this.flag = flag;
-        this.dockerFilesJson = "{}"; // Initialize empty JSON
-    }
-
     public byte[] getDownload() {
-        return this.downloadZip;
+        return downloadZip;
     }
 
     public void setDownload(byte[] download) {

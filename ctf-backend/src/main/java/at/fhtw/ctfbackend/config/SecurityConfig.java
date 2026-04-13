@@ -1,5 +1,6 @@
 package at.fhtw.ctfbackend.config;
 
+import at.fhtw.ctfbackend.filter.RateLimitFilter;
 import at.fhtw.ctfbackend.security.JwtAuthenticationFilter;
 import at.fhtw.ctfbackend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,13 +23,16 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    private final RateLimitFilter rateLimitFilter;
     private final List<String> allowedOrigins;
 
     public SecurityConfig(
             JwtUtil jwtUtil,
+            RateLimitFilter rateLimitFilter,
             @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3002,http://inno1-bif3-p1-w25.cs.technikum-wien.at:3000}") List<String> allowedOrigins
     ) {
         this.jwtUtil = jwtUtil;
+        this.rateLimitFilter = rateLimitFilter;
         this.allowedOrigins = allowedOrigins;
     }
 
@@ -38,7 +42,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*", "X-XSRF-TOKEN"));
-        configuration.setExposedHeaders(List.of("Set-Cookie"));
+        configuration.setExposedHeaders(List.of("Set-Cookie", "X-RateLimit-Remaining", "Retry-After"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -91,7 +95,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
