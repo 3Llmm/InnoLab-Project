@@ -46,6 +46,56 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
     const [environment, setEnvironment] = useState<EnvironmentInstance | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<string>("");
 
+    // Hint system state
+    const [revealedHints, setRevealedHints] = useState<{ [index: number]: string }>({});
+    const [hintNextUnlocksAt, setHintNextUnlocksAt] = useState<Date | null>(null);
+    const [hintCountdown, setHintCountdown] = useState<string>("");
+
+    // Load hint status on page load
+    useEffect(() => {
+        if (!challenge.hints || challenge.hints.length === 0) return;
+
+        const loadHintStatus = async () => {
+            try {
+                const res = await apiClient.get<{ revealedIndexes: number[]; nextUnlocksAt: string }>(
+                    `/api/hints/status/${challenge.id}`
+                );
+
+                // For each already-revealed hint, store the text from the challenge data
+                const revealed: { [index: number]: string } = {};
+                for (const index of res.revealedIndexes) {
+                    revealed[index] = challenge.hints![index];
+                }
+                setRevealedHints(revealed);
+
+                if (res.nextUnlocksAt) {
+                    setHintNextUnlocksAt(new Date(res.nextUnlocksAt));
+                }
+            } catch (error) {
+                console.error("Error loading hint status:", error);
+            }
+        };
+
+        loadHintStatus();
+    }, [challenge.id, challenge.hints]);
+
+    // Countdown timer for hint time-lock
+    useEffect(() => {
+        if (!hintNextUnlocksAt) return;
+
+        const interval = setInterval(() => {
+            const secondsLeft = Math.ceil((hintNextUnlocksAt.getTime() - Date.now()) / 1000);
+            if (secondsLeft <= 0) {
+                setHintCountdown("");
+                setHintNextUnlocksAt(null);
+            } else {
+                setHintCountdown(`${secondsLeft}s`);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [hintNextUnlocksAt]);
+
     // Check for existing environment on component mount
     useEffect(() => {
         const checkExistingEnvironment = async () => {
@@ -258,6 +308,24 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
             });
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleRevealHint = async (index: number) => {
+        try {
+            const res = await apiClient.post<{ status: string; hintText?: string; unlocksAt?: string }>(
+                "/api/hints/reveal",
+                { challengeId: challenge.id, hintIndex: index }
+            );
+
+            if (res.status === "success" && res.hintText) {
+                setRevealedHints(prev => ({ ...prev, [index]: res.hintText! }));
+                setHintNextUnlocksAt(new Date(Date.now() + 60000));
+            } else if (res.status === "locked" && res.unlocksAt) {
+                setHintNextUnlocksAt(new Date(res.unlocksAt));
+            }
+        } catch (error) {
+            console.error("Error revealing hint:", error);
         }
     };
 
@@ -595,49 +663,52 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                         </h2>
 
                         <div className="space-y-4">
-                            {challenge.hints.map((hint, index) => (
-                                <details key={index} className="group">
-                                    <summary className="list-none cursor-pointer">
-                                        <div className="
-                            p-4
-                            bg-primary/5
-                            border border-primary/20
-                            hover:border-primary
-                            rounded-lg
-                            rounded-b-none
-                            transition-all
-                            hover:bg-primary/10
-                        ">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
+                            {challenge.hints.map((_, index) => {
+                                const penalties = [10, 20, 25];
+                                const penalty = penalties[index] ?? 0;
+                                const isRevealed = index in revealedHints;
+                                const prevRevealed = index === 0 || (index - 1) in revealedHints;
+                                const isLocked = !isRevealed && prevRevealed && !!hintCountdown;
+                                const isAvailable = !isRevealed && prevRevealed && !hintCountdown;
+                                const isBlocked = !isRevealed && !prevRevealed;
 
-                                                    <span className="text-sm text-primary/80">
-                                        Click to reveal hint
-                                    </span>
-                                                </div>
-                                                <div className="text-primary transition-transform group-open:rotate-180">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <polyline points="6 9 12 15 18 9"></polyline>
-                                                    </svg>
-                                                </div>
+                                return (
+                                    <div key={index} className="rounded-lg border border-primary/20 overflow-hidden">
+                                        <div className="p-4 bg-primary/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium">Hint {index + 1}</span>
+                                                <span className="text-xs text-yellow-500">-{penalty}%</span>
                                             </div>
-                                        </div>
-                                    </summary>
 
-                                    <div className="
-                        p-4
-                        bg-primary/10
-                        border border-primary/20
-                        border-t-0
-                        rounded-b-lg
-                        rounded-t-none
-                    ">
-                                        <p className="text-sm text-primary/90">
-                                            {hint}
-                                        </p>
+                                            {isRevealed && (
+                                                <span className="text-xs text-green-500">Revealed</span>
+                                            )}
+                                            {isLocked && (
+                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" /> {hintCountdown}
+                                                </span>
+                                            )}
+                                            {isAvailable && (
+                                                <button
+                                                    onClick={() => handleRevealHint(index)}
+                                                    className="text-xs text-primary hover:underline"
+                                                >
+                                                    Reveal (-{penalty}%)
+                                                </button>
+                                            )}
+                                            {isBlocked && (
+                                                <span className="text-xs text-muted-foreground">Locked</span>
+                                            )}
+                                        </div>
+
+                                        {isRevealed && (
+                                            <div className="p-4 bg-primary/10 border-t border-primary/20">
+                                                <p className="text-sm text-primary/90">{revealedHints[index]}</p>
+                                            </div>
+                                        )}
                                     </div>
-                                </details>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}
