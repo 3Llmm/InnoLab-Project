@@ -46,6 +46,8 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
     const [environment, setEnvironment] = useState<EnvironmentInstance | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<string>("");
 
+    const [pointsEarned, setPointsEarned] = useState<number | null>(null);
+
     // Hint system state
     const [revealedHints, setRevealedHints] = useState<{ [index: number]: string }>({});
     const [hintNextUnlocksAt, setHintNextUnlocksAt] = useState<Date | null>(null);
@@ -259,6 +261,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                 status: string;
                 message: string;
                 solveCount?: number;
+                pointsEarned?: number;
             }>("/api/flags/submit", {
                 challengeId: challenge.id,
                 flag: flag.trim()
@@ -272,6 +275,9 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
             if (response?.status === "success") {
                 setFlag("");
                 setSolved(true);
+                if (response.pointsEarned !== undefined) {
+                    setPointsEarned(response.pointsEarned);
+                }
                 
                 // Update solve stats if provided in response
                 if (response.solveCount !== undefined) {
@@ -663,7 +669,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                         </h2>
 
                         <div className="space-y-4">
-                            {challenge.hints.map((_, index) => {
+                            {challenge.hints.map((hint, index) => {
                                 const penalties = [10, 20, 25];
                                 const penalty = penalties[index] ?? 0;
                                 const isRevealed = index in revealedHints;
@@ -671,39 +677,46 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                                 const isLocked = !isRevealed && prevRevealed && !!hintCountdown;
                                 const isAvailable = !isRevealed && prevRevealed && !hintCountdown;
                                 const isBlocked = !isRevealed && !prevRevealed;
+                                const hintText = isRevealed ? revealedHints[index] : (solved ? hint : null);
 
                                 return (
                                     <div key={index} className="rounded-lg border border-primary/20 overflow-hidden">
                                         <div className="p-4 bg-primary/5 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <span className="text-sm font-medium">Hint {index + 1}</span>
-                                                <span className="text-xs text-yellow-500">-{penalty}%</span>
+                                                {!solved && <span className="text-xs text-yellow-500">-{penalty}%</span>}
                                             </div>
 
-                                            {isRevealed && (
-                                                <span className="text-xs text-green-500">Revealed</span>
-                                            )}
-                                            {isLocked && (
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" /> {hintCountdown}
-                                                </span>
-                                            )}
-                                            {isAvailable && (
-                                                <button
-                                                    onClick={() => handleRevealHint(index)}
-                                                    className="text-xs text-primary hover:underline"
-                                                >
-                                                    Reveal (-{penalty}%)
-                                                </button>
-                                            )}
-                                            {isBlocked && (
-                                                <span className="text-xs text-muted-foreground">Locked</span>
+                                            {solved ? (
+                                                <span className="text-xs text-muted-foreground">Solved</span>
+                                            ) : (
+                                                <>
+                                                    {isRevealed && (
+                                                        <span className="text-xs text-green-500">Revealed</span>
+                                                    )}
+                                                    {isLocked && (
+                                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <Clock className="w-3 h-3" /> {hintCountdown}
+                                                        </span>
+                                                    )}
+                                                    {isAvailable && (
+                                                        <button
+                                                            onClick={() => handleRevealHint(index)}
+                                                            className="text-xs text-primary hover:underline"
+                                                        >
+                                                            Reveal (-{penalty}%)
+                                                        </button>
+                                                    )}
+                                                    {isBlocked && (
+                                                        <span className="text-xs text-muted-foreground">Locked</span>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
 
-                                        {isRevealed && (
+                                        {hintText && (
                                             <div className="p-4 bg-primary/10 border-t border-primary/20">
-                                                <p className="text-sm text-primary/90">{revealedHints[index]}</p>
+                                                <p className="text-sm text-primary/90">{hintText}</p>
                                             </div>
                                         )}
                                     </div>
@@ -786,7 +799,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                         <div>
                             <p className="text-green-500 font-semibold">Challenge Solved!</p>
                             <p className="text-sm text-green-600/80 mt-1">
-                                You earned {challenge.points} points for solving this challenge.
+                                You earned {pointsEarned ?? challenge.points} points for solving this challenge.
                             </p>
                         </div>
                     </div>

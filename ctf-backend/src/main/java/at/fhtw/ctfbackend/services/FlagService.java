@@ -179,4 +179,8 @@ public class FlagService {
     public long getSolveCountForChallenge(String challengeId) {
         return solveService.getSolveCountForChallenge(challengeId);
     }
+
+    public int getPointsEarned(String username, String challengeId) {
+        return solveService.getPointsEarned(username, challengeId);
+    }
 }

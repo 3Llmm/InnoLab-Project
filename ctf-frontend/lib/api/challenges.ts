@@ -85,6 +85,9 @@ export async function updateChallenge(id: string, challengeData: Partial<CreateC
     if (challengeData.requiresInstance !== undefined) {
       formData.append('requiresInstance', challengeData.requiresInstance.toString())
     }
+    if (challengeData.hints && challengeData.hints.length > 0) {
+      challengeData.hints.forEach(hint => formData.append('hints', hint))
+    }
 
     return await apiClient.request<Challenge>(`/api/challenges/${id}`, {
       method: 'PUT',

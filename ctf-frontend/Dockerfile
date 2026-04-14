@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY package*.json ./
-RUN rm -f package-lock.json && npm install
+RUN npm install
 COPY . .
 EXPOSE 3000
 CMD npm run dev

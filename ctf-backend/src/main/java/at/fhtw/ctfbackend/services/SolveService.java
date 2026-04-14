@@ -221,6 +221,12 @@ public class SolveService {
         return solveRepository.findByUsernameAndChallengeId(username, challengeId);
     }
 
+    public int getPointsEarned(String username, String challengeId) {
+        return solveRepository.findByUsernameAndChallengeId(username, challengeId)
+                .map(Solve::getPointsEarned)
+                .orElse(0);
+    }
+
     /**
      * Delete a solve record (for administrative purposes)
      * @param solveId The ID of the solve record to delete

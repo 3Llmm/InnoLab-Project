@@ -90,11 +90,13 @@ public class FlagController {
 
         //  Get the updated solve count AFTER the transaction commits
         long solveCount = flagService.getSolveCountForChallenge(challengeId);
+        int pointsEarned = flagService.getPointsEarned(username, challengeId);
 
         Map<String, Object> response = new java.util.HashMap<>();
         response.put("message", "Correct flag!");
         response.put("status", "success");
         response.put("solveCount", solveCount);
+        response.put("pointsEarned", pointsEarned);
 
         return ResponseEntity.ok(response);
     }
