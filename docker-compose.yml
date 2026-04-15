@@ -39,6 +39,8 @@ services:
       - TERMINAL_GATEWAY_URL=http://terminal:3001
       - TERMINAL_WS_URL=ws://terminal:3001
     command: bash -c "java -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStorePassword=changeit -jar app.jar"
+    extra_hosts:
+      - "ldap.technikum-wien.at:172.31.249.50"
     restart: unless-stopped
 
   db:

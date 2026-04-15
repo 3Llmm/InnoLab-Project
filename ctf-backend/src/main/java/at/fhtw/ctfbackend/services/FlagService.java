@@ -16,12 +16,15 @@ public class FlagService {
     private final EnvironmentService envService;
     private final ChallengeRepository challengeRepo;
     private final SolveService solveService;
+    private final HintService hintService;
 
-    public FlagService(ChallengeInstanceRepository instanceRepo, EnvironmentService envService, ChallengeRepository challengeRepo, SolveService solveService) {
+    public FlagService(ChallengeInstanceRepository instanceRepo, EnvironmentService envService, 
+            ChallengeRepository challengeRepo, SolveService solveService, HintService hintService) {
         this.instanceRepo = instanceRepo;
         this.envService = envService;
         this.challengeRepo = challengeRepo;
         this.solveService = solveService;
+        this.hintService = hintService;
     }
 
     public boolean validateFlag(String username, String challengeId, String submittedFlag) {
@@ -117,8 +120,10 @@ public class FlagService {
                 ChallengeEntity challenge = challengeRepo.findById(challengeId)
                         .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
                 
-                int pointsEarned = challenge.getPoints() != null ? challenge.getPoints() : 0;
-                System.out.println(" Points to award: " + pointsEarned);
+                int basePoints = challenge.getPoints() != null ? challenge.getPoints() : 0;
+                int penaltyPercent = hintService.calculatePenaltyPercent(username, challengeId);
+                int pointsEarned = basePoints * (100 - penaltyPercent) / 100;
+                System.out.println(" Base points: " + basePoints + ", Hint penalty: " + penaltyPercent + "%, Points to award: " + pointsEarned);
                 
                 boolean dbSuccess = solveService.recordSolve(username, challengeId, pointsEarned);
                 System.out.println("  Database record result: " + dbSuccess);
@@ -173,5 +178,9 @@ public class FlagService {
      */
     public long getSolveCountForChallenge(String challengeId) {
         return solveService.getSolveCountForChallenge(challengeId);
+    }
+
+    public int getPointsEarned(String username, String challengeId) {
+        return solveService.getPointsEarned(username, challengeId);
     }
 }

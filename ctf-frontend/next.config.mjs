@@ -7,7 +7,7 @@ const nextConfig = {
   images: { unoptimized: true },
   async rewrites() {
     return [
-      { source: '/api/:path*', destination: 'http://localhost:8080/api/:path*' },
+      { source: '/api/:path*', destination: `${process.env.API_PROXY_TARGET || 'http://app:8080'}/api/:path*` },
     ]
   },
 }

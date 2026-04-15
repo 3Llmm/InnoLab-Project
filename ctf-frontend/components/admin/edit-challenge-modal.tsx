@@ -82,6 +82,7 @@ export default function EditChallengeModal({ challenge, isOpen, onClose, onSave 
         defaultVscodePort: challenge.defaultVscodePort || 31000,
         defaultDesktopPort: challenge.defaultDesktopPort || 32000,
       })
+      setHints(challenge.hints || [])
     }
   }, [challenge, form])
 
