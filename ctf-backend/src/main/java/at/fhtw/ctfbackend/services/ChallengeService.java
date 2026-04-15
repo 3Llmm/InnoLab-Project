@@ -96,16 +96,16 @@ public class ChallengeService {
         String safeFlag = flag != null ? flag : "";
 
         // Create entity with potentially null file data
-        ChallengeEntity entity = new ChallengeEntity(
-                challengeId,
-                title,
-                description,
-                category,
-                difficulty,
-                points,
-                downloadBytes,
-                safeFlag  // Use safe flag
-        );
+        ChallengeEntity entity = ChallengeEntity.builder()
+                .id(challengeId)
+                .title(title)
+                .description(description)
+                .category(category)
+                .difficulty(difficulty)
+                .points(points)
+                .downloadZip(downloadBytes)
+                .flag(safeFlag)
+                .build();
 
         // Set folder path
         entity.setChallengeFolderPath(challengeFolderPath);
