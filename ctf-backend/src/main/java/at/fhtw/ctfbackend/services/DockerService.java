@@ -1,12 +1,19 @@
 package at.fhtw.ctfbackend.services;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class DockerService {
@@ -34,12 +41,6 @@ public class DockerService {
         validateChallengeId(challengeId);
         validateImageTag(tag);
 
-        // Remove existing image to prevent accumulation
-        if (imageExists(tag)) {
-            System.out.println("Removing existing image before rebuild: " + tag);
-            removeImage(tag);
-        }
-
         // Determine challenge directory path and Dockerfile location
         String buildContextDir = getBuildContextDir(challengeId);
         String dockerfilePath = getDockerfilePath(challengeId);
@@ -48,7 +49,6 @@ public class DockerService {
             List<String> command = new ArrayList<>();
             command.add("docker");
             command.add("build");
-            command.add("--no-cache"); // Ensure fresh build
             command.add("-t");
             command.add(tag);
             command.add("-f");
@@ -111,9 +111,9 @@ public class DockerService {
      * Build and run a challenge in one step with automatic file setup
      */
     public String buildAndRun(String challengeId,
-                              String containerName,
-                              String flag,
-                              int sshPort) {
+            String containerName,
+            String flag,
+            int sshPort) {
 
         validateChallengeId(challengeId);
 
@@ -122,14 +122,19 @@ public class DockerService {
         System.out.println(" Checking Dockerfile at: " + dockerfilePath);
 
         if (!Files.exists(Paths.get(dockerfilePath))) {
-            throw new RuntimeException("Dockerfile not found for challenge: " + challengeId +
-                    " at path: " + dockerfilePath);
+            throw new RuntimeException("Dockerfile not found for challenge: " + challengeId
+                    + " at path: " + dockerfilePath);
         }
 
         // Build image
         String imageTag = "ctf-" + challengeId.toLowerCase().replaceAll("[^a-z0-9-]", "");
-        System.out.println(" Building image: " + imageTag);
-        buildImage(challengeId, imageTag);
+        if (!imageExists(imageTag)) {
+            System.out.println(" Building image: " + imageTag);
+            buildImage(challengeId, imageTag);
+        } else {
+            System.out.println(" Using cached image: " + imageTag);
+        }
+        runContainer(containerName, imageTag, flag, sshPort);
 
         // Run container
         System.out.println(" Running container: " + containerName);
@@ -166,10 +171,10 @@ public class DockerService {
 
         // Check multiple possible locations for Dockerfile
         List<Path> possiblePaths = Arrays.asList(
-                challengeDir.resolve("docker/Dockerfile"),     // Primary location
-                challengeDir.resolve("docker/dockerfile"),     // lowercase
-                challengeDir.resolve("Dockerfile"),            // Root (fallback)
-                challengeDir.resolve("dockerfile")             // lowercase in root (fallback)
+                challengeDir.resolve("docker/Dockerfile"), // Primary location
+                challengeDir.resolve("docker/dockerfile"), // lowercase
+                challengeDir.resolve("Dockerfile"), // Root (fallback)
+                challengeDir.resolve("dockerfile") // lowercase in root (fallback)
         );
 
         for (Path dockerfilePath : possiblePaths) {
@@ -239,7 +244,7 @@ public class DockerService {
      * Run a container with security constraints
      */
     public void runContainer(String containerName, String imageName, String flag,
-                             int sshPort) {
+            int sshPort) {
 
         System.out.println(" === RUN CONTAINER ===");
         System.out.println(" Image: " + imageName);
@@ -267,8 +272,6 @@ public class DockerService {
                     "-e", "FLAG=" + flag,
                     "-p", sshPort + ":22"
             ));
-
-
 
             // Add memory limits and security constraints
             command.add("--memory=512m");
@@ -478,7 +481,6 @@ public class DockerService {
     }
 
     // ===== VALIDATION METHODS =====
-
     private void validateContainerName(String name) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Container name cannot be empty");
