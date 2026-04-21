@@ -43,7 +43,7 @@ fi
 log_info "Building frontend..."
 cd "$SCRIPT_DIR/ctf-frontend"
 npm install
-env NEXT_PUBLIC_TERMINAL_URL=ws://inno1-bif3-p1-w25.cs.technikum-wien.at:80/terminal npm run build
+env NEXT_PUBLIC_API_URL=http://inno1-bif3-p1-w25.cs.technikum-wien.at:8080 NEXT_PUBLIC_TERMINAL_URL=ws://inno1-bif3-p1-w25.cs.technikum-wien.at:80/terminal npm run build
 log_info "Frontend build complete"
 
 cd "$SCRIPT_DIR"

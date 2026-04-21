@@ -12,11 +12,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DockerService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DockerService.class);
 
     // Validation patterns for security
     private static final Pattern CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,62}$");
@@ -119,7 +123,7 @@ public class DockerService {
 
         // Ensure challenge has a valid Dockerfile
         String dockerfilePath = getDockerfilePath(challengeId);
-        System.out.println(" Checking Dockerfile at: " + dockerfilePath);
+        logger.info(" Checking Dockerfile at: {}", dockerfilePath);
 
         if (!Files.exists(Paths.get(dockerfilePath))) {
             throw new RuntimeException("Dockerfile not found for challenge: " + challengeId
@@ -129,15 +133,14 @@ public class DockerService {
         // Build image
         String imageTag = "ctf-" + challengeId.toLowerCase().replaceAll("[^a-z0-9-]", "");
         if (!imageExists(imageTag)) {
-            System.out.println(" Building image: " + imageTag);
+            logger.info(" Building image: {}", imageTag);
             buildImage(challengeId, imageTag);
         } else {
-            System.out.println(" Using cached image: " + imageTag);
+            logger.info(" Using cached image: {}", imageTag);
         }
-        runContainer(containerName, imageTag, flag, sshPort);
 
         // Run container
-        System.out.println(" Running container: " + containerName);
+        logger.info(" Running container: {}", containerName);
         runContainer(containerName, imageTag, flag, sshPort);
 
         return containerName;
@@ -364,15 +367,24 @@ public class DockerService {
     }
 
     /**
-     * Check if image exists locally
+     * Check if image exists locally (checks both exact name and with :latest tag)
      */
     public boolean imageExists(String imageName) {
         validateImageName(imageName);
 
         try {
+            // Try exact name first
             ProcessBuilder pb = new ProcessBuilder("docker", "image", "inspect", imageName);
             pb.redirectErrorStream(true);
             Process p = pb.start();
+            if (p.waitFor() == 0) {
+                return true;
+            }
+
+            // Try with :latest tag
+            pb = new ProcessBuilder("docker", "image", "inspect", imageName + ":latest");
+            pb.redirectErrorStream(true);
+            p = pb.start();
             return p.waitFor() == 0;
         } catch (Exception e) {
             return false;
