@@ -6,6 +6,7 @@ import { ComponentType } from 'react';
 interface KaliTerminalProps {
     instanceId?: string;
     sshPort?: number;
+    containerName?: string;
     onClose: () => void;
 }
 

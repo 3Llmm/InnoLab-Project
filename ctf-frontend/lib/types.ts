@@ -115,8 +115,8 @@ export interface CreateChallengeData {
 export interface EnvironmentInstance {
     instanceId: string
     sshPort: number
-    vscodePort: number
-    desktopPort: number
+    vscodePort?: number
+    desktopPort?: number
     expiresAt: string
     status: string
     containerName?: string
