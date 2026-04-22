@@ -5,6 +5,7 @@ networks:
     name: ctf-isolated
 services:
   terminal:
+    container_name: terminal
     build:
       context: ./ctf-terminal
       dockerfile: Dockerfile
@@ -18,6 +19,7 @@ services:
 
   app:
     image: ctf-backend
+    container_name: app
     build:
       context: ./ctf-backend
       dockerfile: Dockerfile
@@ -45,6 +47,7 @@ services:
 
   db:
     image: postgres:16
+    container_name: db
     environment:
       POSTGRES_USER: ctfuser
       POSTGRES_PASSWORD: ctfpass
@@ -58,6 +61,7 @@ services:
 
   frontend:
     image: ctf-frontend
+    container_name: frontend
     build:
       context: ./ctf-frontend
       dockerfile: Dockerfile
