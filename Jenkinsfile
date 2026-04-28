@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         COMPOSE_FILE = 'docker-compose.yml'
-        BACKEND_IMAGE = 'if23b090/ctfbackend'
-        FRONTEND_IMAGE = 'if23b090/ctffrontend'
+        BACKEND_IMAGE = 'yusufkh/ctfbackend'
+        FRONTEND_IMAGE = 'yusufkh/ctffrontend'
     }
 
     stages {
