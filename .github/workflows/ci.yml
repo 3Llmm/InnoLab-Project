@@ -9,8 +9,8 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  BACKEND_IMAGE: yusufkh/ctfbackend
-  FRONTEND_IMAGE: yusufkh/ctffrontend
+  BACKEND_IMAGE: aminkasmi06/ctfbackend
+  FRONTEND_IMAGE: aminkasmi06/ctffrontend
 
 jobs:
   # Security scans - run first as they're critical for a security training platform
