@@ -16,8 +16,13 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class EnvironmentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EnvironmentService.class);
 
     private final DockerService dockerService;
     private final ChallengeInstanceRepository instanceRepo;
@@ -109,7 +114,7 @@ public class EnvironmentService {
             try {
                 instanceRepo.delete(inst);
             } catch (Exception dbEx) {
-                System.err.println("CRITICAL: Failed to rollback DB record for instance: " + instanceId + " - " + dbEx.getMessage());
+                logger.error("CRITICAL: Failed to rollback DB record for instance: {} - {}", instanceId, dbEx.getMessage());
             }
             releasePort(sshPort);
             throw new RuntimeException("Failed to start container", e);
@@ -137,16 +142,16 @@ public class EnvironmentService {
             dockerService.stopContainer(inst.getContainerName());
             dockerStopped = true;
         } catch (Exception e) {
-            System.err.println("ERROR stopEnvironment: Failed to stop container " + inst.getContainerName() + ": " + e.getMessage());
+            logger.error("ERROR stopEnvironment: Failed to stop container {}: {}", inst.getContainerName(), e.getMessage());
 
             try {
                 dockerService.killContainer(inst.getContainerName());
                 dockerStopped = true;
             } catch (Exception e2) {
-                System.err.println("ERROR stopEnvironment: Container kill also failed for " + inst.getContainerName() + ": " + e2.getMessage());
+                logger.error("ERROR stopEnvironment: Container kill also failed for {}: {}", inst.getContainerName(), e2.getMessage());
                 if (!dockerService.containerExists(inst.getContainerName())) {
                     dockerStopped = true;
-                    System.out.println("stopEnvironment: Container already gone, continuing with cleanup");
+                    logger.info("stopEnvironment: Container already gone, continuing with cleanup");
                 }
             }
         }
@@ -155,7 +160,7 @@ public class EnvironmentService {
             releasePort(inst.getSshPort());
             portReleased = true;
         } catch (Exception e) {
-            System.err.println("ERROR stopEnvironment: Failed to release port " + inst.getSshPort() + ": " + e.getMessage());
+            logger.error("ERROR stopEnvironment: Failed to release port {}: {}", inst.getSshPort(), e.getMessage());
         }
 
         inst.setStatus("STOPPED");
@@ -164,11 +169,11 @@ public class EnvironmentService {
         String errorMsg = null;
         if (!dockerStopped) {
             errorMsg = "Container cleanup incomplete for " + inst.getContainerName();
-            System.err.println("ERROR: " + errorMsg);
+            logger.error("ERROR: {}", errorMsg);
         }
         if (!portReleased) {
             String portMsg = "Port " + inst.getSshPort() + " NOT released for instance " + instanceId;
-            System.err.println("ERROR: " + portMsg);
+            logger.error("ERROR: {}", portMsg);
             errorMsg = (errorMsg != null ? errorMsg + "; " : "") + portMsg;
         }
 
@@ -226,7 +231,7 @@ public class EnvironmentService {
             try {
                 instanceRepo.delete(inst);
             } catch (Exception dbEx) {
-                System.err.println("CRITICAL: Failed to rollback DB record for instance: " + instanceId + " - " + dbEx.getMessage());
+                logger.error("CRITICAL: Failed to rollback DB record for instance: {} - {}", instanceId, dbEx.getMessage());
             }
             releasePort(sshPort);
             throw new RuntimeException("Failed to build and start challenge", e);
@@ -291,13 +296,13 @@ public class EnvironmentService {
     public void cleanupAndReleasePort(String instanceId) {
         var instOpt = instanceRepo.findByInstanceId(instanceId);
         if (instOpt.isEmpty()) {
-            System.err.println("cleanupAndReleasePort: Instance not found: " + instanceId);
+            logger.error("cleanupAndReleasePort: Instance not found: {}", instanceId);
             return;
         }
 
         var inst = instOpt.get();
         if (!"RUNNING".equals(inst.getStatus())) {
-            System.out.println("cleanupAndReleasePort: Instance not running: " + instanceId + " status=" + inst.getStatus());
+            logger.info("cleanupAndReleasePort: Instance not running: {} status={}", instanceId, inst.getStatus());
             return;
         }
 
@@ -308,12 +313,12 @@ public class EnvironmentService {
             dockerService.stopContainer(inst.getContainerName());
             dockerStopped = true;
         } catch (Exception e) {
-            System.err.println("cleanupAndReleasePort: Failed to stop container " + inst.getContainerName() + ": " + e.getMessage());
+            logger.error("cleanupAndReleasePort: Failed to stop container {}: {}", inst.getContainerName(), e.getMessage());
             try {
                 dockerService.killContainer(inst.getContainerName());
                 dockerStopped = true;
             } catch (Exception killEx) {
-                System.err.println("cleanupAndReleasePort: Failed to kill container " + inst.getContainerName() + ": " + killEx.getMessage());
+                logger.error("cleanupAndReleasePort: Failed to kill container {}: {}", inst.getContainerName(), killEx.getMessage());
             }
         }
 
@@ -321,17 +326,16 @@ public class EnvironmentService {
             releasePort(inst.getSshPort());
             portReleased = true;
         } catch (Exception e) {
-            System.err.println("cleanupAndReleasePort: Failed to release port " + inst.getSshPort() + ": " + e.getMessage());
+            logger.error("cleanupAndReleasePort: Failed to release port {}: {}", inst.getSshPort(), e.getMessage());
         }
 
         inst.setStatus("EXPIRED");
         instanceRepo.save(inst);
 
         if (!dockerStopped || !portReleased) {
-            System.err.println("cleanupAndReleasePort: PARTIAL CLEANUP for instance " + instanceId + 
-                    " docker=" + dockerStopped + " port=" + portReleased);
+            logger.warn("cleanupAndReleasePort: PARTIAL CLEANUP for instance {} docker={} port={}", instanceId, dockerStopped, portReleased);
         } else {
-            System.out.println("cleanupAndReleasePort: SUCCESS for instance " + instanceId);
+            logger.info("cleanupAndReleasePort: SUCCESS for instance {}", instanceId);
         }
     }
 
@@ -386,7 +390,7 @@ public class EnvironmentService {
 
         } catch (Exception e) {
             // If we can't check Docker, assume port might be in use
-            System.err.println("Warning: Could not check Docker port usage: " + e.getMessage());
+            logger.warn("Warning: Could not check Docker port usage: {}", e.getMessage());
             return true; // Be conservative
         }
     }
@@ -403,7 +407,7 @@ public class EnvironmentService {
             allocatedPorts.add(inst.getSshPort());
         }
 
-        System.out.println("Loaded " + allocatedPorts.size() + " allocated ports from database");
+        logger.info("Loaded {} allocated ports from database", allocatedPorts.size());
     }
 
     // ===== UTILITY METHODS =====

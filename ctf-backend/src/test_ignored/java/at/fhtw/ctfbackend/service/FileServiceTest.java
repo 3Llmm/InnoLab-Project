@@ -1,4 +1,4 @@
-package at.fhtw.ctfbackend.service;
+package at.fhtw.ctfbackend.services;
 
 import at.fhtw.ctfbackend.entity.FileEntity;
 import at.fhtw.ctfbackend.repository.FileRepository;

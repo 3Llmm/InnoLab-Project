@@ -6,6 +6,9 @@ import at.fhtw.ctfbackend.entity.ChallengeInstanceEntity;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import org.springframework.stereotype.Service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,6 +21,8 @@ public class FlagService {
     private final SolveService solveService;
     private final HintService hintService;
 
+    private static final Logger logger = LoggerFactory.getLogger(FlagService.class);
+
     public FlagService(ChallengeInstanceRepository instanceRepo, EnvironmentService envService, 
             ChallengeRepository challengeRepo, SolveService solveService, HintService hintService) {
         this.instanceRepo = instanceRepo;
@@ -28,7 +33,7 @@ public class FlagService {
     }
 
     public boolean validateFlag(String username, String challengeId, String submittedFlag) {
-        System.out.println(" Validating flag for user: " + username + ", challenge: " + challengeId);
+        logger.debug(" Validating flag for user: {}, challenge: {}", username, challengeId);
 
         try {
             // 1. First, get the challenge
@@ -38,7 +43,7 @@ public class FlagService {
             // 2. Use the explicit requiresInstance field from the challenge
             boolean requiresInstance = challenge.isRequiresInstance();
 
-            System.out.println("  Challenge " + challengeId + " requires instance: " + requiresInstance);
+            logger.debug("  Challenge {} requires instance: {}", challengeId, requiresInstance);
 
 
             boolean isValid;
@@ -46,16 +51,16 @@ public class FlagService {
             // 3. Route to appropriate validation
             if (requiresInstance) {
                 isValid = validateDynamicFlag(username, challengeId, submittedFlag);
-                System.out.println(" Dynamic validation result: " + isValid);
+                logger.debug(" Dynamic validation result: {}", isValid);
             } else {
                 isValid = validateStaticFlag(challenge, submittedFlag);
-                System.out.println(" Static validation result: " + isValid);
+                logger.debug(" Static validation result: {}", isValid);
             }
 
             return isValid;
         } catch (Exception e) {
-            System.err.println(" Error during flag validation: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(" Error during flag validation: {}", e.getMessage());
+            logger.error("Error during flag validation", e);
             return false;
         }
     }
@@ -66,7 +71,7 @@ public class FlagService {
         );
 
         if (instances.isEmpty()) {
-            System.out.println("No running instance found for dynamic challenge");
+            logger.warn("No running instance found for dynamic challenge");
             return false;
         }
 
@@ -74,12 +79,9 @@ public class FlagService {
         String submittedHash = envService.sha256(submittedFlag);
         boolean isValid = submittedHash.equals(inst.getFlagHash());
 
-        System.out.println(
-                "Dynamic flag comparison: Submitted hash: " +
-                        submittedHash.substring(0, 16) + "..." +
-                        " vs Stored hash: " +
-                        inst.getFlagHash().substring(0, 16) + "..."
-        );
+        logger.debug("Dynamic flag comparison: Submitted hash: {}... vs Stored hash: {}...",
+                submittedHash.substring(0, 16),
+                inst.getFlagHash().substring(0, 16));
 
         return isValid;
     }
@@ -93,17 +95,14 @@ public class FlagService {
         // Direct string comparison for static challenges
         boolean isValid = challenge.getFlag().equals(submittedFlag);
 
-        System.out.println(" Static flag comparison: " +
-                "Submitted: " + submittedFlag +
-                " vs Stored: " + challenge.getFlag() +
-                " -> " + isValid);
+        logger.debug(" Static flag comparison: Submitted: {} vs Stored: {} -> {}", submittedFlag, challenge.getFlag(), isValid);
 
         return isValid;
     }
     private final Map<String, Set<String>> solvedByUser = new ConcurrentHashMap<>();
 
     public boolean recordSolve(String username, String challengeId) {
-        System.out.println(" Attempting to record solve for user: " + username + ", challenge: " + challengeId);
+        logger.debug(" Attempting to record solve for user: {}, challenge: {}", username, challengeId);
 
         try {
             // First check in-memory cache
@@ -111,11 +110,11 @@ public class FlagService {
                     __ -> ConcurrentHashMap.newKeySet());
             boolean isNewSolve = solved.add(challengeId);
 
-            System.out.println(" Cache check - User already solved: " + !isNewSolve);
+            logger.debug(" Cache check - User already solved: {}", !isNewSolve);
 
             // Also persist to database using SolveService
             if (isNewSolve) {
-                System.out.println(" This is a new solve, recording in database...");
+                logger.debug(" This is a new solve, recording in database...");
                 
                 ChallengeEntity challenge = challengeRepo.findById(challengeId)
                         .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
@@ -123,40 +122,36 @@ public class FlagService {
                 int basePoints = challenge.getPoints() != null ? challenge.getPoints() : 0;
                 int penaltyPercent = hintService.calculatePenaltyPercent(username, challengeId);
                 int pointsEarned = basePoints * (100 - penaltyPercent) / 100;
-                System.out.println(" Base points: " + basePoints + ", Hint penalty: " + penaltyPercent + "%, Points to award: " + pointsEarned);
+                logger.debug(" Base points: {}, Hint penalty: {}%, Points to award: {}", basePoints, penaltyPercent, pointsEarned);
                 
                 boolean dbSuccess = solveService.recordSolve(username, challengeId, pointsEarned);
-                System.out.println("  Database record result: " + dbSuccess);
+                logger.debug("  Database record result: {}", dbSuccess);
                 
                 if (dbSuccess) {
-                    System.out.println(" Solve recorded successfully for user: " + username + ", challenge: " + challengeId);
+                    logger.info(" Solve recorded successfully for user: {}, challenge: {}", username, challengeId);
                 } else {
-                    System.err.println(" Failed to record solve in database");
+                    logger.error(" Failed to record solve in database");
                     // Remove from cache if database failed
                     solved.remove(challengeId);
                     isNewSolve = false;
                 }
             } else {
-                System.out.println("ℹ  User already solved this challenge, skipping database record");
+                logger.info("User already solved this challenge, skipping database record");
             }
 
-            System.out.println(
-                    " Final result - User: " + username +
-                            ", Challenge: " + challengeId +
-                            ", New solve: " + isNewSolve
-            );
+            logger.debug(" Final result - User: {}, Challenge: {}, New solve: {}", username, challengeId, isNewSolve);
 
             return isNewSolve;
         } catch (Exception e) {
-            System.err.println(" Critical error recording solve: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(" Critical error recording solve: {}", e.getMessage());
+            logger.error("Critical error recording solve", e);
             return false;
         }
     }
 
     public Set<String> getSolvedChallenges(String username) {
         Set<String> solved = solvedByUser.getOrDefault(username, Collections.emptySet());
-        System.out.println("Retrieved solved challenges for " + username + ": " + solved.size() + " challenges");
+        logger.debug("Retrieved solved challenges for {}: {} challenges", username, solved.size());
         return Collections.unmodifiableSet(solved);
     }
 

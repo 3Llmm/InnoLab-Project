@@ -18,53 +18,6 @@ const getApiBaseUrl = () => {
     return '';
 };
 
-function readCookieValue(name: string): string | null {
-    if (typeof document === 'undefined') return null;
-
-    const value = document.cookie
-        .split('; ')
-        .find((entry) => entry.startsWith(`${name}=`))
-        ?.split('=')[1];
-
-    return value ? decodeURIComponent(value) : null;
-}
-
-async function ensureCsrfToken(baseUrl: string): Promise<string> {
-    if (typeof window === 'undefined') {
-        throw new Error('CSRF token cannot be obtained on server side');
-    }
-
-    // Reuse token cookie when available to avoid an extra network hop.
-    let token = readCookieValue('XSRF-TOKEN');
-    console.log('[CSRF DEBUG] Initial token from cookie:', token);
-    if (token) return token;
-
-    // Fetch new token
-    console.log('[CSRF DEBUG] Fetching CSRF token from:', `${baseUrl}/api/csrf-token`);
-    const response = await fetch(`${baseUrl}/api/csrf-token`, {
-        method: 'GET',
-        credentials: 'include',
-    });
-
-    console.log('[CSRF DEBUG] CSRF fetch response status:', response.status);
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch CSRF token: ${response.status}`);
-    }
-
-    token = readCookieValue('XSRF-TOKEN');
-    console.log('[CSRF DEBUG] Token after fetch:', token);
-    if (!token) {
-        throw new Error('CSRF token cookie not set after fetch');
-    }
-
-    return token;
-}
-
-function isMutatingMethod(method: string): boolean {
-    return method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
-}
-
 // Helper function to extract filename from Content-Disposition header
 function extractFilenameFromHeaders(headers: Headers): string | null {
     const contentDisposition = headers.get('Content-Disposition');
@@ -110,14 +63,6 @@ export class ApiClient {
         // Let browser define multipart boundaries for FormData automatically.
         if (!isFormData && !headers.has('Content-Type')) {
             headers.set('Content-Type', 'application/json');
-        }
-
-        if (isMutatingMethod(method) && !headers.has('X-XSRF-TOKEN')) {
-            const baseUrl = this.getBaseUrl();
-            console.log('[CSRF DEBUG] Base URL:', baseUrl);
-            const csrfToken = await ensureCsrfToken(baseUrl);
-            console.log('[CSRF DEBUG] Setting header X-XSRF-TOKEN:', csrfToken);
-            headers.set('X-XSRF-TOKEN', csrfToken);
         }
 
         const config: RequestInit = {

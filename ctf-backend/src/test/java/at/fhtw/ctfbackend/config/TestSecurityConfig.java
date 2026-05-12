@@ -2,7 +2,6 @@ package at.fhtw.ctfbackend.config;
 
 import at.fhtw.ctfbackend.security.JwtAuthenticationFilter;
 import at.fhtw.ctfbackend.security.JwtUtil;
-import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -18,6 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @TestConfiguration
 @EnableWebSecurity
 public class TestSecurityConfig {
+
+    private static final String TEST_SECRET = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
     @Bean
     @Primary
@@ -37,7 +38,7 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public JwtUtil testJwtUtil() {
-        return new JwtUtil("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        return new JwtUtil(TEST_SECRET);
     }
 
     @Bean

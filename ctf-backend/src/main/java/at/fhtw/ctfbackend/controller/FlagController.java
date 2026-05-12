@@ -10,10 +10,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/flags")
 public class FlagController {
+
+    private static final Logger logger = LoggerFactory.getLogger(FlagController.class);
 
     private final FlagService flagService;
     private final EnvironmentService envService;
@@ -36,7 +40,7 @@ public class FlagController {
         String challengeId = request.getChallengeId();
         String submittedFlag = request.getFlag();
 
-        System.out.println("Got into controller!");
+        logger.debug("Got into controller!");
 
         // NEW: validate using dynamic instance flag
         boolean valid = flagService.validateFlag(username, challengeId, submittedFlag);
@@ -82,10 +86,10 @@ public class FlagController {
             if (!instances.isEmpty()) {
                 String instanceId = instances.get(0).getInstanceId();
                 envService.cleanupAndReleasePort(instanceId);
-                System.out.println("Auto-cleaned environment after solve: " + instanceId);
+                logger.info("Auto-cleaned environment after solve: {}", instanceId);
             }
         } catch (Exception cleanupEx) {
-            System.err.println("WARNING: Failed to auto-cleanup environment after solve: " + cleanupEx.getMessage());
+            logger.warn("Failed to auto-cleanup environment after solve: {}", cleanupEx.getMessage());
         }
 
         //  Get the updated solve count AFTER the transaction commits

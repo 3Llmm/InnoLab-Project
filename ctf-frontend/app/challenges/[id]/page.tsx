@@ -29,58 +29,6 @@ export default function ChallengePage() {
       router.push('/login')
     }
   }, [auth.isAuthenticated, authLoading, router])
-    // Fetch challenge and solve statistics
-    useEffect(() => {
-        if (auth.isAuthenticated && challengeId) {
-            setLoading(true)
-            setError(null)
-
-            Promise.all([
-                getChallenge(challengeId),
-                getChallengeStatistics(challengeId),
-                checkIfSolved(challengeId)
-            ])
-                .then(([challengeData, statsData, solvedData]) => {
-                    console.log(' Stats Data:', statsData) // ADD THIS
-                    setChallenge(challengeData)
-
-                    // Handle stats data safely with proper error checking
-                    let stats = null
-                    let solved = false
-
-                    if (statsData && statsData.success && statsData.data) {
-                        stats = statsData.data
-                        console.log(' Stats extracted:', stats) // ADD THIS
-                    } else if (statsData && !statsData.success) {
-                        console.warn('Challenge statistics failed:', statsData.error)
-                    }
-
-                    if (solvedData && solvedData.success && solvedData.data) {
-                        solved = solvedData.data.solved || false
-                    } else if (solvedData && !solvedData.success) {
-                        console.warn('Solve check failed:', solvedData.error)
-                    }
-
-                    const newSolveStats = {
-                        solveCount: stats?.solveCount || 0,
-                        solvedByUser: solved
-                    }
-                    console.log(' Setting solve stats:', newSolveStats) // ADD THIS
-
-                    setSolveStats(newSolveStats)
-                })
-                .catch((err) => {
-                    console.error('Error fetching challenge data:', err)
-                    setError(err.message)
-                    setSolveStats({
-                        solveCount: 0,
-                        solvedByUser: false
-                    })
-                })
-                .finally(() => setLoading(false))
-        }
-    }, [auth.isAuthenticated, challengeId])
-
 
   // Fetch challenge and solve statistics
   useEffect(() => {

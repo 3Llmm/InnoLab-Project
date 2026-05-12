@@ -1,6 +1,7 @@
 package at.fhtw.ctfbackend.controller;
 
 import at.fhtw.ctfbackend.dto.LoginCredentialsDto;
+import at.fhtw.ctfbackend.repository.AdminUserRepository;
 import at.fhtw.ctfbackend.security.JwtUtil;
 import at.fhtw.ctfbackend.services.LdapAuthenticationService;
 import org.springframework.http.HttpStatus;
@@ -18,22 +19,17 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
     private final LdapAuthenticationService ldapAuthenticationService;
+    private final AdminUserRepository adminUserRepository;
 
-    public AuthController(JwtUtil jwtUtil, LdapAuthenticationService ldapAuthenticationService) {
+    public AuthController(JwtUtil jwtUtil, LdapAuthenticationService ldapAuthenticationService,
+                          AdminUserRepository adminUserRepository) {
         this.jwtUtil = jwtUtil;
         this.ldapAuthenticationService = ldapAuthenticationService;
+        this.adminUserRepository = adminUserRepository;
     }
 
-    // List of admin usernames - these users will have admin access
-    private final String[] adminUsers = {"if24b120", "if24b234"};
-
     private boolean isAdminUser(String username) {
-        for (String adminUser : adminUsers) {
-            if (adminUser.equalsIgnoreCase(username)) {
-                return true;
-            }
-        }
-        return false;
+        return adminUserRepository.existsById(username);
     }
 
     @PostMapping("/api/login")
