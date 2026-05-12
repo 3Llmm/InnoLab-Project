@@ -69,7 +69,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/health").permitAll() 
                         .requestMatchers("/api/csrf-token").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/categories").permitAll()
                         .requestMatchers("/api/courses/**").permitAll()
                         .requestMatchers("/api/solves/challenge/*/stats").permitAll()

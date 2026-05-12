@@ -2,6 +2,7 @@ package at.fhtw.ctfbackend.controller;
 
 import at.fhtw.ctfbackend.dto.ChallengeInstanceResponse;
 import at.fhtw.ctfbackend.entity.ChallengeInstanceEntity;
+import at.fhtw.ctfbackend.security.JwtUtil;
 import at.fhtw.ctfbackend.services.EnvironmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,9 +15,11 @@ import java.util.Map;
 public class EnvironmentController {
 
     private final EnvironmentService envService;
+    private final JwtUtil jwtUtil;
 
-    public EnvironmentController(EnvironmentService envService) {
+    public EnvironmentController(EnvironmentService envService, JwtUtil jwtUtil) {
         this.envService = envService;
+        this.jwtUtil = jwtUtil;
     }
 
     // 1) Start environment for a challenge
@@ -115,5 +118,31 @@ public class EnvironmentController {
                     "details", e.getMessage()
             ));
         }
+    }
+
+    @GetMapping("/terminal-token/{instanceId}")
+    public ResponseEntity<?> getTerminalToken(
+            Authentication auth,
+            @PathVariable String instanceId
+    ) {
+        String username = auth.getName();
+
+        var instance = envService.getInstance(instanceId);
+        if (instance == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!instance.getUsername().equals(username)) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "error", "Not authorized to access this instance"
+            ));
+        }
+
+        String token = jwtUtil.generateTerminalToken(username, instanceId, instance.getContainerName(), instance.getSshPort());
+
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "expiresIn", 300
+        ));
     }
 }

@@ -39,7 +39,7 @@ public class JwtUtil {
 
     // Generate JWT with username only (backward compatibility)
     public String generateToken(String username) {
-        return generateToken(username, false); // Default to non-admin
+        return generateToken(username, false);
     }
 
     // Generate JWT with username and admin role
@@ -49,8 +49,25 @@ public class JwtUtil {
         return createToken(claims, username);
     }
 
-    // Create token with claims
+    // Generate short-lived terminal token with instanceId, containerName, and sshPort claims
+    public String generateTerminalToken(String username, String instanceId, String containerName, Integer sshPort) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "terminal");
+        claims.put("instanceId", instanceId);
+        claims.put("containerName", containerName);
+        if (sshPort != null) {
+            claims.put("sshPort", sshPort);
+        }
+        return createToken(claims, username, 5 * 60 * 1000); // 5 minutes expiry
+    }
+
+    // Create token with claims (default expiration)
     private String createToken(Map<String, Object> claims, String subject) {
+        return createToken(claims, subject, expirationMillis);
+    }
+
+    // Create token with custom expiration
+    private String createToken(Map<String, Object> claims, String subject, long expirationMillis) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
@@ -109,6 +126,23 @@ public class JwtUtil {
     // Validate token and check if user is admin
     public boolean validateTokenAndCheckAdmin(String token) {
         return validateToken(token) && isAdminFromToken(token);
+    }
+
+    // Validate terminal token and extract instanceId
+    public String extractInstanceId(String token) {
+        if (!validateToken(token)) {
+            return null;
+        }
+        String type = extractClaim(token, claims -> claims.get("type", String.class));
+        if (!"terminal".equals(type)) {
+            return null;
+        }
+        return extractClaim(token, claims -> claims.get("instanceId", String.class));
+    }
+
+    // Validate terminal token
+    public boolean validateTerminalToken(String token) {
+        return extractInstanceId(token) != null;
     }
 
     // Parse token (helper method) - kept for backward compatibility

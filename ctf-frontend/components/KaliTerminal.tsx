@@ -5,12 +5,15 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import "xterm/css/xterm.css";
 import { X } from "lucide-react";
+import { apiClient } from "@/lib/api/client";
+
 interface KaliTerminalProps {
     instanceId?: string;
     sshPort?: number;
     containerName?: string;
     onClose: () => void;
 }
+
 export default function KaliTerminal({ instanceId, sshPort, containerName, onClose }: KaliTerminalProps) {
     const terminalRef = useRef<HTMLDivElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
@@ -18,6 +21,7 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
     const fitAddonRef = useRef<FitAddon | null>(null);
     const isInitializedRef = useRef(false);
     const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error" | "missing_props">("connecting");
+
     useEffect(() => {
         if (!sshPort || !instanceId || !terminalRef.current || isInitializedRef.current) {
             if (!sshPort || !instanceId) {
@@ -26,91 +30,114 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             return;
         }
         isInitializedRef.current = true;
-        try {
-            const term = new Terminal({
-                cursorBlink: true,
-                fontSize: 14,
-                fontFamily: 'Consolas, "Courier New", monospace',
-                theme: {
-                    background: "#1e1e1e",
-                    foreground: "#00ff00",
-                    cursor: "#00ff00",
-                },
-                cols: 80,
-                rows: 24,
-                allowTransparency: false,
-                convertEol: true,
-                scrollback: 1000,
-            });
-            const fitAddon = new FitAddon();
-            term.loadAddon(fitAddon);
-            term.loadAddon(new WebLinksAddon());
-            terminalInstanceRef.current = term;
-            fitAddonRef.current = fitAddon;
-            term.open(terminalRef.current);
-            term.writeln("CTF Challenge Terminal");
-            term.writeln("Connecting...\r\n");
-            setTimeout(() => {
-                fitAddon.fit();
-                term.focus();
-            }, 100);
-            const terminalUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || "ws://localhost:3001";
-            const wsUrl = `${terminalUrl}/?instanceId=${instanceId}&containerName=${containerName || `ctf-${instanceId.substring(0, 8)}`}&sshPort=${sshPort}`;
-            const ws = new WebSocket(wsUrl);
-            ws.binaryType = 'arraybuffer';
-            wsRef.current = ws;
-            ws.onopen = () => {
-                setConnectionStatus("connected");
-                term.writeln("Connected!\r\n");
-            };
-            ws.onmessage = (event) => {
-                try {
-                    let data = event.data;
-                    if (data instanceof ArrayBuffer) {
-                        term.write(new Uint8Array(data));
-                    } else if (typeof data === 'string') {
-                        term.write(data);
-                    } else if (data instanceof Blob) {
-                        data.arrayBuffer().then(buffer => {
-                            term.write(new Uint8Array(buffer));
-                        });
+
+        async function connectTerminal() {
+            try {
+                const term = new Terminal({
+                    cursorBlink: true,
+                    fontSize: 14,
+                    fontFamily: 'Consolas, "Courier New", monospace',
+                    theme: {
+                        background: "#1e1e1e",
+                        foreground: "#00ff00",
+                        cursor: "#00ff00",
+                    },
+                    cols: 80,
+                    rows: 24,
+                    allowTransparency: false,
+                    convertEol: true,
+                    scrollback: 1000,
+                });
+                const fitAddon = new FitAddon();
+                term.loadAddon(fitAddon);
+                term.loadAddon(new WebLinksAddon());
+                terminalInstanceRef.current = term;
+                fitAddonRef.current = fitAddon;
+                term.open(terminalRef.current);
+                term.writeln("CTF Challenge Terminal");
+                term.writeln("Authenticating...\r\n");
+                setTimeout(() => {
+                    fitAddon.fit();
+                    term.focus();
+                }, 100);
+
+                const tokenResponse = await apiClient.get<{ token: string }>(`/api/environment/terminal-token/${instanceId}`);
+                if (tokenResponse.status !== "success") {
+                    term.writeln("\r\n\x1b[1;31mAuthentication failed\x1b[0m\r\n");
+                    term.writeln("Please refresh and try again.\r\n");
+                    setConnectionStatus("error");
+                    return;
+                }
+
+                const token = tokenResponse.token;
+                term.writeln("Authenticated. Connecting...\r\n");
+
+                const terminalUrl = process.env.NEXT_PUBLIC_TERMINAL_URL || "ws://localhost:3001";
+                const wsUrl = `${terminalUrl}/?instanceId=${instanceId}`;
+
+                const ws = new WebSocket(wsUrl);
+                ws.binaryType = 'arraybuffer';
+                wsRef.current = ws;
+
+                ws.onopen = () => {
+                    setConnectionStatus("connected");
+
+                    // Send authentication as first message (not in URL)
+                    const authMessage = JSON.stringify({ type: "auth", token });
+                    ws.send(authMessage);
+                    term.writeln("Connected!\r\n");
+                };
+                ws.onmessage = (event) => {
+                    try {
+                        let data = event.data;
+                        if (data instanceof ArrayBuffer) {
+                            term.write(new Uint8Array(data));
+                        } else if (typeof data === 'string') {
+                            term.write(data);
+                        } else if (data instanceof Blob) {
+                            data.arrayBuffer().then(buffer => {
+                                term.write(new Uint8Array(buffer));
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Message handler error:', error);
                     }
-                } catch (error) {
-                    console.error('Message handler error:', error);
-                }
-            };
-            ws.onerror = () => {
+                };
+                ws.onerror = () => {
+                    setConnectionStatus("error");
+                    term.writeln("\r\nConnection error");
+                };
+                ws.onclose = () => {
+                    setConnectionStatus("disconnected");
+                };
+                const disposable = term.onData((data) => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(data);
+                    } else {
+                        term.write('\r\nNot connected\r\n');
+                    }
+                });
+                return () => {
+                    disposable.dispose();
+                    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                        ws.close(1000, "Unmounting");
+                    }
+                    try {
+                        term.dispose();
+                    } catch (error) {
+                        console.error("Dispose error:", error);
+                    }
+                    terminalInstanceRef.current = null;
+                    wsRef.current = null;
+                    isInitializedRef.current = false;
+                };
+            } catch (error) {
+                console.error("Terminal init error:", error);
                 setConnectionStatus("error");
-                term.writeln("\r\nConnection error");
-            };
-            ws.onclose = () => {
-                setConnectionStatus("disconnected");
-            };
-            const disposable = term.onData((data) => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(data);
-                } else {
-                    term.write('\r\nNot connected\r\n');
-                }
-            });
-            return () => {
-                disposable.dispose();
-                if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-                    ws.close(1000, "Unmounting");
-                }
-                try {
-                    term.dispose();
-                } catch (error) {
-                    console.error("Dispose error:", error);
-                }
-                terminalInstanceRef.current = null;
-                wsRef.current = null;
-                isInitializedRef.current = false;
-            };
-        } catch (error) {
-            console.error("Terminal init error:", error);
-            setConnectionStatus("error");
+            }
         }
+
+        connectTerminal();
     }, [instanceId, sshPort, containerName]);
     useEffect(() => {
         const handleResize = () => {
