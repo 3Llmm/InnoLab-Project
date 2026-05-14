@@ -3,6 +3,7 @@ package at.fhtw.ctfbackend.services;
 import at.fhtw.ctfbackend.dto.SolveResponse;
 import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.entity.Solve;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import at.fhtw.ctfbackend.repository.SolveRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +20,12 @@ public class SolveService {
 
     private final SolveRepository solveRepository;
     private final ChallengeRepository challengeRepository;
+    private final UserService userService;
 
-    public SolveService(SolveRepository solveRepository, ChallengeRepository challengeRepository) {
+    public SolveService(SolveRepository solveRepository, ChallengeRepository challengeRepository, UserService userService) {
         this.solveRepository = solveRepository;
         this.challengeRepository = challengeRepository;
+        this.userService = userService;
     }
 
     /**
@@ -34,11 +37,12 @@ public class SolveService {
      */
     @Transactional
     public boolean recordSolve(String username, String challengeId, int pointsEarned) {
+        UserEntity user = userService.getRequiredUser(username);
         System.out.println(" SolveService.recordSolve called for user: " + username + ", challenge: " + challengeId);
 
         try {
             // Check if user already solved this challenge
-            Optional<Solve> existingSolve = solveRepository.findByUsernameAndChallengeId(username, challengeId);
+            Optional<Solve> existingSolve = solveRepository.findByUserAndChallengeId(user, challengeId);
 
             if (existingSolve.isPresent()) {
                 System.out.println("  User already solved this challenge, returning false");
@@ -52,7 +56,7 @@ public class SolveService {
                     .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
 
             // Create and save the new solve record
-            Solve solve = new Solve(username, challenge, pointsEarned);
+            Solve solve = new Solve(user, challenge, pointsEarned);
             Solve savedSolve = solveRepository.saveAndFlush(solve);  //  Changed from save() to saveAndFlush()
 
             System.out.println(" Solve saved to database with ID: " + savedSolve.getId());
@@ -71,7 +75,8 @@ public class SolveService {
      * @return List of solved challenges with details
      */
     public List<SolveResponse> getSolvedChallengesByUser(String username) {
-        return solveRepository.findByUsername(username).stream()
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository.findByUser(user).stream()
                 .map(this::toDto)
                 .toList();
     }
@@ -94,7 +99,8 @@ public class SolveService {
      * @return true if the user has solved the challenge, false otherwise
      */
     public boolean hasUserSolvedChallenge(String username, String challengeId) {
-        return solveRepository.findByUsernameAndChallengeId(username, challengeId).isPresent();
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository.findByUserAndChallengeId(user, challengeId).isPresent();
     }
 
     /**
@@ -123,7 +129,8 @@ public class SolveService {
      * @return Number of challenges solved by the user
      */
     public long getSolveCountForUser(String username) {
-        return solveRepository.countByUsername(username);
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository.countByUser(user);
     }
 
     /**
@@ -218,11 +225,13 @@ public class SolveService {
      * @return Optional containing the solve record if it exists
      */
     public Optional<Solve> getSolveRecord(String username, String challengeId) {
-        return solveRepository.findByUsernameAndChallengeId(username, challengeId);
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository.findByUserAndChallengeId(user, challengeId);
     }
 
     public int getPointsEarned(String username, String challengeId) {
-        return solveRepository.findByUsernameAndChallengeId(username, challengeId)
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository.findByUserAndChallengeId(user, challengeId)
                 .map(Solve::getPointsEarned)
                 .orElse(0);
     }

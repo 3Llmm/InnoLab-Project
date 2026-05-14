@@ -17,6 +17,10 @@ public class ChallengeInstanceEntity {
 
     private String username;    // FH username
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
     private String challengeId; // FK to ChallengeEntity
 
     private String containerName;

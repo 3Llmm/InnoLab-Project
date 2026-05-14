@@ -1,6 +1,7 @@
 package at.fhtw.ctfbackend.repository;
 
 import at.fhtw.ctfbackend.entity.HintReveal;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,10 @@ public interface HintRevealRepository extends JpaRepository<HintReveal, Long> {
 
     List<HintReveal> findByUsernameAndChallengeId(String username, String challengeId);
 
+    List<HintReveal> findByUserAndChallengeId(UserEntity user, String challengeId);
+
     Optional<HintReveal> findByUsernameAndChallengeIdAndHintIndex(String username, String challengeId, Integer hintIndex);
+
+    Optional<HintReveal> findByUserAndChallengeIdAndHintIndex(UserEntity user, String challengeId, Integer hintIndex);
 
 }

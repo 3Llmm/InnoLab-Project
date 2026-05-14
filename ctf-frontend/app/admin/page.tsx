@@ -131,6 +131,13 @@ export default function AdminDashboardPage() {
               Manage Courses
             </Link>
             <Link
+              href="/admin/users"
+              className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors font-medium"
+            >
+              <Users className="w-5 h-5" />
+              Manage Users
+            </Link>
+            <Link
               href="/admin/challenges"
               className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
             >

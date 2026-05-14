@@ -2,6 +2,7 @@ package at.fhtw.ctfbackend.services;
 
 import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.entity.ChallengeInstanceEntity;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.repository.ChallengeInstanceRepository;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class EnvironmentService {
     private final DockerService dockerService;
     private final ChallengeInstanceRepository instanceRepo;
     private final ChallengeRepository challengeRepo;
+    private final UserService userService;
 
     // Thread-safe port allocation tracking
     private final Set<Integer> allocatedPorts = ConcurrentHashMap.newKeySet();
@@ -31,21 +33,24 @@ public class EnvironmentService {
     public EnvironmentService(
             ChallengeInstanceRepository instanceRepo,
             DockerService dockerService,
-            ChallengeRepository challengeRepo) {
+            ChallengeRepository challengeRepo,
+            UserService userService) {
 
         this.instanceRepo = instanceRepo;
         this.dockerService = dockerService;
         this.challengeRepo = challengeRepo;
+        this.userService = userService;
 
         // Initialize with existing allocated ports
         loadAllocatedPorts();
     }
 
     public ChallengeInstanceEntity startEnvironment(String username, String challengeId) {
+        UserEntity user = userService.getRequiredUser(username);
 
         // 1. Check if already has running instance
-        var existing = instanceRepo.findByUsernameAndChallengeIdAndStatus(
-                username, challengeId, "RUNNING"
+        var existing = instanceRepo.findByUserAndChallengeIdAndStatus(
+                user, challengeId, "RUNNING"
         );
         if (!existing.isEmpty()) return existing.get(0);
 
@@ -82,7 +87,8 @@ public class EnvironmentService {
 
         ChallengeInstanceEntity inst = new ChallengeInstanceEntity();
         inst.setInstanceId(instanceId);
-        inst.setUsername(username);
+        inst.setUser(user);
+        inst.setUsername(user.getUsername());
         inst.setChallengeId(challengeId);
         inst.setContainerName(containerName);
         inst.setFlagHash(flagHash);
@@ -177,9 +183,10 @@ public class EnvironmentService {
     // In EnvironmentService.java, add this method: 
 
     public ChallengeInstanceEntity buildAndStartChallenge(String username, String challengeId) {
+        UserEntity user = userService.getRequiredUser(username);
         // Check for existing instance
-        var existing = instanceRepo.findByUsernameAndChallengeIdAndStatus(
-                username, challengeId, "RUNNING"
+        var existing = instanceRepo.findByUserAndChallengeIdAndStatus(
+                user, challengeId, "RUNNING"
         );
         if (!existing.isEmpty()) return existing.get(0);
 
@@ -200,7 +207,8 @@ public class EnvironmentService {
 
         ChallengeInstanceEntity inst = new ChallengeInstanceEntity();
         inst.setInstanceId(instanceId);
-        inst.setUsername(username);
+        inst.setUser(user);
+        inst.setUsername(user.getUsername());
         inst.setChallengeId(challengeId);
         inst.setContainerName(containerName);
         inst.setFlagHash(flagHash);

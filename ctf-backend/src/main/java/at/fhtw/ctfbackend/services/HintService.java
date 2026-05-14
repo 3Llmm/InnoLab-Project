@@ -2,6 +2,7 @@ package at.fhtw.ctfbackend.services;
 
 import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.entity.HintReveal;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import at.fhtw.ctfbackend.repository.HintRevealRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -23,10 +24,12 @@ public class HintService {
 
     private final HintRevealRepository hintRevealRepository;
     private final ChallengeRepository challengeRepository;
+    private final UserService userService;
 
-    public HintService(HintRevealRepository hintRevealRepository, ChallengeRepository challengeRepository) {
+    public HintService(HintRevealRepository hintRevealRepository, ChallengeRepository challengeRepository, UserService userService) {
         this.hintRevealRepository = hintRevealRepository;
         this.challengeRepository = challengeRepository;
+        this.userService = userService;
     }
 
     /**
@@ -34,6 +37,7 @@ public class HintService {
      * Returns the hint text if successful
      */
     public String revealHint(String username, String challengeId, int hintIndex) {
+        UserEntity user = userService.getRequiredUser(username);
         ChallengeEntity challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
 
@@ -46,7 +50,7 @@ public class HintService {
 
         // Check if user already revealed this hint
         Optional<HintReveal> existing = hintRevealRepository
-                .findByUsernameAndChallengeIdAndHintIndex(username, challengeId, hintIndex);
+                .findByUserAndChallengeIdAndHintIndex(user, challengeId, hintIndex);
         if (existing.isPresent()) {
             // Already revealed — just return the text again
             return hints.get(hintIndex);
@@ -55,7 +59,7 @@ public class HintService {
         // Check time lock: the previous hint must have been revealed at least LOCK_SECONDS ago
         if (hintIndex > 0) {
             Optional<HintReveal> previousReveal = hintRevealRepository
-                    .findByUsernameAndChallengeIdAndHintIndex(username, challengeId, hintIndex - 1);
+                    .findByUserAndChallengeIdAndHintIndex(user, challengeId, hintIndex - 1);
 
             if (previousReveal.isEmpty()) {
                 throw new RuntimeException("You must reveal the previous hint first");
@@ -68,7 +72,7 @@ public class HintService {
         }
 
         // All checks passed — save the reveal and return the hint text
-        HintReveal reveal = new HintReveal(username, challenge, hintIndex);
+        HintReveal reveal = new HintReveal(user, challenge, hintIndex);
         hintRevealRepository.save(reveal);
 
         return hints.get(hintIndex);
@@ -79,8 +83,9 @@ public class HintService {
      * Called at flag-submit time.
      */
     public int calculatePenaltyPercent(String username, String challengeId) {
+        UserEntity user = userService.getRequiredUser(username);
         List<HintReveal> reveals = hintRevealRepository
-                .findByUsernameAndChallengeId(username, challengeId);
+                .findByUserAndChallengeId(user, challengeId);
 
         int totalPenalty = 0;
         for (HintReveal reveal : reveals) {

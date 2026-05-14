@@ -1,8 +1,10 @@
 package at.fhtw.ctfbackend.controller;
 
 import at.fhtw.ctfbackend.dto.LoginCredentialsDto;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.security.JwtUtil;
 import at.fhtw.ctfbackend.services.LdapAuthenticationService;
+import at.fhtw.ctfbackend.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,22 +20,16 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
     private final LdapAuthenticationService ldapAuthenticationService;
+    private final UserService userService;
 
-    public AuthController(JwtUtil jwtUtil, LdapAuthenticationService ldapAuthenticationService) {
+    public AuthController(
+            JwtUtil jwtUtil,
+            LdapAuthenticationService ldapAuthenticationService,
+            UserService userService
+    ) {
         this.jwtUtil = jwtUtil;
         this.ldapAuthenticationService = ldapAuthenticationService;
-    }
-
-    // List of admin usernames - these users will have admin access
-    private final String[] adminUsers = {"if24b120", "if24b234"};
-
-    private boolean isAdminUser(String username) {
-        for (String adminUser : adminUsers) {
-            if (adminUser.equalsIgnoreCase(username)) {
-                return true;
-            }
-        }
-        return false;
+        this.userService = userService;
     }
 
     @PostMapping("/api/login")
@@ -56,10 +52,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseBody);
         }
 
-        boolean isAdmin = isAdminUser(username);
+        UserEntity user = userService.ensureUserExistsForLogin(username);
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            responseBody.put("status", "error");
+            responseBody.put("message", "Your account has been deactivated");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(responseBody);
+        }
+
+        user = userService.markSuccessfulLogin(user);
+
+        boolean isAdmin = Boolean.TRUE.equals(user.getIsAdmin());
 
         // Generate token with admin information
-        String jwtToken = jwtUtil.generateToken(username, isAdmin);
+        String jwtToken = jwtUtil.generateToken(user.getUsername(), isAdmin);
 
         // Set HTTP-only cookie
         Cookie authCookie = new Cookie("auth_token", jwtToken);
@@ -71,8 +76,10 @@ public class AuthController {
         response.addCookie(authCookie);
 
         responseBody.put("status", "success");
-        responseBody.put("message", "Welcome, " + username + "!");
-        responseBody.put("username", username);
+        responseBody.put("message", "Welcome, " + user.getUsername() + "!");
+        responseBody.put("username", user.getUsername());
+        responseBody.put("email", user.getEffectiveEmail());
+        responseBody.put("displayName", user.getDisplayName());
         responseBody.put("isAdmin", isAdmin);
 
         return ResponseEntity.ok(responseBody);
@@ -100,11 +107,16 @@ public class AuthController {
     public Map<String, Object> getCurrentUser(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            boolean isAdmin = isAdminUser(username);
+            UserEntity user = userService.getRequiredUser(authentication.getName());
 
-            response.put("username", username);
-            response.put("isAdmin", isAdmin);
+            response.put("id", user.getId());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEffectiveEmail());
+            response.put("displayName", user.getDisplayName());
+            response.put("isAdmin", user.getIsAdmin());
+            response.put("isActive", user.getIsActive());
+            response.put("createdAt", user.getCreatedAt());
+            response.put("lastLoginAt", user.getLastLoginAt());
             response.put("status", "success");
         } else {
             response.put("status", "error");
@@ -117,13 +129,16 @@ public class AuthController {
     public Map<String, Object> getUserInfo(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            boolean isAdmin = isAdminUser(username);
+            UserEntity user = userService.getRequiredUser(authentication.getName());
 
-            response.put("username", username);
-            response.put("email", username + "@ctf-platform.com"); // Default email format
-            response.put("createdAt", "2024-01-01T00:00:00Z"); // Default creation date
-            response.put("isAdmin", isAdmin);
+            response.put("id", user.getId());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEffectiveEmail());
+            response.put("displayName", user.getDisplayName());
+            response.put("createdAt", user.getCreatedAt());
+            response.put("lastLoginAt", user.getLastLoginAt());
+            response.put("isAdmin", user.getIsAdmin());
+            response.put("isActive", user.getIsActive());
             response.put("status", "success");
         } else {
             response.put("status", "error");
@@ -136,8 +151,9 @@ public class AuthController {
     public Map<String, Object> checkAdminStatus(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         if (authentication != null && authentication.isAuthenticated()) {
-            boolean isAdmin = isAdminUser(authentication.getName());
-            response.put("isAdmin", isAdmin);
+            UserEntity user = userService.getRequiredUser(authentication.getName());
+            response.put("isAdmin", user.getIsAdmin());
+            response.put("isActive", user.getIsActive());
             response.put("status", "success");
         } else {
             response.put("isAdmin", false);

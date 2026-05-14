@@ -4,6 +4,7 @@ import at.fhtw.ctfbackend.dto.SubmitFlagRequestDto;
 import at.fhtw.ctfbackend.repository.ChallengeInstanceRepository;
 import at.fhtw.ctfbackend.services.EnvironmentService;
 import at.fhtw.ctfbackend.services.FlagService;
+import at.fhtw.ctfbackend.services.UserService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,12 +19,14 @@ public class FlagController {
     private final FlagService flagService;
     private final EnvironmentService envService;
     private final ChallengeInstanceRepository instanceRepo;
+    private final UserService userService;
 
     public FlagController(FlagService flagService, EnvironmentService envService,
-                          ChallengeInstanceRepository instanceRepo) {
+                          ChallengeInstanceRepository instanceRepo, UserService userService) {
         this.flagService = flagService;
         this.envService = envService;
         this.instanceRepo = instanceRepo;
+        this.userService = userService;
     }
 
     @PostMapping("/submit")
@@ -76,8 +79,8 @@ public class FlagController {
 
         // Auto-cleanup dynamic challenge container after successful solve
         try {
-            var instances = instanceRepo.findByUsernameAndChallengeIdAndStatus(
-                    username, challengeId, "RUNNING"
+            var instances = instanceRepo.findByUserAndChallengeIdAndStatus(
+                    userService.getRequiredUser(username), challengeId, "RUNNING"
             );
             if (!instances.isEmpty()) {
                 String instanceId = instances.get(0).getInstanceId();

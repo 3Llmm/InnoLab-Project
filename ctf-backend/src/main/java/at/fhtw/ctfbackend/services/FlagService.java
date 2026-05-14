@@ -1,6 +1,7 @@
 package at.fhtw.ctfbackend.services;
 
 import at.fhtw.ctfbackend.entity.ChallengeEntity;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.repository.ChallengeInstanceRepository;
 import at.fhtw.ctfbackend.entity.ChallengeInstanceEntity;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
@@ -17,14 +18,16 @@ public class FlagService {
     private final ChallengeRepository challengeRepo;
     private final SolveService solveService;
     private final HintService hintService;
+    private final UserService userService;
 
     public FlagService(ChallengeInstanceRepository instanceRepo, EnvironmentService envService, 
-            ChallengeRepository challengeRepo, SolveService solveService, HintService hintService) {
+            ChallengeRepository challengeRepo, SolveService solveService, HintService hintService, UserService userService) {
         this.instanceRepo = instanceRepo;
         this.envService = envService;
         this.challengeRepo = challengeRepo;
         this.solveService = solveService;
         this.hintService = hintService;
+        this.userService = userService;
     }
 
     public boolean validateFlag(String username, String challengeId, String submittedFlag) {
@@ -61,8 +64,9 @@ public class FlagService {
     }
 
     private boolean validateDynamicFlag(String username, String challengeId, String submittedFlag) {
-        var instances = instanceRepo.findByUsernameAndChallengeIdAndStatus(
-                username, challengeId, "RUNNING"
+        UserEntity user = userService.getRequiredUser(username);
+        var instances = instanceRepo.findByUserAndChallengeIdAndStatus(
+                user, challengeId, "RUNNING"
         );
 
         if (instances.isEmpty()) {
