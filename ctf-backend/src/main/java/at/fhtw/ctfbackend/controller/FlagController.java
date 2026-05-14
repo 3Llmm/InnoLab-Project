@@ -11,21 +11,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/flags")
 public class FlagController {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlagController.class);
-
+    private final UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(
+        FlagController.class
+    );
     private final FlagService flagService;
     private final EnvironmentService envService;
     private final ChallengeInstanceRepository instanceRepo;
-    private final UserService userService;
 
     public FlagController(
         FlagService flagService,
@@ -40,7 +38,7 @@ public class FlagController {
     }
 
     @PostMapping("/submit")
-    @Transactional
+    @Transactional //  Add this annotation
     public ResponseEntity<Map<String, Object>> submitFlag(
         Authentication auth,
         @RequestBody SubmitFlagRequestDto request
@@ -51,27 +49,46 @@ public class FlagController {
 
         logger.debug("Got into controller!");
 
-        boolean valid = flagService.validateFlag(username, challengeId, submittedFlag);
+        // NEW: validate using dynamic instance flag
+        boolean valid = flagService.validateFlag(
+            username,
+            challengeId,
+            submittedFlag
+        );
+
         if (!valid) {
-            return ResponseEntity
-                .badRequest()
-                .body(Map.of("message", "Incorrect flag.", "status", "error"));
+            return ResponseEntity.badRequest().body(
+                Map.of("message", "Incorrect flag.", "status", "error")
+            );
         }
 
-        boolean alreadySolved = flagService.hasUserSolvedChallenge(username, challengeId);
+        // NEW: Check if user already solved this challenge
+        boolean alreadySolved = flagService.hasUserSolvedChallenge(
+            username,
+            challengeId
+        );
+
         if (alreadySolved) {
-            return ResponseEntity
-                .badRequest()
-                .body(Map.of("message", "Flag already submitted.", "status", "warning"));
+            return ResponseEntity.badRequest().body(
+                Map.of(
+                    "message",
+                    "Flag already submitted.",
+                    "status",
+                    "warning"
+                )
+            );
         }
 
+        // NEW: record that user solved the challenge
         boolean isNewSolve = flagService.recordSolve(username, challengeId);
+
         if (!isNewSolve) {
-            return ResponseEntity
-                .badRequest()
-                .body(Map.of("message", "Failed to record solve.", "status", "error"));
+            return ResponseEntity.badRequest().body(
+                Map.of("message", "Failed to record solve.", "status", "error")
+            );
         }
 
+        // Auto-cleanup dynamic challenge container after successful solve
         try {
             var instances = instanceRepo.findByUserAndChallengeIdAndStatus(
                 userService.getRequiredUser(username),
@@ -81,7 +98,10 @@ public class FlagController {
             if (!instances.isEmpty()) {
                 String instanceId = instances.get(0).getInstanceId();
                 envService.cleanupAndReleasePort(instanceId);
-                logger.info("Auto-cleaned environment after solve: {}", instanceId);
+                logger.info(
+                    "Auto-cleaned environment after solve: {}",
+                    instanceId
+                );
             }
         } catch (Exception cleanupEx) {
             logger.warn(
@@ -90,6 +110,7 @@ public class FlagController {
             );
         }
 
+        //  Get the updated solve count AFTER the transaction commits
         long solveCount = flagService.getSolveCountForChallenge(challengeId);
         int pointsEarned = flagService.getPointsEarned(username, challengeId);
 

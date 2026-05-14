@@ -55,9 +55,6 @@ public class UserDataBackfill implements CommandLineRunner {
             if (user.getDisplayName() == null || user.getDisplayName().isBlank()) {
                 user.setDisplayName(normalizedUsername);
             }
-            if (userService.isBootstrapAdmin(normalizedUsername)) {
-                user.setIsAdmin(true);
-            }
         }
     }
 
@@ -104,7 +101,7 @@ public class UserDataBackfill implements CommandLineRunner {
                         .username(normalizedUsername)
                         .email(normalizedUsername + "@technikum-wien.at")
                         .displayName(normalizedUsername)
-                        .isAdmin(userService.isBootstrapAdmin(normalizedUsername))
+                        .isAdmin(false)
                         .isActive(true)
                         .build()));
     }
