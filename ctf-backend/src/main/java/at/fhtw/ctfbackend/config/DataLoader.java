@@ -11,6 +11,8 @@ import at.fhtw.ctfbackend.repository.CourseRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
@@ -23,6 +25,8 @@ import java.util.Set;
 
 @Configuration
 public class DataLoader {
+
+    private static final Logger logger = LoggerFactory.getLogger(DataLoader.class);
 
     private static final Map<String, String> FLAGS = Map.of(
             "web-101", "flag{leet_xss}",
@@ -60,17 +64,17 @@ public class DataLoader {
             var resolver = new PathMatchingResourcePatternResolver();
             Resource[] resources = resolver.getResources("classpath:/files/*.zip");
 
-            System.out.println("=== LOADING CHALLENGES ===");
-            System.out.println("Found " + resources.length + " ZIP files to load");
+            logger.info("=== LOADING CHALLENGES ===");
+            logger.info("Found {} ZIP files to load", resources.length);
 
             for (Resource r : resources) {
                 String filename = r.getFilename();
                 String id = filename.replace(".zip", "");
 
-                System.out.println("Processing: " + filename + " -> ID: " + id);
+                logger.info("Processing: {} -> ID: {}", filename, id);
 
                 if (repo.existsById(id)) {
-                    System.out.println("  -> Already exists, skipping");
+                    logger.info("  -> Already exists, skipping");
                     continue;
                 }
 
@@ -79,7 +83,7 @@ public class DataLoader {
                     zipBytes = in.readAllBytes();
                 }
 
-                System.out.println("  -> Read " + zipBytes.length + " bytes");
+                logger.info("  -> Read {} bytes", zipBytes.length);
 
                 ChallengeEntity entity = ChallengeEntity.builder()
                         .id(id)
@@ -92,22 +96,20 @@ public class DataLoader {
                         .flag(FLAGS.getOrDefault(id, ""))
                         .originalFilename(filename)
                         .build();
-                System.out.println("  -> Set originalFilename: " + filename);
+                logger.info("  -> Set originalFilename: {}", filename);
 
                 repo.save(entity);
-                System.out.println("  -> Saved successfully");
+                logger.info("  -> Saved successfully");
             }
 
-            System.out.println("=== VERIFICATION ===");
+            logger.info("=== VERIFICATION ===");
             repo.findAll().forEach(c -> {
                 String fileStatus = c.getDownload() != null ?
                         c.getDownload().length + " bytes" : "NULL";
-                System.out.println("Challenge: " + c.getId() +
-                        " | Title: " + c.getTitle() +
-                        " | Filename: " + c.getOriginalFilename() +
-                        " | File: " + fileStatus);
+                logger.info("Challenge: {} | Title: {} | Filename: {} | File: {}",
+                        c.getId(), c.getTitle(), c.getOriginalFilename(), fileStatus);
             });
-            System.out.println("=== LOADING COMPLETE ===");
+            logger.info("=== LOADING COMPLETE ===");
         };
     }
 
@@ -115,7 +117,7 @@ public class DataLoader {
     CommandLineRunner loadCategories(CategoryRepository repo) {
         return args -> {
             if (repo.count() > 0) {
-                System.out.println("Categories already exist, skipping initialization.");
+                logger.info("Categories already exist, skipping initialization.");
                 return;
             }
 
@@ -128,7 +130,7 @@ public class DataLoader {
             );
 
             repo.saveAll(categories);
-            System.out.println("Initialized " + categories.size() + " categories.");
+            logger.info("Initialized {} categories.", categories.size());
         };
     }
 

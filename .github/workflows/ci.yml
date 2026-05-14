@@ -9,8 +9,8 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  BACKEND_IMAGE: yusufkh/ctfbackend
-  FRONTEND_IMAGE: yusufkh/ctffrontend
+  BACKEND_IMAGE: aminkasmi06/ctfbackend
+  FRONTEND_IMAGE: aminkasmi06/ctffrontend
 
 jobs:
   # Security scans - run first as they're critical for a security training platform
@@ -27,8 +27,8 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          base: ${{ github.event.before || github.event.pull_request.base.sha }}
+          head: ${{ github.event.after || github.event.pull_request.head.sha }}
           extra_args: --debug --only-verified
 
       - name: Set up Java
@@ -175,6 +175,8 @@ jobs:
 
   docker:
     name: Docker Build & Push
+    permissions:
+      security-events: write
     runs-on: ubuntu-latest
     needs: [frontend, backend, integration-tests]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
@@ -243,8 +245,8 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles('trivy-backend-results.sarif')
         with:
           sarif_file: 'trivy-backend-results.sarif'
 

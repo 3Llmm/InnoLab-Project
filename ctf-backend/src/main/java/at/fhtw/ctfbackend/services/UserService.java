@@ -2,6 +2,7 @@ package at.fhtw.ctfbackend.services;
 
 import at.fhtw.ctfbackend.dto.UserAdminUpdateDto;
 import at.fhtw.ctfbackend.entity.UserEntity;
+import at.fhtw.ctfbackend.repository.AdminUserRepository;
 import at.fhtw.ctfbackend.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,15 +16,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AdminUserRepository adminUserRepository;
     private final List<String> bootstrapAdminUsers;
 
     public UserService(
         UserRepository userRepository,
+        AdminUserRepository adminUserRepository,
         @Value("${app.auth.admin-users:if24b241,if24b234}") List<
             String
         > bootstrapAdminUsers
     ) {
         this.userRepository = userRepository;
+        this.adminUserRepository = adminUserRepository;
         this.bootstrapAdminUsers = bootstrapAdminUsers
             .stream()
             .map(this::normalizeUsername)
@@ -56,6 +60,7 @@ public class UserService {
     @Transactional
     public UserEntity ensureUserExistsForLogin(String rawUsername) {
         String username = normalizeUsername(rawUsername);
+        boolean shouldBeAdmin = isBootstrapAdmin(username);
 
         UserEntity user = userRepository
             .findByUsername(username)
@@ -65,7 +70,7 @@ public class UserService {
                         .username(username)
                         .email(username + "@technikum-wien.at")
                         .displayName(username)
-                        .isAdmin(bootstrapAdminUsers.contains(username))
+                        .isAdmin(shouldBeAdmin)
                         .isActive(true)
                         .build()
                 )
@@ -77,8 +82,17 @@ public class UserService {
         if (user.getDisplayName() == null || user.getDisplayName().isBlank()) {
             user.setDisplayName(user.getUsername());
         }
+        if (shouldBeAdmin && !Boolean.TRUE.equals(user.getIsAdmin())) {
+            user.setIsAdmin(true);
+        }
 
         return userRepository.save(user);
+    }
+
+    public boolean isBootstrapAdmin(String username) {
+        String normalizedUsername = normalizeUsername(username);
+        return bootstrapAdminUsers.contains(normalizedUsername) ||
+        adminUserRepository.existsById(normalizedUsername);
     }
 
     @Transactional

@@ -10,9 +10,11 @@ class JwtUtilTest {
 
     private JwtUtil jwtUtil;
 
+    private static final String TEST_SECRET = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
     @BeforeEach
     void setUp() {
-        jwtUtil = new JwtUtil();
+        jwtUtil = new JwtUtil(TEST_SECRET);
     }
 
     @Test
@@ -160,7 +162,7 @@ class JwtUtilTest {
         String token = jwtUtil.generateToken("testuser");
 
         // Create a new instance (different key)
-        JwtUtil differentJwtUtil = new JwtUtil();
+        JwtUtil differentJwtUtil = new JwtUtil("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
 
         // Act
         boolean isValid = differentJwtUtil.validateToken(token);

@@ -28,8 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.equals("/api/csrf-token") || "OPTIONS".equals(request.getMethod());
+        return "OPTIONS".equals(request.getMethod());
     }
 
     @Override
@@ -38,9 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String uri = request.getRequestURI();
-        
-        if ("/api/csrf-token".equals(uri) || "OPTIONS".equals(request.getMethod())) {
+        if ("OPTIONS".equals(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }

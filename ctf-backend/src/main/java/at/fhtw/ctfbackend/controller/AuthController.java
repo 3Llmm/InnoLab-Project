@@ -5,15 +5,17 @@ import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.security.JwtUtil;
 import at.fhtw.ctfbackend.services.LdapAuthenticationService;
 import at.fhtw.ctfbackend.services.UserService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AuthController {
@@ -23,9 +25,9 @@ public class AuthController {
     private final UserService userService;
 
     public AuthController(
-            JwtUtil jwtUtil,
-            LdapAuthenticationService ldapAuthenticationService,
-            UserService userService
+        JwtUtil jwtUtil,
+        LdapAuthenticationService ldapAuthenticationService,
+        UserService userService
     ) {
         this.jwtUtil = jwtUtil;
         this.ldapAuthenticationService = ldapAuthenticationService;
@@ -33,14 +35,20 @@ public class AuthController {
     }
 
     @PostMapping("/api/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginCredentialsDto credentials, HttpServletResponse response) {
+    public ResponseEntity<Map<String, Object>> login(
+        @RequestBody LoginCredentialsDto credentials,
+        HttpServletResponse response
+    ) {
         Map<String, Object> responseBody = new HashMap<>();
 
         String username = credentials.getUsername();
         String password = credentials.getPassword();
 
         try {
-            boolean authenticated = ldapAuthenticationService.authenticate(username, password);
+            boolean authenticated = ldapAuthenticationService.authenticate(
+                username,
+                password
+            );
             if (!authenticated) {
                 responseBody.put("status", "error");
                 responseBody.put("message", "Invalid username or password");
@@ -48,7 +56,10 @@ public class AuthController {
             }
         } catch (IllegalStateException ex) {
             responseBody.put("status", "error");
-            responseBody.put("message", "Authentication service temporarily unavailable");
+            responseBody.put(
+                "message",
+                "Authentication service temporarily unavailable"
+            );
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseBody);
         }
 
@@ -62,16 +73,13 @@ public class AuthController {
         user = userService.markSuccessfulLogin(user);
 
         boolean isAdmin = Boolean.TRUE.equals(user.getIsAdmin());
-
-        // Generate token with admin information
         String jwtToken = jwtUtil.generateToken(user.getUsername(), isAdmin);
 
-        // Set HTTP-only cookie
         Cookie authCookie = new Cookie("auth_token", jwtToken);
         authCookie.setHttpOnly(true);
         authCookie.setSecure(false);
         authCookie.setPath("/");
-        authCookie.setMaxAge(24 * 60 * 60); // 24 hours
+        authCookie.setMaxAge(24 * 60 * 60);
         authCookie.setAttribute("SameSite", "Lax");
         response.addCookie(authCookie);
 
@@ -87,13 +95,11 @@ public class AuthController {
 
     @PostMapping("/api/logout")
     public Map<String, String> logout(HttpServletResponse response) {
-        // Clear the auth cookie
         Cookie authCookie = new Cookie("auth_token", "");
         authCookie.setHttpOnly(true);
         authCookie.setSecure(false);
         authCookie.setPath("/");
-        authCookie.setMaxAge(0); // Expire immediately
-
+        authCookie.setMaxAge(0);
         response.addCookie(authCookie);
 
         Map<String, String> responseBody = new HashMap<>();
