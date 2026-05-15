@@ -65,6 +65,7 @@ jobs:
         with:
           name: frontend-build
           path: ctf-frontend/.next/
+          include-hidden-files: true
           if-no-files-found: error
 
   deploy:
