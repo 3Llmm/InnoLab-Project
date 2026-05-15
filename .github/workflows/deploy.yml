@@ -15,7 +15,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+      - name: Debug build environment
+        run: |
+          echo "=== Java ==="
+          java -version 2>&1
+          echo "=== Maven ==="
+          ./mvnw --version 2>&1
+          echo "=== Workspace ==="
+          pwd
+          ls -la target/ 2>/dev/null || echo "No target dir"
+        working-directory: ctf-backend
       - name: Build Backend
         run: ./mvnw clean package -DskipTests -Dcheckstyle.skip=true -q
         working-directory: ctf-backend
