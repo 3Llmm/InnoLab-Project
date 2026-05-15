@@ -1,6 +1,7 @@
 package at.fhtw.ctfbackend.repository;
 
 import at.fhtw.ctfbackend.entity.ChallengeInstanceEntity;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,12 @@ public interface ChallengeInstanceRepository extends JpaRepository<ChallengeInst
 
     List<ChallengeInstanceEntity> findByUsernameAndChallengeIdAndStatus(
             String username,
+            String challengeId,
+            String status
+    );
+
+    List<ChallengeInstanceEntity> findByUserAndChallengeIdAndStatus(
+            UserEntity user,
             String challengeId,
             String status
     );

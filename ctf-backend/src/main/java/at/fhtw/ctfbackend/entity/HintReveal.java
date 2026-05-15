@@ -28,6 +28,10 @@ public class HintReveal {
     private String username;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "challenge_id", nullable = false)
     private ChallengeEntity challenge;
 
@@ -38,8 +42,9 @@ public class HintReveal {
     @Column(name = "revealed_at", updatable = false)
     private LocalDateTime revealedAt;
 
-    public HintReveal(String username, ChallengeEntity challenge, Integer hintIndex) {
-        this.username = username;
+    public HintReveal(UserEntity user, ChallengeEntity challenge, Integer hintIndex) {
+        this.user = user;
+        this.username = user.getUsername();
         this.challenge = challenge;
         this.hintIndex = hintIndex;
     }

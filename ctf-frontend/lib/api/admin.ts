@@ -9,6 +9,25 @@ export interface AdminStats {
     challengesByDifficulty: Array<{ difficulty: string; count: number }>
 }
 
+export interface AdminUser {
+    id: number
+    username: string
+    email: string
+    displayName: string
+    isAdmin: boolean
+    isActive: boolean
+    lastLoginAt: string | null
+    createdAt: string | null
+    updatedAt: string | null
+}
+
+export interface AdminUserUpdate {
+    email?: string
+    displayName?: string
+    isAdmin?: boolean
+    isActive?: boolean
+}
+
 export async function getAdminStats(): Promise<AdminStats> {
     try {
         const backendStats = await apiClient.get('/api/challenges/admin/stats');
@@ -60,8 +79,19 @@ export async function updateChallenge(id: string, data: any): Promise<any> {
     return apiClient.put(`/api/challenges/${id}`, data);
 }
 
-export async function getAllUsers(): Promise<any[]> {
+export async function getAllUsers(): Promise<AdminUser[]> {
     return apiClient.get('/api/admin/users');
+}
+
+export async function getUserById(id: number): Promise<AdminUser> {
+    return apiClient.get(`/api/admin/users/${id}`);
+}
+
+export async function updateUserAdmin(id: number, data: AdminUserUpdate): Promise<AdminUser> {
+    return apiClient.request(`/api/admin/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+    });
 }
 
 // Course Admin APIs

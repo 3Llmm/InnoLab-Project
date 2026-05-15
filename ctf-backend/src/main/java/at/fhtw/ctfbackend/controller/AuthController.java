@@ -1,30 +1,38 @@
 package at.fhtw.ctfbackend.controller;
 
 import at.fhtw.ctfbackend.dto.LoginCredentialsDto;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.repository.AdminUserRepository;
 import at.fhtw.ctfbackend.security.JwtUtil;
 import at.fhtw.ctfbackend.services.LdapAuthenticationService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-
+import at.fhtw.ctfbackend.services.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class AuthController {
 
     private final JwtUtil jwtUtil;
     private final LdapAuthenticationService ldapAuthenticationService;
+    private final UserService userService;
     private final AdminUserRepository adminUserRepository;
 
-    public AuthController(JwtUtil jwtUtil, LdapAuthenticationService ldapAuthenticationService,
-                          AdminUserRepository adminUserRepository) {
+    public AuthController(
+        JwtUtil jwtUtil,
+        LdapAuthenticationService ldapAuthenticationService,
+        UserService userService,
+        AdminUserRepository adminUserRepository
+    ) {
         this.jwtUtil = jwtUtil;
         this.ldapAuthenticationService = ldapAuthenticationService;
+        this.userService = userService;
+
         this.adminUserRepository = adminUserRepository;
     }
 
@@ -33,29 +41,53 @@ public class AuthController {
     }
 
     @PostMapping("/api/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginCredentialsDto credentials, HttpServletResponse response) {
+    public ResponseEntity<Map<String, Object>> login(
+        @RequestBody LoginCredentialsDto credentials,
+        HttpServletResponse response
+    ) {
         Map<String, Object> responseBody = new HashMap<>();
 
         String username = credentials.getUsername();
         String password = credentials.getPassword();
 
         try {
-            boolean authenticated = ldapAuthenticationService.authenticate(username, password);
+            boolean authenticated = ldapAuthenticationService.authenticate(
+                username,
+                password
+            );
             if (!authenticated) {
                 responseBody.put("status", "error");
                 responseBody.put("message", "Invalid username or password");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    responseBody
+                );
             }
         } catch (IllegalStateException ex) {
             responseBody.put("status", "error");
-            responseBody.put("message", "Authentication service temporarily unavailable");
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(responseBody);
+            responseBody.put(
+                "message",
+                "Authentication service temporarily unavailable"
+            );
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
+                responseBody
+            );
         }
 
-        boolean isAdmin = isAdminUser(username);
+        UserEntity user = userService.ensureUserExistsForLogin(username);
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            responseBody.put("status", "error");
+            responseBody.put("message", "Your account has been deactivated");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                responseBody
+            );
+        }
+
+        user = userService.markSuccessfulLogin(user);
+
+        boolean isAdmin = Boolean.TRUE.equals(user.getIsAdmin());
 
         // Generate token with admin information
-        String jwtToken = jwtUtil.generateToken(username, isAdmin);
+        String jwtToken = jwtUtil.generateToken(user.getUsername(), isAdmin);
 
         // Set HTTP-only cookie
         Cookie authCookie = new Cookie("auth_token", jwtToken);
@@ -67,8 +99,10 @@ public class AuthController {
         response.addCookie(authCookie);
 
         responseBody.put("status", "success");
-        responseBody.put("message", "Welcome, " + username + "!");
-        responseBody.put("username", username);
+        responseBody.put("message", "Welcome, " + user.getUsername() + "!");
+        responseBody.put("username", user.getUsername());
+        responseBody.put("email", user.getEffectiveEmail());
+        responseBody.put("displayName", user.getDisplayName());
         responseBody.put("isAdmin", isAdmin);
 
         return ResponseEntity.ok(responseBody);
@@ -96,11 +130,18 @@ public class AuthController {
     public Map<String, Object> getCurrentUser(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            boolean isAdmin = isAdminUser(username);
+            UserEntity user = userService.getRequiredUser(
+                authentication.getName()
+            );
 
-            response.put("username", username);
-            response.put("isAdmin", isAdmin);
+            response.put("id", user.getId());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEffectiveEmail());
+            response.put("displayName", user.getDisplayName());
+            response.put("isAdmin", user.getIsAdmin());
+            response.put("isActive", user.getIsActive());
+            response.put("createdAt", user.getCreatedAt());
+            response.put("lastLoginAt", user.getLastLoginAt());
             response.put("status", "success");
         } else {
             response.put("status", "error");
@@ -113,13 +154,18 @@ public class AuthController {
     public Map<String, Object> getUserInfo(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            boolean isAdmin = isAdminUser(username);
+            UserEntity user = userService.getRequiredUser(
+                authentication.getName()
+            );
 
-            response.put("username", username);
-            response.put("email", username + "@ctf-platform.com"); // Default email format
-            response.put("createdAt", "2024-01-01T00:00:00Z"); // Default creation date
-            response.put("isAdmin", isAdmin);
+            response.put("id", user.getId());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEffectiveEmail());
+            response.put("displayName", user.getDisplayName());
+            response.put("createdAt", user.getCreatedAt());
+            response.put("lastLoginAt", user.getLastLoginAt());
+            response.put("isAdmin", user.getIsAdmin());
+            response.put("isActive", user.getIsActive());
             response.put("status", "success");
         } else {
             response.put("status", "error");
@@ -132,8 +178,11 @@ public class AuthController {
     public Map<String, Object> checkAdminStatus(Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         if (authentication != null && authentication.isAuthenticated()) {
-            boolean isAdmin = isAdminUser(authentication.getName());
-            response.put("isAdmin", isAdmin);
+            UserEntity user = userService.getRequiredUser(
+                authentication.getName()
+            );
+            response.put("isAdmin", user.getIsAdmin());
+            response.put("isActive", user.getIsActive());
             response.put("status", "success");
         } else {
             response.put("isAdmin", false);

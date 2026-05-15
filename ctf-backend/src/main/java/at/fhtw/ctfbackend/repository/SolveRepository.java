@@ -1,6 +1,7 @@
 package at.fhtw.ctfbackend.repository;
 
 import at.fhtw.ctfbackend.entity.Solve;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,8 @@ public interface SolveRepository extends JpaRepository<Solve, Long> {
     // Find all solves by username
     List<Solve> findByUsername(String username);
 
+    List<Solve> findByUser(UserEntity user);
+
     // Native query for counting solves by challenge ID
     @Query(value = "SELECT COUNT(*) FROM solves WHERE challenge_id = :challengeId", nativeQuery = true)
     long countByChallengeIdNative(@Param("challengeId") String challengeId);
@@ -30,11 +33,16 @@ public interface SolveRepository extends JpaRepository<Solve, Long> {
     @Query("SELECT s FROM Solve s WHERE s.username = :username AND s.challenge.id = :challengeId")
     Optional<Solve> findByUsernameAndChallengeId(@Param("username") String username, @Param("challengeId") String challengeId);
 
+    @Query("SELECT s FROM Solve s WHERE s.user = :user AND s.challenge.id = :challengeId")
+    Optional<Solve> findByUserAndChallengeId(@Param("user") UserEntity user, @Param("challengeId") String challengeId);
+
     @Query("SELECT COUNT(s) FROM Solve s WHERE s.challenge.id = :challengeId")
     long countByChallengeId(@Param("challengeId") String challengeId);
 
     // Count how many challenges a user has solved
     long countByUsername(String username);
+
+    long countByUser(UserEntity user);
 
     //  FIXED - Use Pageable
     @Query("SELECT s FROM Solve s ORDER BY s.solvedAt DESC")

@@ -3,31 +3,37 @@ package at.fhtw.ctfbackend.services;
 import at.fhtw.ctfbackend.dto.SolveResponse;
 import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.entity.Solve;
+import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import at.fhtw.ctfbackend.repository.SolveRepository;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SolveService {
 
     private final SolveRepository solveRepository;
     private final ChallengeRepository challengeRepository;
+    private final UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(
+        FlagService.class
+    );
 
-    private static final Logger logger = LoggerFactory.getLogger(SolveService.class);
-
-    public SolveService(SolveRepository solveRepository, ChallengeRepository challengeRepository) {
+    public SolveService(
+        SolveRepository solveRepository,
+        ChallengeRepository challengeRepository,
+        UserService userService
+    ) {
         this.solveRepository = solveRepository;
         this.challengeRepository = challengeRepository;
+        this.userService = userService;
     }
 
     /**
@@ -38,33 +44,54 @@ public class SolveService {
      * @return true if this is a new solve, false if the user already solved this challenge
      */
     @Transactional
-    public boolean recordSolve(String username, String challengeId, int pointsEarned) {
-        logger.debug(" SolveService.recordSolve called for user: {}, challenge: {}", username, challengeId);
+    public boolean recordSolve(
+        String username,
+        String challengeId,
+        int pointsEarned
+    ) {
+        UserEntity user = userService.getRequiredUser(username);
+        logger.debug(
+            " SolveService.recordSolve called for user: {}, challenge: {}",
+            username,
+            challengeId
+        );
 
         try {
             // Check if user already solved this challenge
-            Optional<Solve> existingSolve = solveRepository.findByUsernameAndChallengeId(username, challengeId);
+            Optional<Solve> existingSolve =
+                solveRepository.findByUserAndChallengeId(user, challengeId);
 
             if (existingSolve.isPresent()) {
-                logger.debug("  User already solved this challenge, returning false");
+                logger.debug(
+                    "  User already solved this challenge, returning false"
+                );
                 return false; // User already solved this challenge
             }
 
             logger.debug(" This is a new solve, creating database record...");
 
             // Get the challenge entity
-            ChallengeEntity challenge = challengeRepository.findById(challengeId)
-                    .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
+            ChallengeEntity challenge = challengeRepository
+                .findById(challengeId)
+                .orElseThrow(() ->
+                    new RuntimeException("Challenge not found: " + challengeId)
+                );
 
             // Create and save the new solve record
-            Solve solve = new Solve(username, challenge, pointsEarned);
-            Solve savedSolve = solveRepository.saveAndFlush(solve);  //  Changed from save() to saveAndFlush()
+            Solve solve = new Solve(user, challenge, pointsEarned);
+            Solve savedSolve = solveRepository.saveAndFlush(solve); //  Changed from save() to saveAndFlush()
 
-            logger.debug(" Solve saved to database with ID: {}", savedSolve.getId());
+            logger.debug(
+                " Solve saved to database with ID: {}",
+                savedSolve.getId()
+            );
 
             return true; // This is a new solve
         } catch (Exception e) {
-            logger.error(" Error in SolveService.recordSolve: {}", e.getMessage());
+            logger.error(
+                " Error in SolveService.recordSolve: {}",
+                e.getMessage()
+            );
             logger.error("Error in SolveService.recordSolve", e);
             return false;
         }
@@ -76,9 +103,12 @@ public class SolveService {
      * @return List of solved challenges with details
      */
     public List<SolveResponse> getSolvedChallengesByUser(String username) {
-        return solveRepository.findByUsername(username).stream()
-                .map(this::toDto)
-                .toList();
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository
+            .findByUser(user)
+            .stream()
+            .map(this::toDto)
+            .toList();
     }
 
     /**
@@ -87,9 +117,11 @@ public class SolveService {
      * @return List of solves for the challenge
      */
     public List<SolveResponse> getSolversForChallenge(String challengeId) {
-        return solveRepository.findByChallengeId(challengeId).stream()
-                .map(this::toDto)
-                .toList();
+        return solveRepository
+            .findByChallengeId(challengeId)
+            .stream()
+            .map(this::toDto)
+            .toList();
     }
 
     /**
@@ -99,7 +131,10 @@ public class SolveService {
      * @return true if the user has solved the challenge, false otherwise
      */
     public boolean hasUserSolvedChallenge(String username, String challengeId) {
-        return solveRepository.findByUsernameAndChallengeId(username, challengeId).isPresent();
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository
+            .findByUserAndChallengeId(user, challengeId)
+            .isPresent();
     }
 
     /**
@@ -115,7 +150,9 @@ public class SolveService {
         logger.debug(" JPA Count result: {}", countJpa);
 
         // Try native query
-        long countNative = solveRepository.countByChallengeIdNative(challengeId);
+        long countNative = solveRepository.countByChallengeIdNative(
+            challengeId
+        );
         logger.debug(" Native Count result: {}", countNative);
 
         // Use native for now since JPA seems broken
@@ -128,7 +165,8 @@ public class SolveService {
      * @return Number of challenges solved by the user
      */
     public long getSolveCountForUser(String username) {
-        return solveRepository.countByUsername(username);
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository.countByUser(user);
     }
 
     /**
@@ -138,9 +176,11 @@ public class SolveService {
      */
     public List<SolveResponse> getRecentSolves(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
-        return solveRepository.findRecentSolves(pageable).stream()
-                .map(this::toDto)
-                .toList();
+        return solveRepository
+            .findRecentSolves(pageable)
+            .stream()
+            .map(this::toDto)
+            .toList();
     }
 
     /**
@@ -151,11 +191,14 @@ public class SolveService {
     public Map<String, Long> getTopSolvers(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<Object[]> results = solveRepository.findTopSolvers(pageable);
-        return results.stream()
-                .collect(Collectors.toMap(
-                        result -> (String) result[0],
-                        result -> (Long) result[1]
-                ));
+        return results
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    result -> (String) result[0],
+                    result -> (Long) result[1]
+                )
+            );
     }
 
     /**
@@ -166,12 +209,17 @@ public class SolveService {
 
     public Map<String, Long> getMostSolvedChallenges(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
-        List<Object[]> results = solveRepository.findMostSolvedChallenges(pageable);
-        return results.stream()
-                .collect(Collectors.toMap(
-                        result -> (String) result[0],
-                        result -> (Long) result[1]
-                ));
+        List<Object[]> results = solveRepository.findMostSolvedChallenges(
+            pageable
+        );
+        return results
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    result -> (String) result[0],
+                    result -> (Long) result[1]
+                )
+            );
     }
 
     /**
@@ -180,9 +228,11 @@ public class SolveService {
      * @return List of solves in the specified category
      */
     public List<SolveResponse> getSolvesByCategory(String category) {
-        return solveRepository.findByCategory(category).stream()
-                .map(this::toDto)
-                .toList();
+        return solveRepository
+            .findByCategory(category)
+            .stream()
+            .map(this::toDto)
+            .toList();
     }
 
     /**
@@ -191,9 +241,11 @@ public class SolveService {
      * @return List of solves with the specified difficulty
      */
     public List<SolveResponse> getSolvesByDifficulty(String difficulty) {
-        return solveRepository.findByDifficulty(difficulty).stream()
-                .map(this::toDto)
-                .toList();
+        return solveRepository
+            .findByDifficulty(difficulty)
+            .stream()
+            .map(this::toDto)
+            .toList();
     }
 
     /**
@@ -202,10 +254,15 @@ public class SolveService {
      * @param end End time
      * @return List of solves within the time range
      */
-    public List<SolveResponse> getSolvesByTimeRange(LocalDateTime start, LocalDateTime end) {
-        return solveRepository.findBySolvedAtBetween(start, end).stream()
-                .map(this::toDto)
-                .toList();
+    public List<SolveResponse> getSolvesByTimeRange(
+        LocalDateTime start,
+        LocalDateTime end
+    ) {
+        return solveRepository
+            .findBySolvedAtBetween(start, end)
+            .stream()
+            .map(this::toDto)
+            .toList();
     }
 
     /**
@@ -223,13 +280,16 @@ public class SolveService {
      * @return Optional containing the solve record if it exists
      */
     public Optional<Solve> getSolveRecord(String username, String challengeId) {
-        return solveRepository.findByUsernameAndChallengeId(username, challengeId);
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository.findByUserAndChallengeId(user, challengeId);
     }
 
     public int getPointsEarned(String username, String challengeId) {
-        return solveRepository.findByUsernameAndChallengeId(username, challengeId)
-                .map(Solve::getPointsEarned)
-                .orElse(0);
+        UserEntity user = userService.getRequiredUser(username);
+        return solveRepository
+            .findByUserAndChallengeId(user, challengeId)
+            .map(Solve::getPointsEarned)
+            .orElse(0);
     }
 
     /**
@@ -246,15 +306,21 @@ public class SolveService {
      * @return Map containing various statistics about the challenge
      */
     public Map<String, Object> getChallengeStatistics(String challengeId) {
-        logger.debug(" getChallengeStatistics called for challenge: {}", challengeId);
+        logger.debug(
+            " getChallengeStatistics called for challenge: {}",
+            challengeId
+        );
 
         Map<String, Object> stats = new HashMap<>();
 
         long solveCount = getSolveCountForChallenge(challengeId);
         logger.debug(" Solve count from database: {}", solveCount);
 
-        ChallengeEntity challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
+        ChallengeEntity challenge = challengeRepository
+            .findById(challengeId)
+            .orElseThrow(() ->
+                new RuntimeException("Challenge not found: " + challengeId)
+            );
 
         stats.put("challengeId", challengeId);
         stats.put("challengeTitle", challenge.getTitle());
@@ -276,32 +342,33 @@ public class SolveService {
      */
     public Map<String, Object> getUserStatistics(String username) {
         Map<String, Object> stats = new HashMap<>();
-        
+
         long totalSolves = getSolveCountForUser(username);
         List<SolveResponse> userSolves = getSolvedChallengesByUser(username);
-        
+
         stats.put("username", username);
         stats.put("totalSolves", totalSolves);
-        
-        int totalPoints = userSolves.stream()
-                .mapToInt(SolveResponse::getPointsEarned)
-                .sum();
+
+        int totalPoints = userSolves
+            .stream()
+            .mapToInt(SolveResponse::getPointsEarned)
+            .sum();
         stats.put("totalPoints", totalPoints);
-        
+
         stats.put("categoryDistribution", Map.of());
         stats.put("difficultyDistribution", Map.of());
-        
+
         return stats;
     }
 
     private SolveResponse toDto(Solve solve) {
         return new SolveResponse(
-                solve.getId(),
-                solve.getUsername(),
-                solve.getChallenge().getId(),
-                solve.getChallenge().getTitle(),
-                solve.getSolvedAt(),
-                solve.getPointsEarned()
+            solve.getId(),
+            solve.getUsername(),
+            solve.getChallenge().getId(),
+            solve.getChallenge().getTitle(),
+            solve.getSolvedAt(),
+            solve.getPointsEarned()
         );
     }
 }
