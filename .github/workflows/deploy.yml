@@ -24,7 +24,37 @@ jobs:
           name: backend-jar
           path: ctf-backend/target/
           if-no-files-found: error
-  build-frontend:
+    build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ctf-frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ctf-frontend
+      - name: Build Frontend
+        run: npm run build
+        working-directory: ctf-frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_TERMINAL_URL: ${{ env.NEXT_PUBLIC_TERMINAL_URL }}
+      - name: Debug - find .next
+        run: |
+          echo "=== Root dir ==="
+          ls -la
+          echo "=== ctf-frontend/ ==="
+          ls -la ctf-frontend/ 2>/dev/null
+          echo "=== Find .next ==="
+          find . -maxdepth 3 -type d -name ".next" 2>/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: ctf-frontend/.next/
+          if-no-files-found: error
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
