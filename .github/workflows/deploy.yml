@@ -10,134 +10,67 @@ env:
   DEPLOY_DIR: /opt/ctf
 
 jobs:
-  build-backend:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: self-hosted
+
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: temurin
 
       - name: Build Backend
         run: ./mvnw clean package -DskipTests -Dcheckstyle.skip=true -q
         working-directory: ctf-backend
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: backend-jar
-          path: ctf-backend/target/
-          if-no-files-found: error
-
-  build-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: ctf-frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ctf-frontend
-
       - name: Build Frontend
-        run: npm run build
+        run: |
+          npm ci
+          npm run build
         working-directory: ctf-frontend
         env:
           NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_TERMINAL_URL: ${{ env.NEXT_PUBLIC_TERMINAL_URL }}
 
-      - name: Debug - find .next
-        run: |
-          echo "=== Root dir ==="
-          ls -la
-          echo "=== ctf-frontend/ ==="
-          ls -la ctf-frontend/ 2>/dev/null
-          echo "=== Find .next ==="
-          find . -maxdepth 3 -type d -name ".next" 2>/dev/null
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: ctf-frontend/.next/
-          include-hidden-files: true
-          if-no-files-found: error
-
-  deploy:
-    needs: [build-backend, build-frontend]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: backend-jar
-          path: backend-jar
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend-build
-
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy Backend
         run: |
-          BACKEND_JAR=$(find backend-jar -maxdepth 1 -type f -name "*.jar" | head -n1)
+          BACKEND_JAR=$(find ctf-backend/target -maxdepth 1 -name "*.jar" | head -n1)
           if [ -z "$BACKEND_JAR" ]; then
             echo "ERROR: No backend JAR found"
             exit 1
           fi
-          echo "Deploying $BACKEND_JAR..."
-          scp "$BACKEND_JAR" ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.DEPLOY_DIR }}/backend/app.jar
+          cp "$BACKEND_JAR" ${{ env.DEPLOY_DIR }}/backend/app.jar
 
       - name: Deploy Frontend
         run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "rm -rf ${{ env.DEPLOY_DIR }}/frontend/.next"
-          rsync -avz --delete frontend-build/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.DEPLOY_DIR }}/frontend/.next/
+          rm -rf ${{ env.DEPLOY_DIR }}/frontend/.next
+          cp -r ctf-frontend/.next ${{ env.DEPLOY_DIR }}/frontend/.next
 
       - name: Deploy Terminal
-        run: |
-          scp ctf-terminal/server.js ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.DEPLOY_DIR }}/terminal/server.js
+        run: cp ctf-terminal/server.js ${{ env.DEPLOY_DIR }}/terminal/server.js
 
       - name: Restart Services
-        run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "sudo systemctl restart ctf-backend ctf-frontend ctf-terminal"
+        run: sudo systemctl restart ctf-backend ctf-frontend ctf-terminal
 
       - name: Health Check
         run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
-            echo '--- Frontend ---'
-            curl -sf http://localhost:3000 > /dev/null && echo 'Frontend: OK' || { echo 'Frontend: FAIL'; exit 1; }
+          echo "--- Frontend ---"
+          curl -sf http://localhost:3000 > /dev/null && echo "Frontend: OK" || { echo "Frontend: FAIL"; exit 1; }
 
-            echo '--- Terminal ---'
-            curl -sf http://localhost:3001/health > /dev/null && echo 'Terminal: OK' || { echo 'Terminal: FAIL'; exit 1; }
+          echo "--- Terminal ---"
+          curl -sf http://localhost:3001/health > /dev/null && echo "Terminal: OK" || { echo "Terminal: FAIL"; exit 1; }
 
-            echo '--- Backend ---'
-            BACKEND_OK=0
-            for i in \$(seq 1 30); do
-              if curl -sf http://localhost:8080/api/health > /dev/null; then
-                echo 'Backend: OK'
-                BACKEND_OK=1
-                break
-              fi
-              sleep 1
-            done
-
-            if [ \$BACKEND_OK -ne 1 ]; then
-              echo 'Backend: FAIL (timeout)'
-              exit 1
+          echo "--- Backend ---"
+          BACKEND_OK=false
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/health > /dev/null; then
+              BACKEND_OK=true
+              echo "Backend: OK"
+              break
             fi
+            sleep 1
+          done
 
-            echo 'All services healthy!'
-          "
+          if [ "$BACKEND_OK" = false ]; then
+            echo "Backend: FAIL (timeout after 30s)"
+            exit 1
+          fi
+
+          echo "All services healthy!"
