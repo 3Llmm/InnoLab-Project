@@ -52,11 +52,33 @@ jobs:
       - name: Health Check
         run: |
           echo "--- Frontend ---"
-          curl -sf http://localhost:3000 > /dev/null && echo "Frontend: OK" || { echo "Frontend: FAIL"; exit 1; }
-
+          FRONTEND_OK=false
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              FRONTEND_OK=true
+              echo "Frontend: OK"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$FRONTEND_OK" = false ]; then
+            echo "Frontend: FAIL (timeout after 30s)"
+            exit 1
+          fi
           echo "--- Terminal ---"
-          curl -sf http://localhost:3001/health > /dev/null && echo "Terminal: OK" || { echo "Terminal: FAIL"; exit 1; }
-
+          TERMINAL_OK=false
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              TERMINAL_OK=true
+              echo "Terminal: OK"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$TERMINAL_OK" = false ]; then
+            echo "Terminal: FAIL (timeout after 30s)"
+            exit 1
+          fi
           echo "--- Backend ---"
           BACKEND_OK=false
           for i in $(seq 1 30); do
@@ -67,10 +89,8 @@ jobs:
             fi
             sleep 1
           done
-
           if [ "$BACKEND_OK" = false ]; then
             echo "Backend: FAIL (timeout after 30s)"
             exit 1
           fi
-
           echo "All services healthy!"
