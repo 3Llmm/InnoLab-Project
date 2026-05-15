@@ -1,0 +1,114 @@
+name: Deploy CTF Platform
+
+on:
+  push:
+    branches: [master, main]
+env:
+  NEXT_PUBLIC_API_URL: http://inno1-bif3-p1-w25.cs.technikum-wien.at:8080
+  NEXT_PUBLIC_TERMINAL_URL: ws://inno1-bif3-p1-w25.cs.technikum-wien.at:80/terminal
+  DEPLOY_DIR: /opt/ctf
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+      - name: Build Backend
+        run: ./mvnw clean package -DskipTests -Dcheckstyle.skip=true -q
+        working-directory: ctf-backend
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: ctf-backend/target/
+          if-no-files-found: error
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ctf-frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ctf-frontend
+      - name: Build Frontend
+        run: npm run build
+        working-directory: ctf-frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_TERMINAL_URL: ${{ env.NEXT_PUBLIC_TERMINAL_URL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: ctf-frontend/.next/
+          if-no-files-found: error
+  deploy:
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend-jar
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend-build
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+      - name: Deploy Backend
+        run: |
+          BACKEND_JAR=$(find backend-jar -maxdepth 1 -type f -name "*.jar" | head -n1)
+          if [ -z "$BACKEND_JAR" ]; then
+            echo "ERROR: No backend JAR found"
+            exit 1
+          fi
+          echo "Deploying $BACKEND_JAR..."
+          scp "$BACKEND_JAR" ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.DEPLOY_DIR }}/backend/app.jar
+      - name: Deploy Frontend
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "rm -rf ${{ env.DEPLOY_DIR }}/frontend/.next"
+          rsync -avz --delete frontend-build/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.DEPLOY_DIR }}/frontend/.next/
+      - name: Deploy Terminal
+        run: |
+          scp ctf-terminal/server.js ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.DEPLOY_DIR }}/terminal/server.js
+      - name: Restart Services
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "sudo systemctl restart ctf-backend ctf-frontend ctf-terminal"
+      - name: Health Check
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
+            echo '--- Frontend ---'
+            curl -sf http://localhost:3000 > /dev/null && echo 'Frontend: OK' || { echo 'Frontend: FAIL'; exit 1; }
+
+            echo '--- Terminal ---'
+            curl -sf http://localhost:3001/health > /dev/null && echo 'Terminal: OK' || { echo 'Terminal: FAIL'; exit 1; }
+
+            echo '--- Backend ---'
+            BACKEND_OK=0
+            for i in \$(seq 1 30); do
+              if curl -sf http://localhost:8080/api/health > /dev/null; then
+                echo 'Backend: OK'
+                BACKEND_OK=1
+                break
+              fi
+              sleep 1
+            done
+
+            if [ \$BACKEND_OK -ne 1 ]; then
+              echo 'Backend: FAIL (timeout)'
+              exit 1
+            fi
+
+            echo 'All services healthy!'
+          "
