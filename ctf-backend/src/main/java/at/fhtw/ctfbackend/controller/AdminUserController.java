@@ -92,7 +92,7 @@ public class AdminUserController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/admins")
     public List<String> getAllAdmins() {
         return adminUserRepository
             .findAll()
