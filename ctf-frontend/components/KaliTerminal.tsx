@@ -26,15 +26,30 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
         const termEl = terminalInstanceRef.current;
         if (!termEl) return;
         const selection = termEl.getSelection();
-        if (selection) {
-            navigator.clipboard.writeText(selection).then(() => {
-                toast({ title: "Copied", description: "Text copied to clipboard", duration: 2000 });
-            }).catch((err) => {
-                console.error('Copy failed:', err);
-                toast({ title: "Copy failed", description: "Unable to write to clipboard", variant: "destructive", duration: 3000 });
-            });
-        } else {
+        if (!selection) {
             toast({ title: "Nothing to copy", description: "Select text in the terminal first", duration: 2000 });
+            setContextMenu(null);
+            return;
+        }
+        const copyToClipboard = (text: string) => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        };
+        try {
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(selection).catch(() => copyToClipboard(selection));
+            } else {
+                copyToClipboard(selection);
+            }
+            toast({ title: "Copied", description: "Text copied to clipboard", duration: 2000 });
+        } catch {
+            toast({ title: "Copy failed", description: "Unable to write to clipboard", variant: "destructive", duration: 3000 });
         }
         setContextMenu(null);
     }, [toast]);
@@ -49,9 +64,12 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
     const handlePaste = useCallback(async () => {
         let pasted = false;
         try {
-            const text = await navigator.clipboard.readText();
-            if (text) { sendText(text); pasted = true; }
-        } catch {
+            if (navigator.clipboard?.readText) {
+                const text = await navigator.clipboard.readText();
+                if (text) { sendText(text); pasted = true; }
+            }
+        } catch { } // falls through to execCommand fallback
+        if (!pasted) {
             // Fallback: hidden input + execCommand (works without clipboard permission)
             const input = document.createElement('input');
             input.style.position = 'fixed';
