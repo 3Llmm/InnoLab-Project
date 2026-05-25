@@ -59,11 +59,9 @@ public class DockerService {
             command.add(dockerfilePath);
             command.add(buildContextDir);
 
-            logger.info(" === BUILDING DOCKER IMAGE ===");
-            logger.info(" Build context: {}", buildContextDir);
-            logger.info(" Dockerfile: {}", dockerfilePath);
-            logger.info(" Tag: {}", tag);
-            logger.info(" Command: {}", String.join(" ", command));
+            logger.debug("Build context: {}", buildContextDir);
+            logger.debug("Dockerfile: {}", dockerfilePath);
+            logger.debug("Image tag: {}", tag);
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
@@ -123,7 +121,7 @@ public class DockerService {
 
         // Ensure challenge has a valid Dockerfile
         String dockerfilePath = getDockerfilePath(challengeId);
-        logger.info(" Checking Dockerfile at: {}", dockerfilePath);
+        logger.debug("Dockerfile at: {}", dockerfilePath);
 
         if (!Files.exists(Paths.get(dockerfilePath))) {
             throw new RuntimeException("Dockerfile not found for challenge: " + challengeId
@@ -249,11 +247,8 @@ public class DockerService {
     public void runContainer(String containerName, String imageName, String flag,
             int sshPort) {
 
-        logger.info(" === RUN CONTAINER ===");
-        logger.info(" Image: {}", imageName);
-        logger.info(" Container: {}", containerName);
-        logger.info(" Ports: SSH={}", sshPort);
-        logger.info(" Flag: {}", (flag != null ? flag.substring(0, Math.min(flag.length(), 20)) : "null"));
+        logger.debug("Running container - Image: {}, Name: {}, SSH Port: {}", imageName, containerName, sshPort);
+
 
         // Check for existing container with same name (race condition with cleanup)
         if (containerExists(containerName)) {
@@ -283,8 +278,6 @@ public class DockerService {
 
             command.add(imageName);
 
-            logger.debug(" Command: {}", String.join(" ", command));
-
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             Process process = pb.start();
@@ -293,7 +286,6 @@ public class DockerService {
             StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
-                logger.debug(" Docker output:");
                 while ((line = reader.readLine()) != null) {
                     logger.debug("   {}", line);
                     output.append(line).append("\n");
@@ -302,24 +294,16 @@ public class DockerService {
 
             // Wait for process to complete
             int exitCode = process.waitFor();
-            logger.debug(" Exit code: {}", exitCode);
 
             if (exitCode != 0) {
                 throw new RuntimeException("Docker run failed with exit code " + exitCode + ":\n" + output);
             }
 
-            logger.info(" Container started successfully!");
-
             // Wait a moment for container to fully initialize
             Thread.sleep(2000);
 
-            // Check if container is actually running
-            String status = getContainerStatus(containerName);
-            logger.info(" Container status: {}", status);
-
         } catch (Exception e) {
-            logger.error(" ERROR in runContainer: {}", e.getMessage());
-            logger.error("Error in runContainer", e);
+            logger.error("runContainer failed: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to run container: " + e.getMessage(), e);
         }
     }

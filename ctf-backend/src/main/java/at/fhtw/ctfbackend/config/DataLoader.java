@@ -134,20 +134,6 @@ public class DataLoader {
         };
     }
 
-// Course seeding removed - use seed-courses.sh script instead
-//    @Bean
-//    CommandLineRunner loadCourses(CourseRepository courseRepo) {
-//        return args -> {
-//            if (courseRepo.count() > 0) {
-//                System.out.println("Courses already exist, skipping initialization.");
-//                return;
-//            }
-//
-//            List<CourseEntity> courses = createSampleCourses();
-//            courseRepo.saveAll(courses);
-//            System.out.println("Initialized " + courses.size() + " courses.");
-//        };
-//    }
 
     private List<CourseEntity> createSampleCourses() {
         List<CourseEntity> courses = new ArrayList<>();

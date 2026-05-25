@@ -142,37 +142,10 @@ public class ChallengeController {
             @RequestParam(required = false) String[] hints) {
 
         try {
-            logger.info("Creating challenge with parameters:");
-            logger.debug("  title: {}", title);
-            logger.debug("  description: {}", description);
-            logger.debug("  category: {}", category);
-            logger.debug("  difficulty: {}", difficulty);
-            logger.debug("  points: {}", points);
-            logger.debug("  flag: {}", (flag != null ? flag : "null"));
-            logger.debug("  requiresInstance (raw): {}", requiresInstance);
-            logger.debug("  requiresInstance type: {}", (requiresInstance != null ? requiresInstance.getClass().getName() : "null"));
+            logger.info("Creating challenge with parameters...");
 
             // Convert string to boolean
             Boolean requiresInstanceBoolean = Boolean.parseBoolean(requiresInstance);
-            logger.debug("  requiresInstance (raw): {}", requiresInstance);
-            logger.debug("  requiresInstance (converted): {}", requiresInstanceBoolean);
-            logger.debug("  requiresInstance (converted type): {}", (requiresInstanceBoolean != null ? requiresInstanceBoolean.getClass().getName() : "null"));
-            logger.debug("  requiresInstance (converted value check): {}", (requiresInstanceBoolean != null && requiresInstanceBoolean));
-
-            // Additional debug: print all parameters
-            logger.debug("=== DEBUG: All parameters received ===");
-            logger.debug("title: {}", title);
-            logger.debug("description: {}", description);
-            logger.debug("category: {}", category);
-            logger.debug("difficulty: {}", difficulty);
-            logger.debug("points: {}", points);
-            logger.debug("flag: {}", flag);
-
-            logger.debug("requiresInstance (final): {}", requiresInstanceBoolean);
-            logger.debug("downloadFile: {}", (downloadFile != null ? downloadFile.getOriginalFilename() : "null"));
-            logger.debug("dockerFiles: {}", (dockerFiles != null ? dockerFiles.length : 0));
-            logger.debug("hints: {}", (hints != null ? hints.length : 0));
-            logger.debug("=== END DEBUG ===");
 
             ChallengeDto createdChallenge = challengeService.createChallenge(
                     title, description, category, difficulty, points, flag,
@@ -182,8 +155,7 @@ public class ChallengeController {
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
 
         } catch (Exception e) {
-            logger.error("Error creating challenge: {}", e.getMessage());
-            logger.error("Error creating challenge", e);
+            logger.error("Error creating challenge: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "error", "Failed to create challenge",

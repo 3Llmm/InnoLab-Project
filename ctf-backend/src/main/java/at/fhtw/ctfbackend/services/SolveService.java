@@ -50,11 +50,6 @@ public class SolveService {
         int pointsEarned
     ) {
         UserEntity user = userService.getRequiredUser(username);
-        logger.debug(
-            " SolveService.recordSolve called for user: {}, challenge: {}",
-            username,
-            challengeId
-        );
 
         try {
             // Check if user already solved this challenge
@@ -62,13 +57,8 @@ public class SolveService {
                 solveRepository.findByUserAndChallengeId(user, challengeId);
 
             if (existingSolve.isPresent()) {
-                logger.debug(
-                    "  User already solved this challenge, returning false"
-                );
                 return false; // User already solved this challenge
             }
-
-            logger.debug(" This is a new solve, creating database record...");
 
             // Get the challenge entity
             ChallengeEntity challenge = challengeRepository
@@ -79,20 +69,11 @@ public class SolveService {
 
             // Create and save the new solve record
             Solve solve = new Solve(user, challenge, pointsEarned);
-            Solve savedSolve = solveRepository.saveAndFlush(solve); //  Changed from save() to saveAndFlush()
-
-            logger.debug(
-                " Solve saved to database with ID: {}",
-                savedSolve.getId()
-            );
+            solveRepository.saveAndFlush(solve);
 
             return true; // This is a new solve
         } catch (Exception e) {
-            logger.error(
-                " Error in SolveService.recordSolve: {}",
-                e.getMessage()
-            );
-            logger.error("Error in SolveService.recordSolve", e);
+            logger.error("Error recording solve for user {} - challenge {}: {}", username, challengeId, e.getMessage());
             return false;
         }
     }
@@ -143,20 +124,7 @@ public class SolveService {
      * @return Number of users who solved the challenge
      */
     public long getSolveCountForChallenge(String challengeId) {
-        logger.debug(" getSolveCountForChallenge called for: {}", challengeId);
-
-        // Try JPA query
-        long countJpa = solveRepository.countByChallengeId(challengeId);
-        logger.debug(" JPA Count result: {}", countJpa);
-
-        // Try native query
-        long countNative = solveRepository.countByChallengeIdNative(
-            challengeId
-        );
-        logger.debug(" Native Count result: {}", countNative);
-
-        // Use native for now since JPA seems broken
-        return countNative;
+        return solveRepository.countByChallengeId(challengeId);
     }
 
     /**
@@ -306,15 +274,9 @@ public class SolveService {
      * @return Map containing various statistics about the challenge
      */
     public Map<String, Object> getChallengeStatistics(String challengeId) {
-        logger.debug(
-            " getChallengeStatistics called for challenge: {}",
-            challengeId
-        );
-
         Map<String, Object> stats = new HashMap<>();
 
         long solveCount = getSolveCountForChallenge(challengeId);
-        logger.debug(" Solve count from database: {}", solveCount);
 
         ChallengeEntity challenge = challengeRepository
             .findById(challengeId)
@@ -329,8 +291,6 @@ public class SolveService {
         stats.put("difficulty", challenge.getDifficulty());
         stats.put("points", challenge.getPoints());
         stats.put("solveRate", "N/A");
-
-        logger.debug(" Returning stats: {}", stats);
 
         return stats;
     }

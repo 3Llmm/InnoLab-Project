@@ -46,24 +46,18 @@ public class FlagService {
             // 2. Use the explicit requiresInstance field from the challenge
             boolean requiresInstance = challenge.isRequiresInstance();
 
-            logger.debug("  Challenge {} requires instance: {}", challengeId, requiresInstance);
-
-
             boolean isValid;
 
             // 3. Route to appropriate validation
             if (requiresInstance) {
                 isValid = validateDynamicFlag(username, challengeId, submittedFlag);
-                logger.debug(" Dynamic validation result: {}", isValid);
             } else {
                 isValid = validateStaticFlag(challenge, submittedFlag);
-                logger.debug(" Static validation result: {}", isValid);
             }
 
             return isValid;
         } catch (Exception e) {
-            logger.error(" Error during flag validation: {}", e.getMessage());
-            logger.error("Error during flag validation", e);
+            logger.error("Flag validation failed: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -83,9 +77,7 @@ public class FlagService {
         String submittedHash = envService.sha256(submittedFlag);
         boolean isValid = submittedHash.equals(inst.getFlagHash());
 
-        logger.debug("Dynamic flag comparison: Submitted hash: {}... vs Stored hash: {}...",
-                submittedHash.substring(0, 16),
-                inst.getFlagHash().substring(0, 16));
+
 
         return isValid;
     }
@@ -99,43 +91,32 @@ public class FlagService {
         // Direct string comparison for static challenges
         boolean isValid = challenge.getFlag().equals(submittedFlag);
 
-        logger.debug(" Static flag comparison: Submitted: {} vs Stored: {} -> {}", submittedFlag, challenge.getFlag(), isValid);
+
 
         return isValid;
     }
     private final Map<String, Set<String>> solvedByUser = new ConcurrentHashMap<>();
 
     public boolean recordSolve(String username, String challengeId) {
-        logger.debug(" Attempting to record solve for user: {}, challenge: {}", username, challengeId);
-
         try {
-            // First check in-memory cache
             Set<String> solved = solvedByUser.computeIfAbsent(username,
                     __ -> ConcurrentHashMap.newKeySet());
             boolean isNewSolve = solved.add(challengeId);
 
-            logger.debug(" Cache check - User already solved: {}", !isNewSolve);
-
-            // Also persist to database using SolveService
             if (isNewSolve) {
-                logger.debug(" This is a new solve, recording in database...");
-                
                 ChallengeEntity challenge = challengeRepo.findById(challengeId)
                         .orElseThrow(() -> new RuntimeException("Challenge not found: " + challengeId));
                 
                 int basePoints = challenge.getPoints() != null ? challenge.getPoints() : 0;
                 int penaltyPercent = hintService.calculatePenaltyPercent(username, challengeId);
                 int pointsEarned = basePoints * (100 - penaltyPercent) / 100;
-                logger.debug(" Base points: {}, Hint penalty: {}%, Points to award: {}", basePoints, penaltyPercent, pointsEarned);
                 
                 boolean dbSuccess = solveService.recordSolve(username, challengeId, pointsEarned);
-                logger.debug("  Database record result: {}", dbSuccess);
                 
                 if (dbSuccess) {
-                    logger.info(" Solve recorded successfully for user: {}, challenge: {}", username, challengeId);
+                    logger.info(" Solve recorded for user: {}, challenge: {}", username, challengeId);
                 } else {
                     logger.error(" Failed to record solve in database");
-                    // Remove from cache if database failed
                     solved.remove(challengeId);
                     isNewSolve = false;
                 }
@@ -143,19 +124,15 @@ public class FlagService {
                 logger.info("User already solved this challenge, skipping database record");
             }
 
-            logger.debug(" Final result - User: {}, Challenge: {}, New solve: {}", username, challengeId, isNewSolve);
-
             return isNewSolve;
         } catch (Exception e) {
-            logger.error(" Critical error recording solve: {}", e.getMessage());
-            logger.error("Critical error recording solve", e);
+            logger.error("Error recording solve: {}", e.getMessage(), e);
             return false;
         }
     }
 
     public Set<String> getSolvedChallenges(String username) {
         Set<String> solved = solvedByUser.getOrDefault(username, Collections.emptySet());
-        logger.debug("Retrieved solved challenges for {}: {} challenges", username, solved.size());
         return Collections.unmodifiableSet(solved);
     }
 

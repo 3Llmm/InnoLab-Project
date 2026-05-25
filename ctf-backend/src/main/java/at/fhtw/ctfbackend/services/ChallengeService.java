@@ -131,20 +131,8 @@ public class ChallengeService {
         // Set other optional fields
 
 
-        // Detailed debug for requiresInstance
-        logger.debug("=== DEBUG: ChallengeService requiresInstance processing ===");
-        logger.debug("DEBUG: requiresInstance parameter received: {}", requiresInstance);
-        logger.debug("DEBUG: requiresInstance parameter type: {}", (requiresInstance != null ? requiresInstance.getClass().getName() : "null"));
-
         boolean finalRequiresInstanceValue = requiresInstance != null ? requiresInstance : false;
-        logger.debug("DEBUG: Final boolean value to set: {}", finalRequiresInstanceValue);
-        logger.debug("DEBUG: Final boolean value type: {}", Boolean.class.getName());
-
         entity.setRequiresInstance(finalRequiresInstanceValue);
-
-        // Verify what was actually set in the entity
-        logger.debug("DEBUG: Entity requiresInstance after setting: {}", entity.isRequiresInstance());
-        logger.debug("=== END DEBUG ===");
 
         // Set hints
         if (hints != null && hints.length > 0) {
@@ -154,33 +142,13 @@ public class ChallengeService {
         }
 
         try {
-            // Debug: Before save
-            logger.debug("=== DEBUG: Before database save ===");
-            logger.debug("DEBUG: Entity ID: {}", entity.getId());
-            logger.debug("DEBUG: Entity requiresInstance before save: {}", entity.isRequiresInstance());
-
-            logger.debug("=== END DEBUG ===");
-
             ChallengeEntity savedEntity = repo.saveAndFlush(entity);
-
-            // Debug: Check what was actually saved to database
-            logger.debug("=== DEBUG: After database save ===");
-            logger.debug("DEBUG: Saved entity ID: {}", savedEntity.getId());
-            logger.debug("DEBUG: Saved entity requiresInstance: {}", savedEntity.isRequiresInstance());
-
-
-            // Check if the saved entity is the same object
-            logger.debug("DEBUG: Same object reference: {}", (entity == savedEntity));
-            logger.debug("DEBUG: Entity hashCode: {}", entity.hashCode());
-            logger.debug("DEBUG: Saved entity hashCode: {}", savedEntity.hashCode());
-            logger.debug("=== END DEBUG ===");
 
             logger.info("Challenge created: {}", challengeId);
             return toDto(savedEntity);
         } catch (Exception e) {
-            logger.error("Failed to save challenge: {}", e.getMessage());
-            logger.error("Failed to save challenge", e);
-            throw e; // Re-throw the exception
+            logger.error("Failed to save challenge: {}", e.getMessage(), e);
+            throw e;
         }
     }
 
