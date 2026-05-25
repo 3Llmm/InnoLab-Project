@@ -67,7 +67,7 @@ export default async function CoursesPage() {
                   {course.title}
                 </h3>
 
-                <p className="text-muted-foreground text-sm mb-6 flex-1">{course.description}</p>
+                <p className="text-muted-foreground text-sm mb-6 flex-1 line-clamp-3">{course.description}</p>
 
                 <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-border">
                   <div className="flex items-center gap-2">
