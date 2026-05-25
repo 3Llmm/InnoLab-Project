@@ -51,6 +51,7 @@ jobs:
         run: |
           rm -rf ${{ env.DEPLOY_DIR }}/frontend/.next
           cp -r ctf-frontend/.next ${{ env.DEPLOY_DIR }}/frontend/.next
+          cp -r ctf-frontend/.next/static ${{ env.DEPLOY_DIR }}/frontend/.next/standalone/.next/static
 
       - name: Deploy Terminal
         run: cp ctf-terminal/server.js ${{ env.DEPLOY_DIR }}/terminal/server.js
