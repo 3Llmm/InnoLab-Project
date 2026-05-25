@@ -11,7 +11,7 @@ export default async function ProfilePage() {
         {/* Header */}
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl font-bold text-white">
+            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-xl font-bold text-primary-foreground">
               {profile.username.charAt(0).toUpperCase()}
             </div>
             <div>

@@ -1,10 +1,11 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import "xterm/css/xterm.css";
-import { X } from "lucide-react";
+import { X, Copy, Clipboard } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 interface KaliTerminalProps {
     instanceId?: string;
     sshPort?: number;
@@ -18,6 +19,40 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
     const fitAddonRef = useRef<FitAddon | null>(null);
     const isInitializedRef = useRef(false);
     const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error" | "missing_props">("connecting");
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+    const { toast } = useToast();
+
+    const handleCopy = useCallback(() => {
+        const termEl = terminalInstanceRef.current;
+        if (!termEl) return;
+        const selection = termEl.getSelection();
+        if (selection) {
+            navigator.clipboard.writeText(selection).then(() => {
+                toast({ title: "Copied", description: "Text copied to clipboard", duration: 2000 });
+            });
+        } else {
+            toast({ title: "Nothing to copy", description: "Select text in the terminal first", duration: 2000 });
+        }
+        setContextMenu(null);
+    }, [toast]);
+
+    const handlePaste = useCallback(async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.send(text);
+                toast({ title: "Pasted", description: "Text sent to terminal", duration: 2000 });
+            }
+        } catch {
+            toast({
+                title: "Paste blocked",
+                description: "Grant clipboard permission in your browser or use Ctrl+Shift+V",
+                variant: "destructive",
+                duration: 4000,
+            });
+        }
+        setContextMenu(null);
+    }, [toast]);
     useEffect(() => {
         if (!sshPort || !instanceId || !terminalRef.current || isInitializedRef.current) {
             if (!sshPort || !instanceId) {
@@ -138,28 +173,32 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
             if (event.ctrlKey && event.shiftKey && event.code === 'KeyC') {
                 event.preventDefault();
                 event.stopPropagation();
-                const selection = termEl.getSelection();
-                if (selection) {
-                    navigator.clipboard.writeText(selection);
-                }
+                handleCopy();
                 return false;
             }
             if (event.ctrlKey && event.shiftKey && event.code === 'KeyV') {
                 event.preventDefault();
                 event.stopPropagation();
-                navigator.clipboard.readText().then(text => {
-                    if (wsRef.current?.readyState === WebSocket.OPEN) {
-                        wsRef.current.send(text);
-                    }
-                }).catch(err => console.error('Paste error:', err));
+                handlePaste();
                 return false;
             }
         };
+        const handleContextMenu = (event: MouseEvent) => {
+            event.preventDefault();
+            setContextMenu({ x: event.clientX, y: event.clientY });
+        };
+        const handleClickOutside = () => setContextMenu(null);
         domEl.addEventListener('keydown', handleKeyDown, true);
+        domEl.addEventListener('contextmenu', handleContextMenu);
+        document.addEventListener('click', handleClickOutside);
+        document.addEventListener('scroll', handleClickOutside, true);
         return () => {
             domEl.removeEventListener('keydown', handleKeyDown, true);
+            domEl.removeEventListener('contextmenu', handleContextMenu);
+            document.removeEventListener('click', handleClickOutside);
+            document.removeEventListener('scroll', handleClickOutside, true);
         };
-    }, []);
+    }, [handleCopy, handlePaste]);
     const getStatusColor = () => {
         switch (connectionStatus) {
             case "connected": return "text-green-500";
@@ -209,7 +248,7 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-                <div className="flex-1 p-4 overflow-hidden">
+                <div className="flex-1 p-4 overflow-hidden relative">
                     <div
                         ref={terminalRef}
                         className="w-full h-full rounded-lg border border-border cursor-text"
@@ -217,6 +256,27 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
                         onClick={handleTerminalClick}
                         onMouseDown={handleTerminalClick}
                     />
+                    {contextMenu && (
+                        <div
+                            className="fixed z-50 bg-popover border border-border rounded-lg shadow-xl py-1 min-w-[160px]"
+                            style={{ left: contextMenu.x, top: contextMenu.y }}
+                        >
+                            <button
+                                onClick={handleCopy}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors cursor-pointer"
+                            >
+                                <Copy className="w-4 h-4" />
+                                Copy
+                            </button>
+                            <button
+                                onClick={handlePaste}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors cursor-pointer"
+                            >
+                                <Clipboard className="w-4 h-4" />
+                                Paste
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className="p-3 border-t border-border text-xs text-muted-foreground bg-muted/30">
                     <div className="flex justify-between items-center">

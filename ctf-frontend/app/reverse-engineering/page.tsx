@@ -12,7 +12,7 @@ export default function ReverseEngineeringPage() {
       category="reverse-engineering"
       title="Reverse Engineering"
       description="Analyze binaries, understand assembly code, and reverse engineer software"
-      color="from-purple-500 to-pink-500"
+      color="bg-purple-600"
     />
   )
 }

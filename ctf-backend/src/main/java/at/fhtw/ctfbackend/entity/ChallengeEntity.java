@@ -15,6 +15,7 @@ public class ChallengeEntity {
     private String id;
 
     private String title;
+    @Column(columnDefinition = "TEXT")
     private String description;
     private String category;
     private String difficulty;

@@ -12,7 +12,7 @@ export default function CryptographyPage() {
       category="cryptography"
       title="Cryptography"
       description="Break ciphers, analyze encryption algorithms, and crack cryptographic codes"
-      color="from-blue-500 to-cyan-500"
+      color="bg-blue-500"
     />
   )
 }

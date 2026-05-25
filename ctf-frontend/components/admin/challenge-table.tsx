@@ -29,11 +29,8 @@ import {
 import { 
   Edit, 
   Trash2, 
-  Copy,
   MoreVertical,
   Loader2,
-  Code2,
-  Server,
   Zap
 } from "lucide-react"
 import type { Challenge } from "@/lib/types"
@@ -108,19 +105,18 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border bg-muted">
-              <TableHead className="font-semibold text-card-foreground">Challenge</TableHead>
+              <TableHead className="w-2/5 font-semibold text-card-foreground">Challenge</TableHead>
               <TableHead className="font-semibold text-card-foreground">Category</TableHead>
               <TableHead className="font-semibold text-card-foreground">Difficulty</TableHead>
               <TableHead className="font-semibold text-card-foreground text-right">Points</TableHead>
               <TableHead className="font-semibold text-card-foreground">Type</TableHead>
-              <TableHead className="font-semibold text-card-foreground">Docker Image</TableHead>
               <TableHead className="w-12 text-right font-semibold text-card-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {challenges.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24">
+                <TableCell colSpan={6} className="h-24">
                   <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <Zap className="h-8 w-8 mb-2 opacity-40" />
                     <p className="text-sm font-medium">No challenges found</p>
@@ -134,10 +130,10 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
                   key={challenge.id}
                   className="border-b border-border hover:bg-muted/50 transition-colors"
                 >
-                  <TableCell>
-                    <div>
-                      <p className="font-semibold text-foreground">{challenge.title}</p>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
+                  <TableCell className="max-w-[300px]">
+                    <div className="truncate">
+                      <p className="font-semibold text-foreground truncate">{challenge.title}</p>
+                      <p className="text-sm text-muted-foreground truncate">
                         {challenge.description}
                       </p>
                     </div>
@@ -153,11 +149,6 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
                     <span className="text-sm font-medium">
                       {getTypeDisplay(challenge.requiresInstance)}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <code className="relative rounded-sm bg-muted px-2 py-1 font-mono text-sm text-foreground">
-                      {challenge.dockerImageName || "N/A"}
-                    </code>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -178,20 +169,6 @@ export default function ChallengeTable({ challenges }: ChallengeTableProps) {
                         >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Challenge
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            navigator.clipboard.writeText(challenge.dockerImageName || "")
-                            toast({
-                              title: "Copied",
-                              description: "Docker image name copied to clipboard",
-                              duration: 2000,
-                            })
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copy Docker Image
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setDeleteTarget(challenge)}

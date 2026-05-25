@@ -46,7 +46,7 @@ export default async function CategoryPage({ category, title, description, color
         </Link>
 
         <div className="mb-8">
-          <div className={`w-full h-2 rounded-full bg-gradient-to-r ${color} mb-6`} />
+          <div className={`w-full h-2 rounded-full ${color} mb-6`} />
           <h1 className="text-4xl font-bold mb-2">{title}</h1>
           <p className="text-muted-foreground text-lg">{description}</p>
         </div>

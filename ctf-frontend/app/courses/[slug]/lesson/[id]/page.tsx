@@ -292,7 +292,7 @@ export default async function LessonDetailPage({ params }: Props) {
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="text-xl font-semibold text-foreground">Key Takeaways</h2>
               </div>
-              <div className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-lg border border-green-500/20 p-6">
+              <div className="bg-green-500/10 rounded-lg border border-green-500/20 p-6">
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />

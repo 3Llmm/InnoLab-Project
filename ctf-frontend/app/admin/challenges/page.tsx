@@ -90,7 +90,7 @@ export default function AdminChallengesPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/admin"
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            className="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer"
             aria-label="Back to dashboard"
           >
             <ArrowLeft className="w-5 h-5" />

@@ -6,11 +6,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-background via-card to-background">
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-7xl mx-auto text-center">
-<h1 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent
-  bg-gradient-to-r from-blue-700 via-purple-700 to-pink-600
-  dark:from-blue-400 dark:via-purple-400 dark:to-pink-300 leading-tight pb-1">
+<h1 className="text-5xl md:text-7xl font-bold mb-6 text-primary leading-tight">
   CTF Training Platform
 </h1>
 
@@ -72,37 +70,37 @@ export default function HomePage() {
               title="Binary Exploitation"
               description="Master buffer overflows, ROP chains, and memory corruption"
               href="/binary-exploitation"
-              color="from-red-500 to-orange-500"
+              color="bg-red-500"
             />
             <CategoryCard
               title="Cryptography"
               description="Break ciphers, analyze encryption, and crack codes"
               href="/cryptography"
-              color="from-blue-500 to-cyan-500"
+              color="bg-blue-500"
             />
             <CategoryCard
               title="Forensics"
               description="Investigate digital evidence and recover hidden data"
               href="/forensics"
-              color="from-green-500 to-emerald-500"
+              color="bg-green-600"
             />
             <CategoryCard
               title="Reverse Engineering"
               description="Analyze binaries, understand malware, and decompile code"
               href="/reverse-engineering"
-              color="from-purple-500 to-pink-500"
+              color="bg-purple-600"
             />
             <CategoryCard
               title="Web Exploitation"
               description="Find and exploit vulnerabilities in web applications"
               href="/web-exploitation"
-              color="from-yellow-500 to-orange-500"
+              color="bg-yellow-500"
             />
             <CategoryCard
               title="All Challenges"
               description="Browse all available challenges across categories"
               href="/challenges"
-              color="from-primary to-secondary"
+              color="bg-primary"
             />
           </div>
         </div>
@@ -146,7 +144,7 @@ function CategoryCard({
   return (
     <Link href={href} className="group">
       <div className="p-6 bg-card rounded-lg border border-border hover:border-primary transition-all hover:scale-105">
-        <div className={`w-full h-2 rounded-full bg-gradient-to-r ${color} mb-4`} />
+        <div className={`w-full h-2 rounded-full ${color} mb-4`} />
         <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">{title}</h3>
         <p className="text-muted-foreground">{description}</p>
       </div>

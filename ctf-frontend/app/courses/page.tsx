@@ -19,13 +19,13 @@ function formatDuration(minutes: number | null): string {
 
 function getCourseColor(slug: string): string {
   const colors: Record<string, string> = {
-    'binary-exploitation': 'from-red-500 to-orange-500',
-    'cryptography': 'from-blue-500 to-cyan-500',
-    'forensics': 'from-green-500 to-emerald-500',
-    'reverse-engineering': 'from-purple-500 to-pink-500',
-    'web-exploitation': 'from-yellow-500 to-orange-500',
+    'binary-exploitation': 'bg-red-500',
+    'cryptography': 'bg-blue-500',
+    'forensics': 'bg-green-600',
+    'reverse-engineering': 'bg-purple-600',
+    'web-exploitation': 'bg-yellow-500',
   }
-  return colors[slug] || 'from-gray-500 to-gray-600'
+  return colors[slug] || 'bg-gray-500'
 }
 
 export default async function CoursesPage() {
@@ -59,7 +59,7 @@ export default async function CoursesPage() {
           {courses.map((course: CourseListItem) => (
             <Link key={course.id} href={`/courses/${course.slug}`} className="group">
               <div className="bg-card p-6 rounded-lg border border-border hover:border-primary transition-all hover:scale-105 h-full flex flex-col">
-                <div className={`w-full h-2 rounded-full bg-gradient-to-r ${getCourseColor(course.slug)} mb-4`} />
+                <div className={`w-full h-2 rounded-full ${getCourseColor(course.slug)} mb-4`} />
 
                 <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
                   {course.title}

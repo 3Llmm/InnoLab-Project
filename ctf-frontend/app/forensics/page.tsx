@@ -12,7 +12,7 @@ export default function ForensicsPage() {
       category="forensics"
       title="Digital Forensics"
       description="Investigate digital evidence, analyze file systems, and recover hidden data"
-      color="from-green-500 to-emerald-500"
+      color="bg-green-600"
     />
   )
 }
