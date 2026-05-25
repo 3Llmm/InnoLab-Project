@@ -6,7 +6,7 @@ on:
 
 env:
   NEXT_PUBLIC_API_URL: ""
-  NEXT_PUBLIC_TERMINAL_URL: wss://inno1-bif3-p1-w25.cs.technikum-wien.at/terminal
+  NEXT_PUBLIC_TERMINAL_URL: ws://inno1-bif3-p1-w25.cs.technikum-wien.at/terminal
   DEPLOY_DIR: /opt/ctf
 
 jobs:
