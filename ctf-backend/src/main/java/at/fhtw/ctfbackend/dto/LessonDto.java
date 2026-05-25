@@ -23,4 +23,5 @@ public class LessonDto {
     private List<String> codeExamplesJson;
     private List<String> realWorldIncidents;
     private List<String> externalReferences;
+    private List<String> keyTakeaways;
 }

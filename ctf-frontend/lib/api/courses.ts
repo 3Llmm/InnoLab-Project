@@ -11,6 +11,7 @@ export interface Lesson {
   codeExamplesJson: string[]
   realWorldIncidents: string[]
   externalReferences: string[]
+  keyTakeaways: string[]
 }
 
 export interface Module {

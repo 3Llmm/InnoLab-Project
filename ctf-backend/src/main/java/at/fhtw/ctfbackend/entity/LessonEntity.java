@@ -63,6 +63,12 @@ public class LessonEntity {
     @Builder.Default
     private List<String> externalReferences = new ArrayList<>();
 
+    @ElementCollection
+    @CollectionTable(name = "lesson_key_takeaways", joinColumns = @JoinColumn(name = "lesson_id"))
+    @Column(name = "takeaway", columnDefinition = "TEXT")
+    @Builder.Default
+    private List<String> keyTakeaways = new ArrayList<>();
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

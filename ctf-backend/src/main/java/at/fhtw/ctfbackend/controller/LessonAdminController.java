@@ -73,6 +73,7 @@ public class LessonAdminController {
         existing.setCodeExamplesJson(lessonDto.getCodeExamplesJson());
         existing.setRealWorldIncidents(lessonDto.getRealWorldIncidents());
         existing.setExternalReferences(lessonDto.getExternalReferences());
+        existing.setKeyTakeaways(lessonDto.getKeyTakeaways());
 
         if (lessonDto.getModuleId() != null) {
             ModuleEntity module = moduleRepository.findById(lessonDto.getModuleId()).orElse(null);
@@ -125,6 +126,7 @@ public class LessonAdminController {
                 .codeExamplesJson(entity.getCodeExamplesJson())
                 .realWorldIncidents(entity.getRealWorldIncidents())
                 .externalReferences(entity.getExternalReferences())
+                .keyTakeaways(entity.getKeyTakeaways())
                 .build();
     }
 
@@ -139,6 +141,7 @@ public class LessonAdminController {
                 .codeExamplesJson(dto.getCodeExamplesJson())
                 .realWorldIncidents(dto.getRealWorldIncidents())
                 .externalReferences(dto.getExternalReferences())
+                .keyTakeaways(dto.getKeyTakeaways())
                 .build();
     }
 }

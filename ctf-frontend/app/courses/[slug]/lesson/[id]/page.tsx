@@ -289,32 +289,23 @@ export default async function LessonDetailPage({ params }: Props) {
               </section>
             )}
             
-            {/* Summary Card */}
-            <section className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-xl font-semibold text-foreground">Key Takeaways</h2>
-              </div>
-              <div className="bg-green-500/10 rounded-lg border border-green-500/20 p-6">
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-foreground">Understand the mechanics of the vulnerability</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-foreground">Identify vulnerable code patterns</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-foreground">Apply secure coding best practices</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-foreground">Test your knowledge with the practice challenges</span>
-                  </li>
-                </ul>
-              </div>
-            </section>
+            {lesson.keyTakeaways && lesson.keyTakeaways.length > 0 && (
+              <section className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-xl font-semibold text-foreground">Key Takeaways</h2>
+                </div>
+                <div className="bg-green-500/10 rounded-lg border border-green-500/20 p-6">
+                  <ul className="space-y-3">
+                    {lesson.keyTakeaways.map((takeaway: string, i: number) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                        <span className="text-foreground">{takeaway}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+            )}
             
             {/* Lesson Navigation */}
             <section>

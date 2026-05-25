@@ -130,6 +130,7 @@ export default function AdminCoursesPage() {
           title: "",
           content: "",
           detailedExplanation: "",
+          keyTakeaways: [],
           videoUrl: "",
           orderIndex: 0,
         })
@@ -708,6 +709,47 @@ export default function AdminCoursesPage() {
                         }
                         className="w-full cursor-text rounded-lg border border-border bg-background px-3 py-2"
                       />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Key Takeaways</label>
+                      <div className="space-y-2">
+                        {(editingItem?.keyTakeaways || []).map((takeaway: string, i: number) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={takeaway}
+                              onChange={(e) => {
+                                const newTakeaways = [...(editingItem?.keyTakeaways || [])]
+                                newTakeaways[i] = e.target.value
+                                setEditingItem({ ...editingItem, keyTakeaways: newTakeaways })
+                              }}
+                              className="flex-1 cursor-text rounded-lg border border-border bg-background px-3 py-2"
+                              placeholder="Enter a key takeaway..."
+                            />
+                            <button
+                              onClick={() => {
+                                const newTakeaways = (editingItem?.keyTakeaways || []).filter((_: string, j: number) => j !== i)
+                                setEditingItem({ ...editingItem, keyTakeaways: newTakeaways })
+                              }}
+                              className="cursor-pointer rounded-lg bg-destructive/10 px-3 py-2 text-destructive hover:bg-destructive/20 transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() =>
+                            setEditingItem({
+                              ...editingItem,
+                              keyTakeaways: [...(editingItem?.keyTakeaways || []), ""],
+                            })
+                          }
+                          className="cursor-pointer text-sm text-primary hover:text-primary/80 transition-colors"
+                        >
+                          + Add takeaway
+                        </button>
+                      </div>
                     </div>
                   </>
                 )}

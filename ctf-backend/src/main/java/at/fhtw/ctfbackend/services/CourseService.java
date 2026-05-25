@@ -105,6 +105,7 @@ public class CourseService {
                 .codeExamplesJson(entity.getCodeExamplesJson())
                 .realWorldIncidents(entity.getRealWorldIncidents())
                 .externalReferences(entity.getExternalReferences())
+                .keyTakeaways(entity.getKeyTakeaways())
                 .build();
     }
 }

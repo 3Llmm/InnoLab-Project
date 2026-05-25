@@ -126,6 +126,7 @@ export interface LessonAdmin {
     codeExamplesJson: string[];
     realWorldIncidents: string[];
     externalReferences: string[];
+    keyTakeaways: string[];
 }
 
 export async function getAllCoursesAdmin(): Promise<CourseAdmin[]> {
