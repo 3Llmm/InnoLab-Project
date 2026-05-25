@@ -199,14 +199,10 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
         setResult(null);
 
         try {
-            console.log(" Building and starting environment for challenge:", challenge.id);
-
-            // ALWAYS use the build endpoint for now
             const res = await apiClient.post<EnvironmentInstance>(
                 `/api/environment/build/${challenge.id}`
             );
 
-            console.log(" Environment built and started:", res);
             setEnvironment(res);
             setShowTerminal(true);
 

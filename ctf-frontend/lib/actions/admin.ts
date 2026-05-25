@@ -17,8 +17,6 @@ export async function createChallenge(formData: FormData): Promise<ActionResult>
     // But since we need the JWT token from localStorage, we'll handle it client-side
     // This server action is mainly for revalidation
     
-    console.log(" Creating challenge via server action")
-    
     // Revalidate the challenges page
     revalidatePath("/admin/challenges")
     revalidatePath("/challenges")
@@ -35,8 +33,6 @@ export async function createChallenge(formData: FormData): Promise<ActionResult>
 
 export async function updateChallenge(id: string, formData: FormData): Promise<ActionResult> {
   try {
-    console.log(" Updating challenge via server action:", id)
-    
     // Revalidate the challenges page
     revalidatePath("/admin/challenges")
     revalidatePath("/challenges")
@@ -54,8 +50,6 @@ export async function updateChallenge(id: string, formData: FormData): Promise<A
 
 export async function deleteChallenge(id: string): Promise<ActionResult> {
   try {
-    console.log(" Deleting challenge via server action:", id)
-
     // Revalidate the challenges page
     revalidatePath("/admin/challenges")
     revalidatePath("/challenges")
