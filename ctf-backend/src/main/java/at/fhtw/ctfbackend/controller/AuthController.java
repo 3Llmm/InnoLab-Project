@@ -2,7 +2,6 @@ package at.fhtw.ctfbackend.controller;
 
 import at.fhtw.ctfbackend.dto.LoginCredentialsDto;
 import at.fhtw.ctfbackend.entity.UserEntity;
-import at.fhtw.ctfbackend.repository.AdminUserRepository;
 import at.fhtw.ctfbackend.security.JwtUtil;
 import at.fhtw.ctfbackend.services.LdapAuthenticationService;
 import at.fhtw.ctfbackend.services.UserService;
@@ -21,23 +20,15 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final LdapAuthenticationService ldapAuthenticationService;
     private final UserService userService;
-    private final AdminUserRepository adminUserRepository;
 
     public AuthController(
         JwtUtil jwtUtil,
         LdapAuthenticationService ldapAuthenticationService,
-        UserService userService,
-        AdminUserRepository adminUserRepository
+        UserService userService
     ) {
         this.jwtUtil = jwtUtil;
         this.ldapAuthenticationService = ldapAuthenticationService;
         this.userService = userService;
-
-        this.adminUserRepository = adminUserRepository;
-    }
-
-    private boolean isAdminUser(String username) {
-        return adminUserRepository.existsById(username);
     }
 
     @PostMapping("/api/login")

@@ -65,7 +65,13 @@ public class JwtUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // Check if user is admin from token
+    /**
+     * @deprecated No longer used for authorization. The JwtAuthenticationFilter
+     *             now derives admin status from the database on each request.
+     *             Kept only for login response payload (frontend UI hint) and
+     *             backward-compatible tests.
+     */
+    @Deprecated
     public Boolean isAdminFromToken(String token) {
         Boolean isAdmin = extractClaim(token, claims -> claims.get("isAdmin", Boolean.class));
         return isAdmin != null ? isAdmin : false; // Default to false if claim is missing
@@ -106,7 +112,11 @@ public class JwtUtil {
         }
     }
 
-    // Validate token and check if user is admin
+    /**
+     * @deprecated No longer used for authorization. The JwtAuthenticationFilter
+     *             now derives admin status from the database on each request.
+     */
+    @Deprecated
     public boolean validateTokenAndCheckAdmin(String token) {
         return validateToken(token) && isAdminFromToken(token);
     }

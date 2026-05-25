@@ -3,6 +3,7 @@ package at.fhtw.ctfbackend.config;
 import at.fhtw.ctfbackend.filter.RateLimitFilter;
 import at.fhtw.ctfbackend.security.JwtAuthenticationFilter;
 import at.fhtw.ctfbackend.security.JwtUtil;
+import at.fhtw.ctfbackend.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,15 +23,18 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    private final UserService userService;
     private final RateLimitFilter rateLimitFilter;
     private final List<String> allowedOrigins;
 
     public SecurityConfig(
             JwtUtil jwtUtil,
+            UserService userService,
             RateLimitFilter rateLimitFilter,
             @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3002,http://inno1-bif3-p1-w25.cs.technikum-wien.at:3000}") List<String> allowedOrigins
     ) {
         this.jwtUtil = jwtUtil;
+        this.userService = userService;
         this.rateLimitFilter = rateLimitFilter;
         this.allowedOrigins = allowedOrigins;
     }
@@ -52,7 +56,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtil);
+        return new JwtAuthenticationFilter(jwtUtil, userService);
     }
 
     @Bean

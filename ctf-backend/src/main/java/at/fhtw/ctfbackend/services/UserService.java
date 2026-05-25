@@ -1,5 +1,6 @@
 package at.fhtw.ctfbackend.services;
 
+import at.fhtw.ctfbackend.controller.AdminStateConflictException;
 import at.fhtw.ctfbackend.dto.UserAdminUpdateDto;
 import at.fhtw.ctfbackend.entity.UserEntity;
 import at.fhtw.ctfbackend.repository.UserRepository;
@@ -112,12 +113,20 @@ public class UserService {
     }
 
     @Transactional
-    public UserEntity updateUser(Long id, UserAdminUpdateDto updateDto) {
+    public UserEntity updateUser(
+        Long id,
+        UserAdminUpdateDto updateDto,
+        String actingUsername
+    ) {
         UserEntity user = userRepository
             .findById(id)
             .orElseThrow(() ->
                 new IllegalArgumentException("User not found: " + id)
             );
+
+        String targetUsername = normalizeUsername(user.getUsername());
+        String actingNormalized = normalizeUsername(actingUsername);
+        boolean isSelfEdit = targetUsername.equals(actingNormalized);
 
         if (updateDto.getEmail() != null) {
             String email = updateDto.getEmail().trim();
@@ -132,13 +141,49 @@ public class UserService {
         }
 
         if (updateDto.getIsAdmin() != null) {
-            user.setIsAdmin(updateDto.getIsAdmin());
+            boolean currentlyAdmin = Boolean.TRUE.equals(user.getIsAdmin());
+            boolean willBeAdmin = updateDto.getIsAdmin();
+
+            if (currentlyAdmin && !willBeAdmin) {
+                if (isSelfEdit) {
+                    throw new AdminStateConflictException(
+                        "Cannot demote yourself"
+                    );
+                }
+                enforceNotLastActiveAdmin();
+            }
+
+            user.setIsAdmin(willBeAdmin);
         }
 
         if (updateDto.getIsActive() != null) {
-            user.setIsActive(updateDto.getIsActive());
+            boolean currentlyActive = Boolean.TRUE.equals(user.getIsActive());
+            boolean willBeActive = updateDto.getIsActive();
+
+            if (currentlyActive && !willBeActive) {
+                if (isSelfEdit) {
+                    throw new AdminStateConflictException(
+                        "Cannot deactivate yourself"
+                    );
+                }
+
+                if (Boolean.TRUE.equals(user.getIsAdmin())) {
+                    enforceNotLastActiveAdmin();
+                }
+            }
+
+            user.setIsActive(willBeActive);
         }
 
         return userRepository.save(user);
+    }
+
+    private void enforceNotLastActiveAdmin() {
+        long activeAdminCount = userRepository.countByIsAdminTrueAndIsActiveTrue();
+        if (activeAdminCount <= 1) {
+            throw new AdminStateConflictException(
+                "Cannot remove the last active administrator"
+            );
+        }
     }
 }

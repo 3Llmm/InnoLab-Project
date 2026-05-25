@@ -2,6 +2,8 @@ package at.fhtw.ctfbackend.config;
 
 import at.fhtw.ctfbackend.security.JwtAuthenticationFilter;
 import at.fhtw.ctfbackend.security.JwtUtil;
+import at.fhtw.ctfbackend.services.UserService;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -43,8 +45,17 @@ public class TestSecurityConfig {
 
     @Bean
     @Primary
-    public JwtAuthenticationFilter testJwtAuthenticationFilter(JwtUtil jwtUtil) {
-        return new JwtAuthenticationFilter(jwtUtil);
+    public UserService testUserService() {
+        return Mockito.mock(UserService.class);
+    }
+
+    @Bean
+    @Primary
+    public JwtAuthenticationFilter testJwtAuthenticationFilter(
+            JwtUtil jwtUtil,
+            UserService userService
+    ) {
+        return new JwtAuthenticationFilter(jwtUtil, userService);
     }
 
     @Bean

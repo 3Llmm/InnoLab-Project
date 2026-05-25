@@ -53,7 +53,7 @@ function formatDateTime(value: string | null) {
 }
 
 export default function AdminUsersPage() {
-  const { auth, isLoading: authLoading } = useAuth()
+  const { auth, isLoading: authLoading, checkAuth } = useAuth()
   const router = useRouter()
 
   const [users, setUsers] = useState<AdminUser[]>([])
@@ -124,6 +124,9 @@ export default function AdminUsersPage() {
       const updated = await updateUserAdmin(formState.id, payload)
       setUsers((current) => current.map((user) => (user.id === updated.id ? updated : user)))
       closeEditDialog()
+      if (updated.username === auth.user) {
+        await checkAuth()
+      }
     } catch (err) {
       console.error("Failed to update user:", err)
       setError(err instanceof Error ? err.message : "Failed to update user")

@@ -61,6 +61,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(AdminStateConflictException.class)
+    public ResponseEntity<Map<String, String>> handleAdminStateConflict(
+        AdminStateConflictException ex
+    ) {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler({DisabledException.class, LockedException.class})
     public ResponseEntity<Map<String, String>> handleAccountIssues(Exception ex) {
         Map<String, String> response = new HashMap<>();

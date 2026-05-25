@@ -14,10 +14,10 @@ export interface UserInfo {
  */
 export async function getUserInfo(): Promise<ApiResult<UserInfo>> {
   try {
-    const response = await apiClient.get('/api/auth/me')
+    const response = await apiClient.get<any>('/api/auth/me')
     return {
       success: true,
-      data: response.data
+      data: response
     }
   } catch (error) {
     console.error('Error fetching user info:', error)
@@ -33,10 +33,10 @@ export async function getUserInfo(): Promise<ApiResult<UserInfo>> {
  */
 export async function isAdmin(): Promise<ApiResult<{ isAdmin: boolean }>> {
   try {
-    const response = await apiClient.get('/api/auth/admin-check')
+    const response = await apiClient.get<any>('/api/auth/admin-check')
     return {
       success: true,
-      data: { isAdmin: response.data.isAdmin || false }
+      data: { isAdmin: response.isAdmin || false }
     }
   } catch (error) {
     console.error('Error checking admin status:', error)
