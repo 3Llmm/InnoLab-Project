@@ -10,10 +10,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/challenges")
 public class ChallengeController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChallengeController.class);
 
     private final ChallengeService challengeService;
 
@@ -44,7 +48,7 @@ public class ChallengeController {
 
             // Check if file data exists or is empty
             if (data == null || data.length == 0) {
-                System.out.println("DEBUG: No file data found for challenge: " + id);
+                logger.debug("No file data found for challenge: {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(Map.of(
@@ -56,21 +60,21 @@ public class ChallengeController {
             String filename = challengeService.getOriginalFilename(id);
 
             // Debug logging
-            System.out.println("DEBUG: Challenge ID = " + id);
-            System.out.println("DEBUG: Retrieved filename = '" + filename + "'");
-            System.out.println("DEBUG: Is null? " + (filename == null));
-            System.out.println("DEBUG: Is empty? " + (filename != null && filename.trim().isEmpty()));
+            logger.debug("Challenge ID = {}", id);
+            logger.debug("Retrieved filename = '{}'", filename);
+            logger.debug("Is null? {}", (filename == null));
+            logger.debug("Is empty? {}", (filename != null && filename.trim().isEmpty()));
 
             ByteArrayResource resource = new ByteArrayResource(data);
 
             // Better fallback logic
             if (filename == null || filename.trim().isEmpty()) {
-                System.out.println("DEBUG: Falling back to file extension detection");
+                logger.debug("Falling back to file extension detection");
                 String fileExtension = determineFileExtension(data);
                 filename = id + fileExtension;
             }
 
-            System.out.println("DEBUG: Final filename = '" + filename + "'");
+            logger.debug("Final filename = '{}'", filename);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -79,7 +83,7 @@ public class ChallengeController {
 
         } catch (RuntimeException e) {
             // Return proper error response
-            System.out.println("ERROR: Download failed for challenge: " + id + " - " + e.getMessage());
+            logger.error("Download failed for challenge: {} - {}", id, e.getMessage());
 
             if (e.getMessage().contains("Challenge not found")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -138,37 +142,10 @@ public class ChallengeController {
             @RequestParam(required = false) String[] hints) {
 
         try {
-            System.out.println("Creating challenge with parameters:");
-            System.out.println("  title: " + title);
-            System.out.println("  description: " + description);
-            System.out.println("  category: " + category);
-            System.out.println("  difficulty: " + difficulty);
-            System.out.println("  points: " + points);
-            System.out.println("  flag: " + (flag != null ? flag : "null"));
-            System.out.println("  requiresInstance (raw): " + requiresInstance);
-            System.out.println("  requiresInstance type: " + (requiresInstance != null ? requiresInstance.getClass().getName() : "null"));
+            logger.info("Creating challenge with parameters...");
 
             // Convert string to boolean
             Boolean requiresInstanceBoolean = Boolean.parseBoolean(requiresInstance);
-            System.out.println("  requiresInstance (raw): " + requiresInstance);
-            System.out.println("  requiresInstance (converted): " + requiresInstanceBoolean);
-            System.out.println("  requiresInstance (converted type): " + (requiresInstanceBoolean != null ? requiresInstanceBoolean.getClass().getName() : "null"));
-            System.out.println("  requiresInstance (converted value check): " + (requiresInstanceBoolean != null && requiresInstanceBoolean));
-
-            // Additional debug: print all parameters
-            System.out.println("=== DEBUG: All parameters received ===");
-            System.out.println("title: " + title);
-            System.out.println("description: " + description);
-            System.out.println("category: " + category);
-            System.out.println("difficulty: " + difficulty);
-            System.out.println("points: " + points);
-            System.out.println("flag: " + flag);
-
-            System.out.println("requiresInstance (final): " + requiresInstanceBoolean);
-            System.out.println("downloadFile: " + (downloadFile != null ? downloadFile.getOriginalFilename() : "null"));
-            System.out.println("dockerFiles: " + (dockerFiles != null ? dockerFiles.length : 0));
-            System.out.println("hints: " + (hints != null ? hints.length : 0));
-            System.out.println("=== END DEBUG ===");
 
             ChallengeDto createdChallenge = challengeService.createChallenge(
                     title, description, category, difficulty, points, flag,
@@ -178,8 +155,7 @@ public class ChallengeController {
             return ResponseEntity.status(HttpStatus.CREATED).body(createdChallenge);
 
         } catch (Exception e) {
-            System.err.println("Error creating challenge: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error creating challenge: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "error", "Failed to create challenge",

@@ -18,7 +18,6 @@ import {
     Wifi,
     Monitor,
     Code,
-    Container,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import KaliTerminal from "@/components/KaliTerminalClient";
@@ -38,10 +37,6 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
     const [downloading, setDownloading] = useState(false);
     const [showTerminal, setShowTerminal] = useState(false);
     const [startingTerminal, setStartingTerminal] = useState(false);
-    // Build stage tracking
-    const [buildStage, setBuildStage] = useState<
-        "idle" | "checking" | "building" | "starting" | "ready" | "error"
-    >("idle");
     const [stoppingTerminal, setStoppingTerminal] = useState(false);
     const [result, setResult] = useState<{
         status: "success" | "error" | "warning" | "info";
@@ -201,32 +196,15 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
         }
 
         setStartingTerminal(true);
-        setBuildStage("checking");
         setResult(null);
 
         try {
-            console.log("Building and starting environment for challenge:", challenge.id);
-
-            // Stage 1: Checking/Create Instance
-            setBuildStage("checking");
-
             const res = await apiClient.post<EnvironmentInstance>(
                 `/api/environment/build/${challenge.id}`,
                 {}
             );
 
-            // Stage 2: Building (simulated - backend builds during request)
-            setBuildStage("building");
-
-            console.log("Environment built and started:", res);
             setEnvironment(res);
-
-            // Stage 3: Starting
-            setBuildStage("starting");
-
-            // Stage 4: Ready
-            setBuildStage("ready");
-
             setShowTerminal(true);
 
             setResult({
@@ -235,19 +213,12 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
             });
         } catch (error: any) {
             console.error("Failed to build and start environment:", error);
-            setBuildStage("error");
             setResult({
                 status: "error",
                 message: `Failed to start environment: ${error?.message || "Unknown error"}`,
             });
         } finally {
             setStartingTerminal(false);
-            // Reset stage after a delay if successful
-            if (buildStage === "ready") {
-                setTimeout(() => setBuildStage("idle"), 3000);
-            } else if (buildStage === "error") {
-                setTimeout(() => setBuildStage("idle"), 5000);
-            }
         }
     }
 
@@ -571,12 +542,7 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                                     {startingTerminal ? (
                                         <>
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            {buildStage === "checking" && "Checking..."}
-                                            {buildStage === "building" && "Building..."}
-                                            {buildStage === "starting" && "Starting..."}
-                                            {buildStage === "ready" && "Ready!"}
-                                            {buildStage === "error" && "Failed"}
-                                            {buildStage === "idle" && "Starting..."}
+                                            Preparing environment...
                                         </>
                                     ) : environment?.status === "RUNNING" ? (
                                         <>
@@ -631,84 +597,9 @@ export default function ChallengeDetail({ challenge, solveStats = null, setSolve
                                 )}
                             </div>
 
-                            {/* Build Progress Indicator */}
-                            {startingTerminal && buildStage !== "idle" && (
-                                <div className="bg-background border border-border rounded-lg p-4 space-y-3">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="font-medium">Build Progress</span>
-                                        <span className={`${
-                                            buildStage === "error" ? "text-red-500" :
-                                            buildStage === "ready" ? "text-green-500" :
-                                            "text-blue-500"
-                                        }`}>
-                                            {buildStage === "checking" && "Preparing..."}
-                                            {buildStage === "building" && "Building Docker image..."}
-                                            {buildStage === "starting" && "Launching container..."}
-                                            {buildStage === "ready" && "Environment ready!"}
-                                            {buildStage === "error" && "Build failed"}
-                                        </span>
-                                    </div>
-
-                                    {/* Progress bar with stages */}
-                                    <div className="relative">
-                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full transition-all duration-500 ${
-                                                    buildStage === "error" ? "bg-red-500" :
-                                                    buildStage === "ready" ? "bg-green-500" :
-                                                    "bg-blue-500"
-                                                }`}
-                                                style={{
-                                                    width: buildStage === "checking" ? "25%" :
-                                                           buildStage === "building" ? "50%" :
-                                                           buildStage === "starting" ? "75%" :
-                                                           buildStage === "ready" ? "100%" :
-                                                           buildStage === "error" ? "100%" : "25%"
-                                                }}
-                                            />
-                                        </div>
-                                        
-                                        {/* Stage dots */}
-                                        <div className="flex justify-between mt-2">
-                                            <div className="flex flex-col items-center">
-                                                <div className={`w-3 h-3 rounded-full ${
-                                                    buildStage === "checking" || buildStage === "building" || buildStage === "starting" || buildStage === "ready" ? "bg-blue-500" : buildStage === "error" ? "bg-red-500" : "bg-muted"
-                                                } ${buildStage === "checking" || buildStage === "building" || buildStage === "starting" || buildStage === "ready" ? "ring-2 ring-blue-500" : ""}`}>
-                                                </div>
-                                                <span className="text-xs text-muted-foreground mt-1">Prepare</span>
-                                            </div>
-                                            <div className="flex flex-col items-center">
-                                                <div className={`w-3 h-3 rounded-full ${
-                                                    buildStage === "building" || buildStage === "starting" || buildStage === "ready" ? "bg-blue-500" : "bg-muted"
-                                                } ${buildStage === "building" ? "ring-2 ring-blue-500" : ""}`}>
-                                                </div>
-                                                <span className="text-xs text-muted-foreground mt-1">Build</span>
-                                            </div>
-                                            <div className="flex flex-col items-center">
-                                                <div className={`w-3 h-3 rounded-full ${
-                                                    buildStage === "starting" || buildStage === "ready" ? "bg-blue-500" : "bg-muted"
-                                                } ${buildStage === "starting" ? "ring-2 ring-blue-500" : ""}`}>
-                                                </div>
-                                                <span className="text-xs text-muted-foreground mt-1">Launch</span>
-                                            </div>
-                                            <div className="flex flex-col items-center">
-                                                <div className={`w-3 h-3 rounded-full ${
-                                                    buildStage === "ready" ? "bg-green-500" : buildStage === "error" ? "bg-red-500" : "bg-muted"
-                                                } ${buildStage === "ready" ? "ring-2 ring-green-500" : ""}`}>
-                                                </div>
-                                                <span className="text-xs text-muted-foreground mt-1">Ready</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Stage-specific messages */}
-                                    <div className="text-xs text-muted-foreground">
-                                        {buildStage === "checking" && "Verifying challenge configuration..."}
-                                        {buildStage === "building" && "Building Docker image (this may take 1-2 minutes on first run)..."}
-                                        {buildStage === "starting" && "Starting the container and SSH service..."}
-                                        {buildStage === "ready" && "Environment is ready! You can now access it via SSH."}
-                                        {buildStage === "error" && "An error occurred during build. Please try again or contact support."}
-                                    </div>
+                            {startingTerminal && (
+                                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div className="h-full bg-primary rounded-full w-1/3 animate-pulse" />
                                 </div>
                             )}
 

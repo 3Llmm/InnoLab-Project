@@ -23,8 +23,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     private static final List<String> EXCLUDED_PATHS = List.of(
-            "/api/health",
-            "/api/csrf-token"
+            "/api/health"
     );
 
     public RateLimitFilter(RateLimitConfig rateLimitConfig, JwtUtil jwtUtil) {

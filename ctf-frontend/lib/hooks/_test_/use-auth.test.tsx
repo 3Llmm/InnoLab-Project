@@ -27,10 +27,6 @@ function wrapper({ children }: { children: React.ReactNode }) {
 
 beforeEach(() => {
     localStorage.clear()
-    Object.defineProperty(document, 'cookie', {
-        writable: true,
-        value: 'XSRF-TOKEN=test-csrf-token; path=/',
-    })
     global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,

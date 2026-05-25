@@ -1,0 +1,106 @@
+name: Deploy CTF Platform
+
+on:
+  push:
+    branches: [master, main]
+
+env:
+  NEXT_PUBLIC_API_URL: ""
+  NEXT_PUBLIC_TERMINAL_URL: ws://inno1-bif3-p1-w25.cs.technikum-wien.at/terminal
+  DEPLOY_DIR: /opt/ctf
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Debug build environment
+        run: |
+          echo "=== Java ==="
+          java -version 2>&1
+          echo "=== Maven ==="
+          ./mvnw --version 2>&1
+          echo "=== Workspace ==="
+          pwd
+          ls -la target/ 2>/dev/null || echo "No target dir"
+        working-directory: ctf-backend
+      - name: Build Backend
+        run: ./mvnw clean package -DskipTests -Dcheckstyle.skip=true -q
+        working-directory: ctf-backend
+
+      - name: Build Frontend
+        run: |
+          npm ci
+          npm run build
+        working-directory: ctf-frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_TERMINAL_URL: ${{ env.NEXT_PUBLIC_TERMINAL_URL }}
+
+      - name: Deploy Backend
+        run: |
+          BACKEND_JAR=$(find ctf-backend/target -maxdepth 1 -name "*.jar" | head -n1)
+          if [ -z "$BACKEND_JAR" ]; then
+            echo "ERROR: No backend JAR found"
+            exit 1
+          fi
+          cp "$BACKEND_JAR" ${{ env.DEPLOY_DIR }}/backend/app.jar
+
+      - name: Deploy Frontend
+        run: |
+          rm -rf ${{ env.DEPLOY_DIR }}/frontend/.next
+          cp -r ctf-frontend/.next ${{ env.DEPLOY_DIR }}/frontend/.next
+          cp -r ctf-frontend/.next/static ${{ env.DEPLOY_DIR }}/frontend/.next/standalone/.next/static
+
+      - name: Deploy Terminal
+        run: cp ctf-terminal/server.js ${{ env.DEPLOY_DIR }}/terminal/server.js
+
+      - name: Restart Services
+        run: sudo systemctl restart ctf-backend ctf-frontend ctf-terminal
+
+      - name: Health Check
+        run: |
+          echo "--- Frontend ---"
+          FRONTEND_OK=false
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              FRONTEND_OK=true
+              echo "Frontend: OK"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$FRONTEND_OK" = false ]; then
+            echo "Frontend: FAIL (timeout after 30s)"
+            exit 1
+          fi
+          echo "--- Terminal ---"
+          TERMINAL_OK=false
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              TERMINAL_OK=true
+              echo "Terminal: OK"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$TERMINAL_OK" = false ]; then
+            echo "Terminal: FAIL (timeout after 30s)"
+            exit 1
+          fi
+          echo "--- Backend ---"
+          BACKEND_OK=false
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/health > /dev/null; then
+              BACKEND_OK=true
+              echo "Backend: OK"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$BACKEND_OK" = false ]; then
+            echo "Backend: FAIL (timeout after 30s)"
+            exit 1
+          fi
+          echo "All services healthy!"

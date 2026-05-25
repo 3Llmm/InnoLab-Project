@@ -3,6 +3,7 @@ package at.fhtw.ctfbackend.config;
 import at.fhtw.ctfbackend.filter.RateLimitFilter;
 import at.fhtw.ctfbackend.security.JwtAuthenticationFilter;
 import at.fhtw.ctfbackend.security.JwtUtil;
+import at.fhtw.ctfbackend.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +13,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,15 +23,18 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    private final UserService userService;
     private final RateLimitFilter rateLimitFilter;
     private final List<String> allowedOrigins;
 
     public SecurityConfig(
             JwtUtil jwtUtil,
+            UserService userService,
             RateLimitFilter rateLimitFilter,
             @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3002,http://inno1-bif3-p1-w25.cs.technikum-wien.at:3000}") List<String> allowedOrigins
     ) {
         this.jwtUtil = jwtUtil;
+        this.userService = userService;
         this.rateLimitFilter = rateLimitFilter;
         this.allowedOrigins = allowedOrigins;
     }
@@ -41,7 +44,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*", "X-XSRF-TOKEN"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Set-Cookie", "X-RateLimit-Remaining", "Retry-After"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
@@ -53,7 +56,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtil);
+        return new JwtAuthenticationFilter(jwtUtil, userService);
     }
 
     @Bean
@@ -67,7 +70,6 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/login").permitAll()
                         .requestMatchers("/api/health").permitAll() 
-                        .requestMatchers("/api/csrf-token").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/categories").permitAll()
@@ -101,8 +103,4 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public CookieCsrfTokenRepository csrfTokenRepository() {
-        return CookieCsrfTokenRepository.withHttpOnlyFalse();
-    }
 }

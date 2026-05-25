@@ -28,6 +28,10 @@ public class Solve {
     private String username;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "challenge_id", nullable = false)
     private ChallengeEntity challenge;
 
@@ -39,8 +43,9 @@ public class Solve {
     @Column(name = "points_earned")
     private Integer pointsEarned = 0;
 
-    public Solve(String username, ChallengeEntity challenge, Integer pointsEarned) {
-        this.username = username;
+    public Solve(UserEntity user, ChallengeEntity challenge, Integer pointsEarned) {
+        this.user = user;
+        this.username = user.getUsername();
         this.challenge = challenge;
         this.pointsEarned = pointsEarned;
     }

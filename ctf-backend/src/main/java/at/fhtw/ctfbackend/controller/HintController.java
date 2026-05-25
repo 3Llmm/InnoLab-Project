@@ -3,6 +3,7 @@ package at.fhtw.ctfbackend.controller;
 import at.fhtw.ctfbackend.entity.HintReveal;
 import at.fhtw.ctfbackend.repository.HintRevealRepository;
 import at.fhtw.ctfbackend.services.HintService;
+import at.fhtw.ctfbackend.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +19,12 @@ public class HintController {
 
     private final HintService hintService;
     private final HintRevealRepository hintRevealRepository;
+    private final UserService userService;
 
-    public HintController(HintService hintService, HintRevealRepository hintRevealRepository) {
+    public HintController(HintService hintService, HintRevealRepository hintRevealRepository, UserService userService) {
         this.hintService = hintService;
         this.hintRevealRepository = hintRevealRepository;
+        this.userService = userService;
     }
 
     /**
@@ -74,7 +77,10 @@ public class HintController {
             @PathVariable String challengeId) {
 
         String username = auth.getName();
-        List<HintReveal> reveals = hintRevealRepository.findByUsernameAndChallengeId(username, challengeId);
+        List<HintReveal> reveals = hintRevealRepository.findByUserAndChallengeId(
+                userService.getRequiredUser(username),
+                challengeId
+        );
 
         // Build a list of revealed hint indexes
         List<Integer> revealedIndexes = new ArrayList<>();

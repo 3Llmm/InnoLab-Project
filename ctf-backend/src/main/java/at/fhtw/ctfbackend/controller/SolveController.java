@@ -9,10 +9,14 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/solves")
 public class SolveController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SolveController.class);
 
     private final SolveService solveService;
 
@@ -151,9 +155,9 @@ public class SolveController {
      */
     @GetMapping("/challenge/{challengeId}/stats")
     public ResponseEntity<Map<String, Object>> getChallengeStatistics(@PathVariable String challengeId) {
-        System.out.println(" Controller: getChallengeStatistics endpoint called for: " + challengeId);
+        logger.debug(" Controller: getChallengeStatistics endpoint called for: {}", challengeId);
         Map<String, Object> stats = solveService.getChallengeStatistics(challengeId);
-        System.out.println(" Controller: Returning stats: " + stats);
+        logger.debug(" Controller: Returning stats: {}", stats);
         return ResponseEntity.ok(stats);
     }
 

@@ -1,5 +1,7 @@
 package at.fhtw.ctfbackend.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import at.fhtw.ctfbackend.entity.CategoryEntity;
 import at.fhtw.ctfbackend.dto.CategoryDto;
 import at.fhtw.ctfbackend.repository.CategoryRepository;
@@ -13,6 +15,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CategoryService.class);
+
     private final CategoryRepository categoryRepository;
     private final ObjectMapper objectMapper;
 
@@ -77,7 +82,7 @@ public class CategoryService {
             categoryRepository.save(categoryEntity);
             return "OK";
         } catch (Exception e) {
-            System.err.println("Error saving category '" + id + "': " + e.getMessage());
+            logger.error("Error saving category '{}': {}", id, e.getMessage());
             return "Failed to save category: " + e.getMessage();
         }
     }

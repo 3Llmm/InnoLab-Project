@@ -163,7 +163,6 @@ export default function AddChallengeForm() {
 
             // Add instance configuration
             const requiresInstanceValue = data.requiresInstance ? "true" : "false";
-            console.log("DEBUG: Setting requiresInstance to:", requiresInstanceValue, "typeof:", typeof requiresInstanceValue);
             formData.append("requiresInstance", requiresInstanceValue)
             if (data.requiresInstance) {
                 if (data.dockerImageName) {

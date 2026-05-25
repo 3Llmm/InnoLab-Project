@@ -1,5 +1,8 @@
 # Course Editor Guide
 
+> **Latest version:** [docs/12-course-editor-guide.md](docs/12-course-editor-guide.md)
+> This root copy is maintained for quick reference. The docs/ copy is the canonical source.
+
 A comprehensive guide for creating high-quality lessons on the InnoLab CTF Platform.
 
 ---

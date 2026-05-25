@@ -4,6 +4,8 @@ import at.fhtw.ctfbackend.entity.ChallengeEntity;
 import at.fhtw.ctfbackend.dto.ChallengeDto;
 import at.fhtw.ctfbackend.repository.ChallengeRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class ChallengeService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChallengeService.class);
 
     private final ChallengeRepository repo;
     private final ChallengeFileStorageService fileStorageService;
@@ -61,13 +65,13 @@ public class ChallengeService {
 
         // Create challenge folder
         String challengeFolderPath = fileStorageService.createChallengeFolder(challengeId);
-        System.out.println("Created challenge folder: " + challengeFolderPath);
+        logger.info("Created challenge folder: {}", challengeFolderPath);
 
         // Save Docker files if provided
         List<String> savedFiles = new ArrayList<>();
         if (dockerFiles != null && dockerFiles.length > 0) {
             savedFiles = fileStorageService.saveDockerFiles(challengeId, dockerFiles);
-            System.out.println("Saved " + savedFiles.size() + " Docker files for challenge: " + challengeId);
+            logger.info("Saved {} Docker files for challenge: {}", savedFiles.size(), challengeId);
         }
 
         // Save download file if provided
@@ -126,21 +130,9 @@ public class ChallengeService {
 
         // Set other optional fields
 
-        
-        // Detailed debug for requiresInstance
-        System.out.println("=== DEBUG: ChallengeService requiresInstance processing ===");
-        System.out.println("DEBUG: requiresInstance parameter received: " + requiresInstance);
-        System.out.println("DEBUG: requiresInstance parameter type: " + (requiresInstance != null ? requiresInstance.getClass().getName() : "null"));
-        
+
         boolean finalRequiresInstanceValue = requiresInstance != null ? requiresInstance : false;
-        System.out.println("DEBUG: Final boolean value to set: " + finalRequiresInstanceValue);
-        System.out.println("DEBUG: Final boolean value type: " + Boolean.class.getName());
-        
         entity.setRequiresInstance(finalRequiresInstanceValue);
-        
-        // Verify what was actually set in the entity
-        System.out.println("DEBUG: Entity requiresInstance after setting: " + entity.isRequiresInstance());
-        System.out.println("=== END DEBUG ===");
 
         // Set hints
         if (hints != null && hints.length > 0) {
@@ -150,33 +142,13 @@ public class ChallengeService {
         }
 
         try {
-            // Debug: Before save
-            System.out.println("=== DEBUG: Before database save ===");
-            System.out.println("DEBUG: Entity ID: " + entity.getId());
-            System.out.println("DEBUG: Entity requiresInstance before save: " + entity.isRequiresInstance());
-
-            System.out.println("=== END DEBUG ===");
-            
             ChallengeEntity savedEntity = repo.saveAndFlush(entity);
-            
-            // Debug: Check what was actually saved to database
-            System.out.println("=== DEBUG: After database save ===");
-            System.out.println("DEBUG: Saved entity ID: " + savedEntity.getId());
-            System.out.println("DEBUG: Saved entity requiresInstance: " + savedEntity.isRequiresInstance());
 
-            
-            // Check if the saved entity is the same object
-            System.out.println("DEBUG: Same object reference: " + (entity == savedEntity));
-            System.out.println("DEBUG: Entity hashCode: " + entity.hashCode());
-            System.out.println("DEBUG: Saved entity hashCode: " + savedEntity.hashCode());
-            System.out.println("=== END DEBUG ===");
-            
-            System.out.println("Challenge created: " + challengeId);
+            logger.info("Challenge created: {}", challengeId);
             return toDto(savedEntity);
         } catch (Exception e) {
-            System.err.println("Failed to save challenge: " + e.getMessage());
-            e.printStackTrace();
-            throw e; // Re-throw the exception
+            logger.error("Failed to save challenge: {}", e.getMessage(), e);
+            throw e;
         }
     }
 
@@ -238,7 +210,7 @@ public class ChallengeService {
         }
 
         ChallengeEntity updatedEntity = repo.save(existingEntity);
-        System.out.println("Challenge updated: " + id);
+        logger.info("Challenge updated: {}", id);
         return toDto(updatedEntity);
     }
 
@@ -258,7 +230,7 @@ public class ChallengeService {
         }
 
         repo.deleteById(id);
-        System.out.println("Challenge deleted: " + id);
+        logger.info("Challenge deleted: {}", id);
     }
 
     /**

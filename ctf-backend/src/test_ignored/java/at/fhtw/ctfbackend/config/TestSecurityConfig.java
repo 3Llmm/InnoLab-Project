@@ -1,8 +1,8 @@
 package at.fhtw.ctfbackend.config;
 
-
 import at.fhtw.ctfbackend.security.JwtAuthenticationFilter;
 import at.fhtw.ctfbackend.security.JwtUtil;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -15,10 +15,6 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * Test-specific security configuration.
- * This replaces LDAP authentication with in-memory authentication for testing.
- */
 @TestConfiguration
 @EnableWebSecurity
 public class TestSecurityConfig {
@@ -26,10 +22,9 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public UserDetailsService testUserDetailsService() {
-        // Create test users for integration tests
         return new InMemoryUserDetailsManager(
                 User.withUsername("testuser")
-                        .password("{noop}password123") // {noop} means no password encoding
+                        .password("{noop}password123")
                         .roles("USER")
                         .build(),
                 User.withUsername("admin")
@@ -42,13 +37,13 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public JwtUtil testJwtUtil() {
-        return new JwtUtil();
+        return new JwtUtil("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     }
 
     @Bean
     @Primary
     public JwtAuthenticationFilter testJwtAuthenticationFilter(JwtUtil jwtUtil) {
-        return new JwtAuthenticationFilter();
+        return new JwtAuthenticationFilter(jwtUtil);
     }
 
     @Bean
