@@ -63,3 +63,16 @@ export async function deleteChallenge(id: string): Promise<ActionResult> {
     }
   }
 }
+
+export async function revalidateCourses(): Promise<ActionResult> {
+  try {
+    revalidatePath("/courses")
+    return { success: true }
+  } catch (error) {
+    console.error(" Error revalidating courses:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to revalidate courses",
+    }
+  }
+}

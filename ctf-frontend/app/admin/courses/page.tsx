@@ -35,6 +35,7 @@ import {
   type ModuleAdmin,
   type LessonAdmin,
 } from "@/lib/api/admin"
+import { revalidateCourses } from "@/lib/actions/admin"
 
 export default function AdminCoursesPage() {
   const { auth, isLoading: authLoading } = useAuth()
@@ -165,6 +166,7 @@ export default function AdminCoursesPage() {
       await loadData()
       setShowModal(false)
       setEditingItem(null)
+      revalidateCourses()
     } catch (err) {
       console.error("Failed to save:", err)
       alert(err instanceof Error ? err.message : "Failed to save")
@@ -182,6 +184,7 @@ export default function AdminCoursesPage() {
       else if (type === "lesson") await deleteLesson(id)
 
       await loadData()
+      revalidateCourses()
     } catch (err) {
       console.error("Failed to delete:", err)
       alert(err instanceof Error ? err.message : "Failed to delete")
@@ -192,6 +195,7 @@ export default function AdminCoursesPage() {
     try {
       await publishCourse(id, !currentPublished)
       await loadData()
+      revalidateCourses()
     } catch (err) {
       console.error("Failed to publish:", err)
       alert(err instanceof Error ? err.message : "Failed to update publish status")

@@ -3,6 +3,8 @@ import Link from "next/link"
 import { Clock, Target } from "lucide-react"
 import { getAllCourses, CourseListItem } from "@/lib/api/courses"
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "Courses | CTF Platform",
   description: "Learn cybersecurity through structured courses",

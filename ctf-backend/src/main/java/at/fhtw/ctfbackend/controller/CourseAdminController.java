@@ -55,7 +55,7 @@ public class CourseAdminController {
         existing.setDifficulty(courseDto.getDifficulty());
         existing.setEstimatedMinutes(courseDto.getEstimatedMinutes());
         existing.setOrderIndex(courseDto.getOrderIndex() != null ? courseDto.getOrderIndex() : 0);
-        existing.setIsPublished(courseDto.getIsPublished() != null ? courseDto.getIsPublished() : false);
+        existing.setIsPublished(courseDto.getIsPublished() != null ? courseDto.getIsPublished() : existing.getIsPublished());
 
         CourseEntity saved = courseRepository.save(existing);
         return ResponseEntity.ok(toDto(saved));
