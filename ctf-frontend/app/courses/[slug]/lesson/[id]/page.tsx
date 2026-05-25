@@ -41,6 +41,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function generateStaticParams() {
   const course = await getCourseBySlug("web-exploitation")
   if (!course) return []
