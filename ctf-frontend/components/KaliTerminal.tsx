@@ -29,6 +29,9 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
         if (selection) {
             navigator.clipboard.writeText(selection).then(() => {
                 toast({ title: "Copied", description: "Text copied to clipboard", duration: 2000 });
+            }).catch((err) => {
+                console.error('Copy failed:', err);
+                toast({ title: "Copy failed", description: "Unable to write to clipboard", variant: "destructive", duration: 3000 });
             });
         } else {
             toast({ title: "Nothing to copy", description: "Select text in the terminal first", duration: 2000 });
@@ -36,23 +39,46 @@ export default function KaliTerminal({ instanceId, sshPort, containerName, onClo
         setContextMenu(null);
     }, [toast]);
 
+    const sendText = useCallback((text: string) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(text);
+            toast({ title: "Pasted", description: "Text sent to terminal", duration: 2000 });
+        }
+    }, [toast]);
+
     const handlePaste = useCallback(async () => {
+        let pasted = false;
         try {
             const text = await navigator.clipboard.readText();
-            if (wsRef.current?.readyState === WebSocket.OPEN) {
-                wsRef.current.send(text);
-                toast({ title: "Pasted", description: "Text sent to terminal", duration: 2000 });
-            }
+            if (text) { sendText(text); pasted = true; }
         } catch {
-            toast({
-                title: "Paste blocked",
-                description: "Grant clipboard permission in your browser or use Ctrl+Shift+V",
-                variant: "destructive",
-                duration: 4000,
+            // Fallback: hidden input + execCommand (works without clipboard permission)
+            const input = document.createElement('input');
+            input.style.position = 'fixed';
+            input.style.opacity = '0';
+            input.style.pointerEvents = 'none';
+            document.body.appendChild(input);
+            input.focus();
+            input.addEventListener('paste', (e: Event) => {
+                const text = (e as ClipboardEvent).clipboardData?.getData('text/plain') || '';
+                if (text) { sendText(text); pasted = true; }
+                document.body.removeChild(input);
             });
+            document.execCommand('paste');
+            setTimeout(() => {
+                if (document.body.contains(input)) document.body.removeChild(input);
+                if (!pasted) {
+                    toast({
+                        title: "Paste blocked",
+                        description: "Grant clipboard permission in site settings or use Ctrl+Shift+V",
+                        variant: "destructive",
+                        duration: 4000,
+                    });
+                }
+            }, 200);
         }
         setContextMenu(null);
-    }, [toast]);
+    }, [sendText, toast]);
     useEffect(() => {
         if (!sshPort || !instanceId || !terminalRef.current || isInitializedRef.current) {
             if (!sshPort || !instanceId) {
