@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
 import {
   Table,
   TableBody,
@@ -55,6 +56,7 @@ function formatDateTime(value: string | null) {
 export default function AdminUsersPage() {
   const { auth, isLoading: authLoading, checkAuth } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
 
   const [users, setUsers] = useState<AdminUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -124,12 +126,23 @@ export default function AdminUsersPage() {
       const updated = await updateUserAdmin(formState.id, payload)
       setUsers((current) => current.map((user) => (user.id === updated.id ? updated : user)))
       closeEditDialog()
+      toast({
+        title: "User Updated",
+        description: `${updated.username}'s account has been updated successfully.`,
+        duration: 3000,
+      })
       if (updated.username === auth.user) {
         await checkAuth()
       }
     } catch (err) {
       console.error("Failed to update user:", err)
       setError(err instanceof Error ? err.message : "Failed to update user")
+      toast({
+        title: "Error Updating User",
+        description: err instanceof Error ? err.message : "Failed to update user",
+        variant: "destructive",
+        duration: 5000,
+      })
       setIsSaving(false)
     }
   }
