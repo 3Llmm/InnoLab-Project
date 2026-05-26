@@ -9,8 +9,9 @@ import { AlertCircle } from "lucide-react"
 
 export default function LoginForm() {
     const router = useRouter()
-    const { login, isLoading } = useAuth()
+    const { login } = useAuth()
     const [error, setError] = useState("")
+    const [submitting, setSubmitting] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -22,13 +23,12 @@ export default function LoginForm() {
             password: formData.get('password') as string,
         }
 
+        setSubmitting(true)
         try {
             const result = await login(credentials)
 
             if (result.success) {
-                // Check if user is admin and redirect accordingly
                 const isAdmin = result.data?.isAdmin || false
-
                 if (isAdmin) {
                     router.push("/admin")
                 } else {
@@ -40,6 +40,8 @@ export default function LoginForm() {
             }
         } catch (err) {
             setError("An unexpected error occurred")
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -93,10 +95,10 @@ export default function LoginForm() {
 
                 <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={submitting}
                     className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? "Logging in..." : "Login"}
+                    {submitting ? "Logging in..." : "Login"}
                 </button>
             </form>
         </div>

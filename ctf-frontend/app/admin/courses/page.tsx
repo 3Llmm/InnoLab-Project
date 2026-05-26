@@ -14,8 +14,10 @@ import {
   EyeOff,
   Loader2,
   ArrowLeft,
+  CheckCircle2,
 } from "lucide-react"
 import { useAuth } from "@/lib/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
 import TipTapEditor from "@/components/tiptap-editor"
 import {
   getAllCoursesAdmin,
@@ -40,6 +42,7 @@ import { revalidateCourses } from "@/lib/actions/admin"
 export default function AdminCoursesPage() {
   const { auth, isLoading: authLoading } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
 
   const [courses, setCourses] = useState<CourseAdmin[]>([])
   const [modules, setModules] = useState<ModuleAdmin[]>([])
@@ -168,9 +171,19 @@ export default function AdminCoursesPage() {
       setShowModal(false)
       setEditingItem(null)
       revalidateCourses()
+      toast({
+        title: `${modalType === "course" ? "Course" : modalType === "module" ? "Module" : "Lesson"} Saved`,
+        description: "Changes have been saved successfully.",
+        duration: 3000,
+      })
     } catch (err) {
       console.error("Failed to save:", err)
-      alert(err instanceof Error ? err.message : "Failed to save")
+      toast({
+        title: "Error Saving",
+        description: err instanceof Error ? err.message : "Failed to save",
+        variant: "destructive",
+        duration: 5000,
+      })
     } finally {
       setIsSaving(false)
     }
@@ -186,9 +199,19 @@ export default function AdminCoursesPage() {
 
       await loadData()
       revalidateCourses()
+      toast({
+        title: `${type.charAt(0).toUpperCase() + type.slice(1)} Deleted`,
+        description: "The item has been removed successfully.",
+        duration: 3000,
+      })
     } catch (err) {
       console.error("Failed to delete:", err)
-      alert(err instanceof Error ? err.message : "Failed to delete")
+      toast({
+        title: "Error Deleting",
+        description: err instanceof Error ? err.message : "Failed to delete",
+        variant: "destructive",
+        duration: 5000,
+      })
     }
   }
 
@@ -197,9 +220,21 @@ export default function AdminCoursesPage() {
       await publishCourse(id, !currentPublished)
       await loadData()
       revalidateCourses()
+      toast({
+        title: currentPublished ? "Course Unpublished" : "Course Published",
+        description: currentPublished
+          ? "The course is no longer visible to students."
+          : "The course is now live and visible to students.",
+        duration: 3000,
+      })
     } catch (err) {
       console.error("Failed to publish:", err)
-      alert(err instanceof Error ? err.message : "Failed to update publish status")
+      toast({
+        title: "Error Publishing",
+        description: err instanceof Error ? err.message : "Failed to update publish status",
+        variant: "destructive",
+        duration: 5000,
+      })
     }
   }
 

@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
         Map<String, String> response = new HashMap<>();
         response.put("status", "error");
-        response.put("message", "Access denied");
+        response.put("message", "You don't have permission to perform this action");
 
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
@@ -69,6 +69,15 @@ public class GlobalExceptionHandler {
         response.put("status", "error");
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "An unexpected error occurred. Please try again later.");
+
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler({DisabledException.class, LockedException.class})
