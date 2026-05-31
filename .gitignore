@@ -12,3 +12,8 @@ ctf-frontend/tsconfig.tsbuildinfo
 DEPLOYMENT_GUIDE.md
 challenges/
 .opencode/
+.agents/
+Agents.md
+.playwright-mcp/
+.serena/
+skills-lock.json
